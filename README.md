@@ -8,8 +8,9 @@ capabilities through a small request/response bridge.
 The current `0.1` foundation includes:
 
 - responsive desktop sidebar and mobile drawer;
+- optional persistent desktop sidebar collapsing;
 - accessible, keyboard-navigable tab views;
-- animated sliding pages with back history;
+- interruption-safe animated tabs and sliding pages with back history;
 - responsive live charts for thousands of continuously updated data points;
 - accessible toast notifications with actions and four severity levels;
 - light, dark, and system themes powered by CSS variables;
@@ -72,13 +73,16 @@ Listen for `gui:tab-change` when application state needs to follow the UI.
 
 ```html
 <button data-gui-sidebar-toggle="app-sidebar">Menu</button>
-<gui-sidebar id="app-sidebar">
+<button data-gui-sidebar-collapse="app-sidebar">Collapse</button>
+<gui-sidebar id="app-sidebar" collapsible persist-key="workspace">
   <nav class="gui-nav">...</nav>
 </gui-sidebar>
 ```
 
 The sidebar is permanently visible on larger screens and behaves as a drawer
-below `52rem`. Pressing Escape closes an open drawer.
+below `52rem`. Pressing Escape closes an open drawer. Desktop collapsing is
+opt-in with `collapsible`; `persist-key` remembers the choice when local storage
+is available.
 
 ### Sliding pages
 

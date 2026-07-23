@@ -85,6 +85,8 @@
   "actions": {
     "menu": "Abrir menú",
     "theme": "Cambiar tema",
+    "collapseSidebar": "Contraer barra lateral",
+    "expandSidebar": "Expandir barra lateral",
     "back": "Atrás",
     "save": "Guardar",
     "cancel": "Cancelar"

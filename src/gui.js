@@ -154,6 +154,8 @@ export class GuiI18n extends GuiEventTarget {
     translateAttribute("[data-i18n-placeholder]", "data-i18n-placeholder", "placeholder");
     translateAttribute("[data-i18n-title]", "data-i18n-title", "title");
     translateAttribute("[data-i18n-aria-label]", "data-i18n-aria-label", "aria-label");
+    translateAttribute("[data-i18n-expanded-label]", "data-i18n-expanded-label", "data-expanded-label");
+    translateAttribute("[data-i18n-collapsed-label]", "data-i18n-collapsed-label", "data-collapsed-label");
   }
 }
 
@@ -872,9 +874,10 @@ export class GuiToastManager {
   }
 }
 
-class GuiTabs extends GuiElement {
+export class GuiTabs extends GuiElement {
   static observedAttributes = ["active"];
   static #nextId = 0;
+  #transitionToken = 0;
 
   connectedCallback() {
     this.id ||= `gui-tabs-${++GuiTabs.#nextId}`;
@@ -889,8 +892,8 @@ class GuiTabs extends GuiElement {
     this.removeEventListener("keydown", this.#onKeyDown);
   }
 
-  attributeChangedCallback() {
-    if (this.isConnected) this.#render();
+  attributeChangedCallback(_name, previous, current) {
+    if (this.isConnected) this.#render(current, previous);
   }
 
   get active() {
@@ -933,27 +936,48 @@ class GuiTabs extends GuiElement {
       panel.id ||= `${this.id}-panel-${name}`;
       panel.setAttribute("aria-labelledby", `${this.id}-tab-${name}`);
     });
-    this.#render();
+    this.#render(this.active, null, false);
   }
 
-  #render() {
+  #render(active = this.active, previous = null, animate = true) {
     this.#tabs().forEach((tab) => {
-      const selected = tab.dataset.tab === this.active;
+      const selected = tab.dataset.tab === active;
       tab.setAttribute("aria-selected", String(selected));
       tab.tabIndex = selected ? 0 : -1;
     });
-    this.#panels().forEach((panel) => {
-      panel.hidden = panel.dataset.tabPanel !== this.active;
+
+    const panels = this.#panels();
+    const incoming = panels.find((panel) => panel.dataset.tabPanel === active);
+    const token = ++this.#transitionToken;
+    panels.forEach((panel) => {
+      panel.getAnimations?.().forEach((animation) => animation.cancel());
+      panel.hidden = panel !== incoming;
+      panel.inert = panel !== incoming;
+    });
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!incoming || !animate || !previous || reducedMotion || !incoming.animate) return;
+
+    const animation = incoming.animate([
+      { opacity: 0, transform: "translateY(0.75rem) scale(0.992)", filter: "blur(3px)" },
+      { opacity: 1, transform: "translateY(0) scale(1)", filter: "blur(0)" },
+    ], {
+      duration: 280,
+      easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
+    });
+    animation.finished.catch(() => {}).finally(() => {
+      if (token === this.#transitionToken) animation.cancel();
     });
   }
 
   #onClick = (event) => {
     const tab = event.target.closest("[data-tab]");
-    if (tab && this.contains(tab)) this.select(tab.dataset.tab);
+    if (tab?.closest("gui-tabs") === this) this.select(tab.dataset.tab);
   };
 
   #onKeyDown = (event) => {
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    if (event.target.closest("gui-tabs") !== this) return;
     const tabs = this.#tabs();
     const currentIndex = tabs.indexOf(event.target.closest("[data-tab]"));
     if (currentIndex < 0) return;
@@ -968,18 +992,24 @@ class GuiTabs extends GuiElement {
   };
 }
 
-class GuiSidebar extends GuiElement {
-  static observedAttributes = ["open"];
+export class GuiSidebar extends GuiElement {
+  static observedAttributes = ["open", "collapsed", "collapsible"];
   #mobileQuery;
 
   connectedCallback() {
     this.setAttribute("role", "navigation");
+    const persistKey = this.getAttribute("persist-key");
+    if (this.collapsible && persistKey) {
+      const storedState = readStorage(`gui-sidebar:${persistKey}:collapsed`);
+      if (storedState !== null) this.collapsed = storedState === "true";
+    }
     this.#mobileQuery = window.matchMedia("(max-width: 52rem)");
     if (this.#mobileQuery.addEventListener) {
       this.#mobileQuery.addEventListener("change", this.#syncAccessibility);
     } else {
       this.#mobileQuery.addListener?.(this.#syncAccessibility);
     }
+    window.addEventListener("gui:locale-changed", this.#syncAccessibility);
     this.#syncAccessibility();
   }
 
@@ -989,12 +1019,24 @@ class GuiSidebar extends GuiElement {
     } else {
       this.#mobileQuery?.removeListener?.(this.#syncAccessibility);
     }
+    window.removeEventListener("gui:locale-changed", this.#syncAccessibility);
   }
 
-  attributeChangedCallback() {
+  attributeChangedCallback(name) {
     if (this.isConnected) {
+      if (name === "collapsible" && !this.collapsible && this.collapsed) {
+        this.removeAttribute("collapsed");
+      }
       this.#syncAccessibility();
-      emit(this, "gui:sidebar-change", { open: this.open });
+      if (name === "collapsed") {
+        const persistKey = this.getAttribute("persist-key");
+        if (persistKey) {
+          writeStorage(`gui-sidebar:${persistKey}:collapsed`, String(this.collapsed));
+        }
+        emit(this, "gui:sidebar-collapse", { collapsed: this.collapsed });
+      } else if (name === "open") {
+        emit(this, "gui:sidebar-change", { open: this.open });
+      }
     }
   }
 
@@ -1010,24 +1052,61 @@ class GuiSidebar extends GuiElement {
     this.open = force ?? !this.open;
   }
 
+  get collapsible() {
+    return this.hasAttribute("collapsible");
+  }
+
+  set collapsible(value) {
+    this.toggleAttribute("collapsible", Boolean(value));
+  }
+
+  get collapsed() {
+    return this.hasAttribute("collapsed");
+  }
+
+  set collapsed(value) {
+    this.toggleAttribute("collapsed", Boolean(value) && this.collapsible);
+  }
+
+  toggleCollapse(force) {
+    if (!this.collapsible) return false;
+    this.collapsed = force ?? !this.collapsed;
+    return this.collapsed;
+  }
+
   #syncAccessibility = () => {
     const hidden = Boolean(this.#mobileQuery?.matches && !this.open);
     this.setAttribute("aria-hidden", String(hidden));
     this.inert = hidden;
+    this.closest(".gui-app")?.toggleAttribute("data-sidebar-collapsed", this.collapsed);
+    document.querySelectorAll("[data-gui-sidebar-collapse]").forEach((button) => {
+      if (button.dataset.guiSidebarCollapse !== this.id) return;
+      button.setAttribute("aria-expanded", String(!this.collapsed));
+      button.dataset.collapsed = String(this.collapsed);
+      button.setAttribute(
+        "aria-label",
+        this.collapsed
+          ? button.dataset.collapsedLabel ?? "Expand sidebar"
+          : button.dataset.expandedLabel ?? "Collapse sidebar",
+      );
+    });
   };
 }
 
-class GuiPages extends GuiElement {
+export class GuiPages extends GuiElement {
   static observedAttributes = ["active"];
   #history = [];
-  #transitionTimer;
+  #transitionToken = 0;
 
   connectedCallback() {
     this.#prepare();
   }
 
   disconnectedCallback() {
-    clearTimeout(this.#transitionTimer);
+    this.#transitionToken += 1;
+    this.#pages().forEach((page) => {
+      page.getAnimations?.().forEach((animation) => animation.cancel());
+    });
   }
 
   attributeChangedCallback(name, previous, current) {
@@ -1060,39 +1139,68 @@ class GuiPages extends GuiElement {
   }
 
   #prepare() {
-    const pages = [...this.querySelectorAll(":scope > [data-page]")];
+    const pages = this.#pages();
     if (!this.active && pages[0]) this.setAttribute("active", pages[0].dataset.page);
     pages.forEach((page) => {
       page.setAttribute("role", "region");
       page.toggleAttribute("hidden", page.dataset.page !== this.active);
+      page.inert = page.dataset.page !== this.active;
     });
   }
 
-  #show(current, previous) {
-    const pages = [...this.querySelectorAll(":scope > [data-page]")];
+  #pages() {
+    return [...this.querySelectorAll(":scope > [data-page]")];
+  }
+
+  async #show(current, previous) {
+    const pages = this.#pages();
     const incoming = pages.find((page) => page.dataset.page === current);
     const outgoing = pages.find((page) => page.dataset.page === previous);
     if (!incoming) return;
 
-    clearTimeout(this.#transitionTimer);
+    const token = ++this.#transitionToken;
     pages.forEach((page) => {
-      if (page !== incoming && page !== outgoing) page.hidden = true;
+      page.getAnimations?.().forEach((animation) => animation.cancel());
+      delete page.dataset.pageState;
+      page.hidden = page !== incoming && page !== outgoing;
+      page.inert = page !== incoming;
     });
     incoming.hidden = false;
     incoming.dataset.pageState = "incoming";
     if (outgoing) outgoing.dataset.pageState = "outgoing";
 
-    requestAnimationFrame(() => {
-      incoming.dataset.pageState = "active";
-    });
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!outgoing || reducedMotion || !incoming.animate) {
+      pages.forEach((page) => {
+        page.hidden = page !== incoming;
+        delete page.dataset.pageState;
+      });
+      return;
+    }
 
-    this.#transitionTimer = setTimeout(() => {
-      if (outgoing) {
-        outgoing.hidden = true;
-        delete outgoing.dataset.pageState;
-      }
-      delete incoming.dataset.pageState;
-    }, 280);
+    const backwards = this.dataset.direction === "back";
+    const offset = backwards ? -32 : 32;
+    const timing = {
+      duration: 380,
+      easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+      fill: "both",
+    };
+    const incomingAnimation = incoming.animate([
+      { opacity: 0, transform: `translateX(${offset}px) scale(0.985)`, filter: "blur(4px)" },
+      { opacity: 1, transform: "translateX(0) scale(1)", filter: "blur(0)" },
+    ], timing);
+    const outgoingAnimation = outgoing.animate([
+      { opacity: 1, transform: "translateX(0) scale(1)", filter: "blur(0)" },
+      { opacity: 0, transform: `translateX(${-offset * 0.65}px) scale(0.99)`, filter: "blur(3px)" },
+    ], { ...timing, duration: 260 });
+
+    await Promise.allSettled([incomingAnimation.finished, outgoingAnimation.finished]);
+    if (token !== this.#transitionToken) return;
+    pages.forEach((page) => {
+      page.hidden = page !== incoming;
+      delete page.dataset.pageState;
+      page.getAnimations?.().forEach((animation) => animation.cancel());
+    });
   }
 }
 
@@ -1131,6 +1239,12 @@ export function initializeGui(options = {}) {
       const sidebarClose = event.target.closest("[data-gui-sidebar-close]");
       if (sidebarClose) {
         sidebarClose.closest("gui-sidebar")?.toggle(false);
+      }
+
+      const sidebarCollapse = event.target.closest("[data-gui-sidebar-collapse]");
+      if (sidebarCollapse) {
+        document.getElementById(sidebarCollapse.dataset.guiSidebarCollapse)
+          ?.toggleCollapse();
       }
 
       const pageOpen = event.target.closest("[data-gui-page-open]");

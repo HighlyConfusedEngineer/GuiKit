@@ -85,6 +85,8 @@
   "actions": {
     "menu": "Open menu",
     "theme": "Toggle theme",
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar",
     "back": "Back",
     "save": "Save",
     "cancel": "Cancel"

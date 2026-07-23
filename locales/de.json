@@ -85,6 +85,8 @@
   "actions": {
     "menu": "Menü öffnen",
     "theme": "Darstellung wechseln",
+    "collapseSidebar": "Seitenleiste einklappen",
+    "expandSidebar": "Seitenleiste ausklappen",
     "back": "Zurück",
     "save": "Speichern",
     "cancel": "Abbrechen"

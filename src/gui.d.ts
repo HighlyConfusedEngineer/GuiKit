@@ -106,6 +106,28 @@ export class GuiToastManager {
   dismiss(id: string): boolean;
 }
 
+export class GuiTabs extends HTMLElement {
+  active: string | null;
+  select(name: string, focus?: boolean): void;
+}
+
+export class GuiSidebar extends HTMLElement {
+  open: boolean;
+  collapsible: boolean;
+  collapsed: boolean;
+  toggle(force?: boolean): void;
+  toggleCollapse(force?: boolean): boolean;
+}
+
+export class GuiPages extends HTMLElement {
+  active: string | null;
+  open(name: string, options?: {
+    history?: boolean;
+    direction?: "forward" | "back";
+  }): void;
+  back(): void;
+}
+
 export const i18n: GuiI18n;
 export const bridge: GuiBridge;
 export const toast: GuiToastManager;
@@ -129,6 +151,9 @@ declare global {
   }
 
   interface HTMLElementTagNameMap {
+    "gui-tabs": GuiTabs;
+    "gui-sidebar": GuiSidebar;
+    "gui-pages": GuiPages;
     "gui-live-chart": GuiLiveChart;
     "gui-toast-stack": GuiToastStack;
   }

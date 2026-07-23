@@ -14,8 +14,11 @@
     --gui-space-5: 1.5rem;
     --gui-space-6: 2rem;
     --gui-sidebar-width: 17rem;
+    --gui-sidebar-collapsed-width: 4.75rem;
     --gui-duration: 220ms;
+    --gui-duration-slow: 380ms;
     --gui-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --gui-spring: cubic-bezier(0.22, 1, 0.36, 1);
     --gui-accent: #5b5ce2;
     --gui-accent-hover: #4b4ccb;
     --gui-accent-soft: #ededff;
@@ -126,11 +129,13 @@
     display: grid;
     grid-template-columns: var(--gui-sidebar-width) minmax(0, 1fr);
     min-height: 100vh;
+    transition: grid-template-columns var(--gui-duration-slow) var(--gui-spring);
   }
 
   .gui-main {
     min-width: 0;
     padding: clamp(1rem, 3vw, 2.25rem);
+    transition: padding var(--gui-duration-slow) var(--gui-spring);
   }
 
   .gui-topbar {
@@ -165,6 +170,18 @@
     border-radius: var(--gui-radius-lg);
     background: var(--gui-surface);
     box-shadow: var(--gui-shadow-sm);
+    transition:
+      border-color var(--gui-duration),
+      box-shadow var(--gui-duration-slow) var(--gui-ease),
+      transform var(--gui-duration-slow) var(--gui-spring);
+  }
+
+  @media (hover: hover) {
+    .gui-card:hover {
+      border-color: color-mix(in srgb, var(--gui-border), var(--gui-accent) 22%);
+      box-shadow: 0 14px 36px rgb(18 23 38 / 0.1);
+      transform: translateY(-2px);
+    }
   }
 
   .gui-eyebrow {
@@ -258,6 +275,9 @@
     padding: var(--gui-space-5) var(--gui-space-4);
     border-right: 1px solid var(--gui-border);
     background: var(--gui-surface);
+    transition:
+      padding var(--gui-duration-slow) var(--gui-spring),
+      box-shadow var(--gui-duration-slow) var(--gui-ease);
   }
 
   gui-sidebar .gui-brand {
@@ -269,10 +289,46 @@
     letter-spacing: -0.02em;
   }
 
+  .gui-sidebar-label {
+    max-width: 12rem;
+    overflow: hidden;
+    opacity: 1;
+    white-space: nowrap;
+    transition:
+      max-width var(--gui-duration-slow) var(--gui-spring),
+      opacity 160ms var(--gui-ease);
+  }
+
+  .gui-sidebar-collapse {
+    position: absolute;
+    top: 1.45rem;
+    right: -0.8rem;
+    display: none;
+    width: 1.65rem;
+    height: 1.65rem;
+    place-items: center;
+    padding: 0;
+    border: 1px solid var(--gui-border);
+    border-radius: 50%;
+    background: var(--gui-surface-raised);
+    box-shadow: var(--gui-shadow-sm);
+    color: var(--gui-text-muted);
+    cursor: pointer;
+  }
+
+  .gui-sidebar-collapse span {
+    transition: transform var(--gui-duration-slow) var(--gui-spring);
+  }
+
+  .gui-sidebar-collapse[data-collapsed="true"] span {
+    transform: rotate(180deg);
+  }
+
   .gui-brand__mark {
     display: grid;
     width: 2rem;
     height: 2rem;
+    flex: 0 0 2rem;
     place-items: center;
     border-radius: 0.6rem;
     background: var(--gui-accent);
@@ -286,6 +342,7 @@
 
   .gui-nav a,
   .gui-nav button {
+    position: relative;
     display: flex;
     align-items: center;
     gap: var(--gui-space-3);
@@ -298,6 +355,12 @@
     cursor: pointer;
     text-align: left;
     text-decoration: none;
+    transition:
+      gap var(--gui-duration-slow) var(--gui-spring),
+      padding var(--gui-duration-slow) var(--gui-spring),
+      background var(--gui-duration),
+      color var(--gui-duration),
+      transform var(--gui-duration);
   }
 
   .gui-nav a:hover,
@@ -305,6 +368,21 @@
   .gui-nav [aria-current="page"] {
     background: var(--gui-accent-soft);
     color: var(--gui-text);
+  }
+
+  .gui-nav a:active,
+  .gui-nav button:active {
+    transform: scale(0.98);
+  }
+
+  .gui-nav [aria-current="page"]::before {
+    position: absolute;
+    inset: 0.55rem auto 0.55rem 0;
+    width: 3px;
+    border-radius: 999px;
+    background: var(--gui-accent);
+    content: "";
+    animation: gui-nav-indicator var(--gui-duration-slow) var(--gui-spring);
   }
 
   .gui-sidebar-backdrop {
@@ -319,6 +397,7 @@
     border: 1px solid var(--gui-border);
     border-radius: var(--gui-radius-md);
     background: var(--gui-surface);
+    scrollbar-width: thin;
   }
 
   gui-tabs > [role="tablist"] > [data-tab] {
@@ -330,15 +409,27 @@
     color: var(--gui-text-muted);
     cursor: pointer;
     font-weight: 650;
+    transition:
+      background var(--gui-duration),
+      color var(--gui-duration),
+      box-shadow var(--gui-duration-slow) var(--gui-ease),
+      transform var(--gui-duration-slow) var(--gui-spring);
+  }
+
+  gui-tabs > [role="tablist"] > [data-tab]:active {
+    transform: scale(0.96);
   }
 
   gui-tabs > [role="tablist"] > [aria-selected="true"] {
     background: var(--gui-accent-soft);
     color: var(--gui-accent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gui-accent) 14%, transparent);
   }
 
   gui-tabs > [data-tab-panel] {
     padding-top: var(--gui-space-5);
+    transform-origin: 50% 0;
+    will-change: opacity, transform, filter;
   }
 
   gui-pages {
@@ -349,32 +440,20 @@
 
   gui-pages > [data-page] {
     width: 100%;
-    transition: opacity 280ms var(--gui-ease), transform 280ms var(--gui-ease);
+    transform-origin: 50% 10%;
+    will-change: opacity, transform, filter;
   }
 
   gui-pages > [data-page-state="incoming"] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    transform: translateX(2rem);
-  }
-
-  gui-pages[data-direction="back"] > [data-page-state="incoming"] {
-    transform: translateX(-2rem);
-  }
-
-  gui-pages > [data-page-state="active"] {
-    opacity: 1;
-    transform: translateX(0);
+    position: relative;
+    z-index: 1;
   }
 
   gui-pages > [data-page-state="outgoing"] {
-    opacity: 0;
-    transform: translateX(-2rem);
-  }
-
-  gui-pages[data-direction="back"] > [data-page-state="outgoing"] {
-    transform: translateX(2rem);
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
   }
 
   .gui-badge {
@@ -514,6 +593,56 @@
     gui-sidebar {
       transform: none;
     }
+
+    .gui-app[data-sidebar-collapsed] {
+      grid-template-columns: var(--gui-sidebar-collapsed-width) minmax(0, 1fr);
+    }
+
+    gui-sidebar[collapsible] .gui-sidebar-collapse {
+      display: grid;
+    }
+
+    gui-sidebar[collapsed] {
+      padding-inline: 0.65rem;
+    }
+
+    gui-sidebar[collapsed] .gui-brand {
+      gap: 0;
+      justify-content: center;
+      padding-inline: 0;
+    }
+
+    gui-sidebar[collapsed] .gui-sidebar-label {
+      max-width: 0;
+      opacity: 0;
+    }
+
+    gui-sidebar[collapsed] .gui-badge.gui-sidebar-label {
+      padding-inline: 0;
+    }
+
+    gui-sidebar[collapsed] .gui-nav a,
+    gui-sidebar[collapsed] .gui-nav button {
+      justify-content: center;
+      gap: 0;
+      padding-inline: 0.65rem;
+    }
+
+    gui-sidebar[collapsed] .gui-nav [aria-current="page"]::before {
+      inset-block: 0.65rem;
+      left: -0.65rem;
+    }
+  }
+}
+
+@keyframes gui-nav-indicator {
+  from {
+    opacity: 0;
+    transform: scaleY(0.2);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
   }
 }
 

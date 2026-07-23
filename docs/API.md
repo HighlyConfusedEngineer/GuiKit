@@ -121,12 +121,44 @@ The stack emits `gui:toast-show`, `gui:toast-action`, and
 ## Tabs
 
 Set the `active` attribute or call `select(name, focus?)`. The component emits
-`gui:tab-change`.
+`gui:tab-change`. Tab activation uses an interruption-safe entrance transition;
+rapid selection always leaves exactly one visible panel. Arrow Left,
+Arrow Right, Home, and End provide keyboard navigation.
 
 ## Pages
 
 Set the `active` attribute, call `open(name, options?)`, or call `back()`. The
-component emits `gui:page-change`.
+component emits `gui:page-change`. Forward and back navigation use coordinated
+entrance and exit motion. Starting another navigation safely cancels and
+replaces the current transition.
+
+## Sidebar
+
+The mobile drawer API remains `toggle(force?)`. Desktop collapse is optional:
+
+```html
+<button
+  data-gui-sidebar-collapse="navigation"
+  data-expanded-label="Collapse sidebar"
+  data-collapsed-label="Expand sidebar">
+  ‹
+</button>
+
+<gui-sidebar
+  id="navigation"
+  collapsible
+  persist-key="primary-navigation">
+  ...
+</gui-sidebar>
+```
+
+Use the `collapsed` property or `toggleCollapse(force?)` method from
+JavaScript. The component emits `gui:sidebar-collapse`. When `persist-key` is
+present, the state is stored under a namespaced local-storage key. The
+collapsed layout is ignored at mobile drawer sizes.
+
+Elements whose visual content should contract can use
+`.gui-sidebar-label`. Icon-only controls must retain an accessible name.
 
 ## Localization
 
