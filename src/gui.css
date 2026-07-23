@@ -1,0 +1,538 @@
+@layer gui.reset, gui.tokens, gui.base, gui.components, gui.utilities;
+
+@layer gui.tokens {
+  :root {
+    color-scheme: light dark;
+    --gui-font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --gui-radius-sm: 0.5rem;
+    --gui-radius-md: 0.75rem;
+    --gui-radius-lg: 1rem;
+    --gui-space-1: 0.25rem;
+    --gui-space-2: 0.5rem;
+    --gui-space-3: 0.75rem;
+    --gui-space-4: 1rem;
+    --gui-space-5: 1.5rem;
+    --gui-space-6: 2rem;
+    --gui-sidebar-width: 17rem;
+    --gui-duration: 220ms;
+    --gui-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --gui-accent: #5b5ce2;
+    --gui-accent-hover: #4b4ccb;
+    --gui-accent-soft: #ededff;
+    --gui-bg: #f6f7fb;
+    --gui-surface: #ffffff;
+    --gui-surface-raised: #ffffff;
+    --gui-text: #17181c;
+    --gui-text-muted: #666b78;
+    --gui-border: #e4e6ec;
+    --gui-danger: #d63850;
+    --gui-warning: #b25c00;
+    --gui-success: #16805a;
+    --gui-chart-1: #5b5ce2;
+    --gui-chart-2: #0e9f87;
+    --gui-chart-3: #df7a18;
+    --gui-chart-4: #d84b76;
+    --gui-chart-5: #3285d8;
+    --gui-focus: color-mix(in srgb, var(--gui-accent) 42%, transparent);
+    --gui-shadow-sm: 0 1px 2px rgb(18 23 38 / 0.06);
+    --gui-shadow-lg: 0 20px 48px rgb(18 23 38 / 0.14);
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --gui-accent: #8b8cff;
+    --gui-accent-hover: #a1a2ff;
+    --gui-accent-soft: #2b2c59;
+    --gui-bg: #111318;
+    --gui-surface: #191c23;
+    --gui-surface-raised: #20242c;
+    --gui-text: #f4f5f8;
+    --gui-text-muted: #a8adba;
+    --gui-border: #303540;
+    --gui-warning: #ffb45c;
+    --gui-success: #5ed6a9;
+    --gui-chart-1: #8b8cff;
+    --gui-chart-2: #4fd6be;
+    --gui-chart-3: #ffb45c;
+    --gui-chart-4: #ff7da5;
+    --gui-chart-5: #70b7ff;
+    --gui-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.24);
+    --gui-shadow-lg: 0 20px 48px rgb(0 0 0 / 0.38);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --gui-accent: #8b8cff;
+      --gui-accent-hover: #a1a2ff;
+      --gui-accent-soft: #2b2c59;
+      --gui-bg: #111318;
+      --gui-surface: #191c23;
+      --gui-surface-raised: #20242c;
+      --gui-text: #f4f5f8;
+      --gui-text-muted: #a8adba;
+      --gui-border: #303540;
+      --gui-warning: #ffb45c;
+      --gui-success: #5ed6a9;
+      --gui-chart-1: #8b8cff;
+      --gui-chart-2: #4fd6be;
+      --gui-chart-3: #ffb45c;
+      --gui-chart-4: #ff7da5;
+      --gui-chart-5: #70b7ff;
+      --gui-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.24);
+      --gui-shadow-lg: 0 20px 48px rgb(0 0 0 / 0.38);
+    }
+  }
+}
+
+@layer gui.reset {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: var(--gui-font);
+    background: var(--gui-bg);
+    color: var(--gui-text);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    margin: 0;
+    min-width: 20rem;
+    min-height: 100vh;
+  }
+
+  button, input, select, textarea {
+    font: inherit;
+  }
+
+  button {
+    color: inherit;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--gui-focus);
+    outline-offset: 2px;
+  }
+}
+
+@layer gui.base {
+  .gui-app {
+    display: grid;
+    grid-template-columns: var(--gui-sidebar-width) minmax(0, 1fr);
+    min-height: 100vh;
+  }
+
+  .gui-main {
+    min-width: 0;
+    padding: clamp(1rem, 3vw, 2.25rem);
+  }
+
+  .gui-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gui-space-4);
+    margin-bottom: var(--gui-space-6);
+  }
+
+  .gui-cluster {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--gui-space-3);
+  }
+
+  .gui-stack {
+    display: grid;
+    gap: var(--gui-space-4);
+  }
+
+  .gui-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    gap: var(--gui-space-4);
+  }
+
+  .gui-card {
+    padding: var(--gui-space-5);
+    border: 1px solid var(--gui-border);
+    border-radius: var(--gui-radius-lg);
+    background: var(--gui-surface);
+    box-shadow: var(--gui-shadow-sm);
+  }
+
+  .gui-eyebrow {
+    margin: 0 0 var(--gui-space-2);
+    color: var(--gui-accent);
+    font-size: 0.75rem;
+    font-weight: 750;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  .gui-title {
+    margin: 0;
+    font-size: clamp(1.65rem, 3vw, 2.4rem);
+    letter-spacing: -0.04em;
+    line-height: 1.08;
+  }
+
+  .gui-muted {
+    color: var(--gui-text-muted);
+  }
+}
+
+@layer gui.components {
+  .gui-button {
+    display: inline-flex;
+    min-height: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gui-space-2);
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--gui-border);
+    border-radius: var(--gui-radius-md);
+    background: var(--gui-surface);
+    box-shadow: var(--gui-shadow-sm);
+    cursor: pointer;
+    font-weight: 650;
+    transition: border-color var(--gui-duration), background var(--gui-duration), transform var(--gui-duration);
+  }
+
+  .gui-button:hover {
+    border-color: color-mix(in srgb, var(--gui-border), var(--gui-text) 20%);
+    background: var(--gui-surface-raised);
+  }
+
+  .gui-button:active {
+    transform: translateY(1px);
+  }
+
+  .gui-button--primary {
+    border-color: var(--gui-accent);
+    background: var(--gui-accent);
+    color: white;
+  }
+
+  .gui-button--primary:hover {
+    border-color: var(--gui-accent-hover);
+    background: var(--gui-accent-hover);
+  }
+
+  .gui-icon-button {
+    width: 2.5rem;
+    padding: 0;
+  }
+
+  .gui-field {
+    display: grid;
+    gap: var(--gui-space-2);
+    color: var(--gui-text-muted);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .gui-input,
+  .gui-select {
+    min-height: 2.5rem;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--gui-border);
+    border-radius: var(--gui-radius-md);
+    background: var(--gui-surface);
+    color: var(--gui-text);
+  }
+
+  gui-sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    height: 100vh;
+    flex-direction: column;
+    padding: var(--gui-space-5) var(--gui-space-4);
+    border-right: 1px solid var(--gui-border);
+    background: var(--gui-surface);
+  }
+
+  gui-sidebar .gui-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--gui-space-3);
+    padding: 0 var(--gui-space-2) var(--gui-space-5);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .gui-brand__mark {
+    display: grid;
+    width: 2rem;
+    height: 2rem;
+    place-items: center;
+    border-radius: 0.6rem;
+    background: var(--gui-accent);
+    color: white;
+  }
+
+  .gui-nav {
+    display: grid;
+    gap: var(--gui-space-1);
+  }
+
+  .gui-nav a,
+  .gui-nav button {
+    display: flex;
+    align-items: center;
+    gap: var(--gui-space-3);
+    width: 100%;
+    padding: 0.7rem 0.75rem;
+    border: 0;
+    border-radius: var(--gui-radius-md);
+    background: transparent;
+    color: var(--gui-text-muted);
+    cursor: pointer;
+    text-align: left;
+    text-decoration: none;
+  }
+
+  .gui-nav a:hover,
+  .gui-nav button:hover,
+  .gui-nav [aria-current="page"] {
+    background: var(--gui-accent-soft);
+    color: var(--gui-text);
+  }
+
+  .gui-sidebar-backdrop {
+    display: none;
+  }
+
+  gui-tabs > [role="tablist"] {
+    display: flex;
+    gap: var(--gui-space-1);
+    overflow-x: auto;
+    padding: var(--gui-space-1);
+    border: 1px solid var(--gui-border);
+    border-radius: var(--gui-radius-md);
+    background: var(--gui-surface);
+  }
+
+  gui-tabs > [role="tablist"] > [data-tab] {
+    flex: 0 0 auto;
+    padding: 0.55rem 0.8rem;
+    border: 0;
+    border-radius: calc(var(--gui-radius-md) - 0.2rem);
+    background: transparent;
+    color: var(--gui-text-muted);
+    cursor: pointer;
+    font-weight: 650;
+  }
+
+  gui-tabs > [role="tablist"] > [aria-selected="true"] {
+    background: var(--gui-accent-soft);
+    color: var(--gui-accent);
+  }
+
+  gui-tabs > [data-tab-panel] {
+    padding-top: var(--gui-space-5);
+  }
+
+  gui-pages {
+    position: relative;
+    display: block;
+    overflow: hidden;
+  }
+
+  gui-pages > [data-page] {
+    width: 100%;
+    transition: opacity 280ms var(--gui-ease), transform 280ms var(--gui-ease);
+  }
+
+  gui-pages > [data-page-state="incoming"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transform: translateX(2rem);
+  }
+
+  gui-pages[data-direction="back"] > [data-page-state="incoming"] {
+    transform: translateX(-2rem);
+  }
+
+  gui-pages > [data-page-state="active"] {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  gui-pages > [data-page-state="outgoing"] {
+    opacity: 0;
+    transform: translateX(-2rem);
+  }
+
+  gui-pages[data-direction="back"] > [data-page-state="outgoing"] {
+    transform: translateX(2rem);
+  }
+
+  .gui-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    background: var(--gui-accent-soft);
+    color: var(--gui-accent);
+    font-size: 0.75rem;
+    font-weight: 750;
+  }
+
+  gui-live-chart {
+    display: block;
+    width: 100%;
+    min-height: 18rem;
+  }
+
+  gui-toast-stack {
+    position: fixed;
+    right: max(1rem, env(safe-area-inset-right));
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    z-index: 1000;
+    display: grid;
+    width: min(25rem, calc(100vw - 2rem));
+    gap: var(--gui-space-3);
+    pointer-events: none;
+  }
+
+  .gui-toast {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: start;
+    gap: var(--gui-space-3);
+    padding: 0.85rem;
+    border: 1px solid var(--gui-border);
+    border-left: 3px solid var(--toast-color, var(--gui-accent));
+    border-radius: var(--gui-radius-md);
+    background: var(--gui-surface-raised);
+    box-shadow: var(--gui-shadow-lg);
+    opacity: 0;
+    pointer-events: auto;
+    transform: translateX(calc(100% + 2rem));
+    transition: opacity var(--gui-duration), transform var(--gui-duration) var(--gui-ease);
+  }
+
+  .gui-toast[data-visible="true"] {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .gui-toast--success { --toast-color: var(--gui-success); }
+  .gui-toast--warning { --toast-color: var(--gui-warning); }
+  .gui-toast--error { --toast-color: var(--gui-danger); }
+
+  .gui-toast__icon {
+    display: grid;
+    width: 1.5rem;
+    height: 1.5rem;
+    place-items: center;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--toast-color, var(--gui-accent)) 15%, transparent);
+    color: var(--toast-color, var(--gui-accent));
+    font-size: 0.8rem;
+    font-weight: 850;
+  }
+
+  .gui-toast__content {
+    display: grid;
+    gap: 0.15rem;
+    min-width: 0;
+    font-size: 0.875rem;
+    line-height: 1.35;
+  }
+
+  .gui-toast__content > span {
+    color: var(--gui-text-muted);
+    overflow-wrap: anywhere;
+  }
+
+  .gui-toast__action,
+  .gui-toast__close {
+    border: 0;
+    background: transparent;
+    color: var(--gui-accent);
+    cursor: pointer;
+    font-weight: 750;
+  }
+
+  .gui-toast__action {
+    padding: 0.2rem;
+  }
+
+  .gui-toast__close {
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    color: var(--gui-text-muted);
+    font-size: 1.15rem;
+    line-height: 1;
+  }
+
+  @media (max-width: 52rem) {
+    .gui-app {
+      display: block;
+    }
+
+    gui-sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: min(var(--gui-sidebar-width), calc(100vw - 3rem));
+      box-shadow: var(--gui-shadow-lg);
+      transform: translateX(-105%);
+      transition: transform var(--gui-duration) var(--gui-ease);
+    }
+
+    gui-sidebar[open] {
+      transform: translateX(0);
+    }
+
+    gui-sidebar[open] + .gui-sidebar-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: block;
+      border: 0;
+      background: rgb(0 0 0 / 0.38);
+    }
+  }
+
+  @media (min-width: 52.001rem) {
+    [data-gui-sidebar-toggle] {
+      display: none;
+    }
+
+    gui-sidebar {
+      transform: none;
+    }
+  }
+}
+
+@layer gui.utilities {
+  .gui-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

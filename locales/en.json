@@ -1,0 +1,92 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "components": "Components",
+    "charts": "Live charts",
+    "settings": "Settings"
+  },
+  "sidebar": { "runtime": "Runtime" },
+  "header": {
+    "eyebrow": "Universal GUI foundation",
+    "title": "Build once. Run anywhere."
+  },
+  "dashboard": {
+    "intro": "One dependency-free interface shared by the browser and native hosts."
+  },
+  "metrics": {
+    "runtime": "Runtime dependencies",
+    "platforms": "Target platforms",
+    "languages": "Demo languages"
+  },
+  "tabs": {
+    "overview": "Overview",
+    "activity": "Activity",
+    "bridge": "Host bridge"
+  },
+  "overview": {
+    "nativeTitle": "Native browser primitives",
+    "nativeBody": "Accessible components with no framework lock-in.",
+    "themeTitle": "Themeable by design",
+    "themeBody": "Change the visual system through a compact set of variables."
+  },
+  "status": { "ready": "Ready" },
+  "bridge": {
+    "title": "Call native code",
+    "body": "The same promise-based API works with Python, C#, and browser mocks.",
+    "action": "Test bridge",
+    "connected": "Host connected"
+  },
+  "components": {
+    "eyebrow": "Component gallery",
+    "title": "Small pieces, composed freely.",
+    "controls": "Controls",
+    "projectName": "Project name",
+    "tokens": "Design tokens",
+    "tokensBody": "Colors, spacing, type, radius, motion, and elevation are all customizable."
+  },
+  "charts": {
+    "eyebrow": "Streaming telemetry",
+    "title": "Thousands of points, continuously updated.",
+    "body": "Canvas rendering, bounded memory, and peak-preserving downsampling keep updates fluid.",
+    "telemetry": "System telemetry",
+    "points": "points",
+    "pause": "Pause",
+    "resume": "Resume",
+    "burst": "Add 5,000",
+    "clear": "Clear",
+    "burstComplete": "Added 5,000 samples to each series.",
+    "cleared": "Chart data cleared."
+  },
+  "toasts": {
+    "title": "Toast notifications",
+    "body": "Queued, accessible, actionable, and automatically dismissed.",
+    "info": "Info",
+    "success": "Success",
+    "warning": "Warning",
+    "error": "Error",
+    "infoMessage": "A background task has new information.",
+    "successMessage": "Your changes were saved successfully.",
+    "warningMessage": "This operation may need your attention.",
+    "errorMessage": "The operation could not be completed.",
+    "undo": "Undo",
+    "undone": "The action was undone."
+  },
+  "settings": {
+    "eyebrow": "Preferences",
+    "title": "Make it yours.",
+    "language": "Language",
+    "theme": "Theme"
+  },
+  "themes": {
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "actions": {
+    "menu": "Open menu",
+    "theme": "Toggle theme",
+    "back": "Back",
+    "save": "Save",
+    "cancel": "Cancel"
+  }
+}

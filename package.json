@@ -1,0 +1,36 @@
+{
+  "name": "@gui-template/core",
+  "version": "0.1.0",
+  "description": "A lightweight, cross-platform UI foundation for browsers and native webviews.",
+  "type": "module",
+  "types": "./src/gui.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/gui.d.ts",
+      "import": "./src/gui.js",
+      "default": "./src/gui.js"
+    },
+    "./styles": "./src/gui.css"
+  },
+  "files": [
+    "src",
+    "locales",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "dev": "node tools/dev-server.mjs",
+    "check": "node --check src/gui.js && node --test",
+    "test": "node --test"
+  },
+  "keywords": [
+    "gui",
+    "web-components",
+    "webview",
+    "cross-platform",
+    "i18n",
+    "live-chart",
+    "toast"
+  ],
+  "license": "MIT"
+}

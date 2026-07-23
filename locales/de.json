@@ -1,0 +1,92 @@
+{
+  "nav": {
+    "dashboard": "Übersicht",
+    "components": "Komponenten",
+    "charts": "Live-Diagramme",
+    "settings": "Einstellungen"
+  },
+  "sidebar": { "runtime": "Laufzeit" },
+  "header": {
+    "eyebrow": "Universelles GUI-Fundament",
+    "title": "Einmal bauen. Überall ausführen."
+  },
+  "dashboard": {
+    "intro": "Eine Oberfläche ohne Laufzeit-Abhängigkeiten für Browser und native Hosts."
+  },
+  "metrics": {
+    "runtime": "Laufzeit-Abhängigkeiten",
+    "platforms": "Zielplattformen",
+    "languages": "Demo-Sprachen"
+  },
+  "tabs": {
+    "overview": "Überblick",
+    "activity": "Aktivität",
+    "bridge": "Host-Brücke"
+  },
+  "overview": {
+    "nativeTitle": "Native Browser-Bausteine",
+    "nativeBody": "Barrierearme Komponenten ohne Framework-Zwang.",
+    "themeTitle": "Flexibles Design",
+    "themeBody": "Das Erscheinungsbild lässt sich über wenige Variablen anpassen."
+  },
+  "status": { "ready": "Bereit" },
+  "bridge": {
+    "title": "Nativen Code aufrufen",
+    "body": "Dieselbe Promise-API funktioniert mit Python, C# und Browser-Mocks.",
+    "action": "Brücke testen",
+    "connected": "Host verbunden"
+  },
+  "components": {
+    "eyebrow": "Komponenten-Galerie",
+    "title": "Kleine Bausteine, frei kombiniert.",
+    "controls": "Steuerelemente",
+    "projectName": "Projektname",
+    "tokens": "Design-Tokens",
+    "tokensBody": "Farben, Abstände, Schrift, Radien, Bewegung und Schatten sind anpassbar."
+  },
+  "charts": {
+    "eyebrow": "Streaming-Telemetrie",
+    "title": "Tausende Datenpunkte, laufend aktualisiert.",
+    "body": "Canvas-Rendering, begrenzter Speicher und spitzenerhaltende Reduktion sorgen für flüssige Updates.",
+    "telemetry": "Systemtelemetrie",
+    "points": "Punkte",
+    "pause": "Pausieren",
+    "resume": "Fortsetzen",
+    "burst": "5.000 hinzufügen",
+    "clear": "Leeren",
+    "burstComplete": "Jeder Datenreihe wurden 5.000 Messwerte hinzugefügt.",
+    "cleared": "Diagrammdaten wurden geleert."
+  },
+  "toasts": {
+    "title": "Toast-Benachrichtigungen",
+    "body": "In Warteschlange, barrierearm, interaktiv und automatisch ausgeblendet.",
+    "info": "Info",
+    "success": "Erfolg",
+    "warning": "Warnung",
+    "error": "Fehler",
+    "infoMessage": "Eine Hintergrundaufgabe enthält neue Informationen.",
+    "successMessage": "Deine Änderungen wurden erfolgreich gespeichert.",
+    "warningMessage": "Dieser Vorgang benötigt möglicherweise deine Aufmerksamkeit.",
+    "errorMessage": "Der Vorgang konnte nicht abgeschlossen werden.",
+    "undo": "Rückgängig",
+    "undone": "Die Aktion wurde rückgängig gemacht."
+  },
+  "settings": {
+    "eyebrow": "Präferenzen",
+    "title": "Ganz nach deinem Geschmack.",
+    "language": "Sprache",
+    "theme": "Darstellung"
+  },
+  "themes": {
+    "system": "System",
+    "light": "Hell",
+    "dark": "Dunkel"
+  },
+  "actions": {
+    "menu": "Menü öffnen",
+    "theme": "Darstellung wechseln",
+    "back": "Zurück",
+    "save": "Speichern",
+    "cancel": "Abbrechen"
+  }
+}

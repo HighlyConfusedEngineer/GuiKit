@@ -1,0 +1,92 @@
+{
+  "nav": {
+    "dashboard": "Panel",
+    "components": "Componentes",
+    "charts": "Gráficos en vivo",
+    "settings": "Ajustes"
+  },
+  "sidebar": { "runtime": "Entorno" },
+  "header": {
+    "eyebrow": "Base universal para interfaces",
+    "title": "Crea una vez. Ejecuta donde quieras."
+  },
+  "dashboard": {
+    "intro": "Una interfaz sin dependencias compartida por el navegador y los hosts nativos."
+  },
+  "metrics": {
+    "runtime": "Dependencias de ejecución",
+    "platforms": "Plataformas de destino",
+    "languages": "Idiomas de demostración"
+  },
+  "tabs": {
+    "overview": "Resumen",
+    "activity": "Actividad",
+    "bridge": "Puente nativo"
+  },
+  "overview": {
+    "nativeTitle": "Elementos nativos del navegador",
+    "nativeBody": "Componentes accesibles sin dependencia de frameworks.",
+    "themeTitle": "Temas desde el diseño",
+    "themeBody": "Cambia el sistema visual mediante un conjunto compacto de variables."
+  },
+  "status": { "ready": "Listo" },
+  "bridge": {
+    "title": "Llama a código nativo",
+    "body": "La misma API basada en promesas funciona con Python, C# y simulaciones del navegador.",
+    "action": "Probar puente",
+    "connected": "Host conectado"
+  },
+  "components": {
+    "eyebrow": "Galería de componentes",
+    "title": "Piezas pequeñas, combinadas libremente.",
+    "controls": "Controles",
+    "projectName": "Nombre del proyecto",
+    "tokens": "Tokens de diseño",
+    "tokensBody": "Los colores, espacios, textos, radios, movimientos y elevaciones son personalizables."
+  },
+  "charts": {
+    "eyebrow": "Telemetría en streaming",
+    "title": "Miles de puntos, actualizados continuamente.",
+    "body": "Canvas, memoria limitada y reducción que conserva picos mantienen las actualizaciones fluidas.",
+    "telemetry": "Telemetría del sistema",
+    "points": "puntos",
+    "pause": "Pausar",
+    "resume": "Continuar",
+    "burst": "Añadir 5000",
+    "clear": "Limpiar",
+    "burstComplete": "Se añadieron 5000 muestras a cada serie.",
+    "cleared": "Se borraron los datos del gráfico."
+  },
+  "toasts": {
+    "title": "Notificaciones toast",
+    "body": "En cola, accesibles, interactivas y descartadas automáticamente.",
+    "info": "Información",
+    "success": "Éxito",
+    "warning": "Aviso",
+    "error": "Error",
+    "infoMessage": "Una tarea en segundo plano tiene información nueva.",
+    "successMessage": "Los cambios se guardaron correctamente.",
+    "warningMessage": "Esta operación podría requerir tu atención.",
+    "errorMessage": "No se pudo completar la operación.",
+    "undo": "Deshacer",
+    "undone": "La acción se deshizo."
+  },
+  "settings": {
+    "eyebrow": "Preferencias",
+    "title": "Hazlo a tu manera.",
+    "language": "Idioma",
+    "theme": "Tema"
+  },
+  "themes": {
+    "system": "Sistema",
+    "light": "Claro",
+    "dark": "Oscuro"
+  },
+  "actions": {
+    "menu": "Abrir menú",
+    "theme": "Cambiar tema",
+    "back": "Atrás",
+    "save": "Guardar",
+    "cancel": "Cancelar"
+  }
+}

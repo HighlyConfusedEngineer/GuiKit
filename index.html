@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en" data-theme="system">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A lightweight, universal GUI template for web and native applications.">
+    <title>GuiKit — Universal interface foundation</title>
+    <link rel="stylesheet" href="./src/gui.css">
+    <style>
+      .demo-metric {
+        display: grid;
+        gap: .5rem;
+      }
+      .demo-metric strong {
+        font-size: 2rem;
+        letter-spacing: -.04em;
+      }
+      .demo-progress {
+        height: .45rem;
+        overflow: hidden;
+        border-radius: 999px;
+        background: var(--gui-border);
+      }
+      .demo-progress span {
+        display: block;
+        width: var(--progress);
+        height: 100%;
+        border-radius: inherit;
+        background: var(--gui-accent);
+      }
+      .demo-list {
+        display: grid;
+        gap: .75rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .demo-list li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .85rem 0;
+        border-bottom: 1px solid var(--gui-border);
+      }
+      .demo-list li:last-child {
+        border-bottom: 0;
+      }
+      .demo-avatar {
+        display: grid;
+        width: 2.25rem;
+        height: 2.25rem;
+        flex: 0 0 auto;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--gui-accent-soft);
+        color: var(--gui-accent);
+        font-size: .78rem;
+        font-weight: 800;
+      }
+      .demo-code {
+        overflow-x: auto;
+        padding: 1rem;
+        border-radius: var(--gui-radius-md);
+        background: #12141a;
+        color: #e8eaf2;
+        font: .86rem/1.6 ui-monospace, SFMono-Regular, Consolas, monospace;
+      }
+      @media (max-width: 38rem) {
+        .gui-topbar {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="gui-app">
+      <gui-sidebar id="main-sidebar" aria-label="Primary navigation">
+        <div class="gui-brand">
+          <span class="gui-brand__mark" aria-hidden="true">G</span>
+          <span>GuiKit</span>
+          <span class="gui-badge">0.1</span>
+        </div>
+        <nav class="gui-nav" aria-label="Main">
+          <button type="button" aria-current="page" data-gui-page-open="dashboard">
+            <span aria-hidden="true">◫</span>
+            <span data-i18n="nav.dashboard">Dashboard</span>
+          </button>
+          <button type="button" data-gui-page-open="components">
+            <span aria-hidden="true">◇</span>
+            <span data-i18n="nav.components">Components</span>
+          </button>
+          <button type="button" data-gui-page-open="charts">
+            <span aria-hidden="true">⌁</span>
+            <span data-i18n="nav.charts">Live charts</span>
+          </button>
+          <button type="button" data-gui-page-open="settings">
+            <span aria-hidden="true">⚙</span>
+            <span data-i18n="nav.settings">Settings</span>
+          </button>
+        </nav>
+        <div style="margin-top:auto">
+          <p class="gui-muted" style="font-size:.8rem;margin:.75rem">
+            <span data-i18n="sidebar.runtime">Runtime</span>:
+            <strong id="host-kind">browser</strong>
+          </p>
+        </div>
+      </gui-sidebar>
+      <button class="gui-sidebar-backdrop" type="button" data-gui-sidebar-toggle="main-sidebar" aria-label="Close navigation"></button>
+
+      <main class="gui-main">
+        <header class="gui-topbar">
+          <div class="gui-cluster">
+            <button class="gui-button gui-icon-button" type="button" data-gui-sidebar-toggle="main-sidebar" data-i18n-aria-label="actions.menu" aria-label="Open menu">☰</button>
+            <div>
+              <p class="gui-eyebrow" data-i18n="header.eyebrow">Universal GUI foundation</p>
+              <h1 class="gui-title" data-i18n="header.title">Build once. Run anywhere.</h1>
+            </div>
+          </div>
+          <div class="gui-cluster">
+            <label class="gui-field">
+              <span class="gui-sr-only" data-i18n="settings.language">Language</span>
+              <select class="gui-select" id="language-select" aria-label="Language">
+                <option value="en">English</option>
+                <option value="de">Deutsch</option>
+                <option value="es">Español</option>
+              </select>
+            </label>
+            <button class="gui-button gui-icon-button" id="theme-toggle" type="button" data-i18n-aria-label="actions.theme" aria-label="Toggle theme">◐</button>
+          </div>
+        </header>
+
+        <gui-pages id="main-pages" active="dashboard">
+          <section data-page="dashboard">
+            <div class="gui-stack">
+              <div>
+                <p class="gui-muted" data-i18n="dashboard.intro">
+                  One dependency-free interface shared by the browser and native hosts.
+                </p>
+              </div>
+              <div class="gui-grid">
+                <article class="gui-card demo-metric">
+                  <span class="gui-muted" data-i18n="metrics.runtime">Runtime dependencies</span>
+                  <strong>0</strong>
+                  <div class="demo-progress"><span style="--progress:100%"></span></div>
+                </article>
+                <article class="gui-card demo-metric">
+                  <span class="gui-muted" data-i18n="metrics.platforms">Target platforms</span>
+                  <strong>3+</strong>
+                  <div class="demo-progress"><span style="--progress:82%"></span></div>
+                </article>
+                <article class="gui-card demo-metric">
+                  <span class="gui-muted" data-i18n="metrics.languages">Demo languages</span>
+                  <strong>3</strong>
+                  <div class="demo-progress"><span style="--progress:64%"></span></div>
+                </article>
+              </div>
+
+              <gui-tabs id="feature-tabs" active="overview">
+                <div role="tablist" aria-label="Feature views">
+                  <button type="button" data-tab="overview" data-i18n="tabs.overview">Overview</button>
+                  <button type="button" data-tab="activity" data-i18n="tabs.activity">Activity</button>
+                  <button type="button" data-tab="bridge" data-i18n="tabs.bridge">Host bridge</button>
+                </div>
+                <section data-tab-panel="overview">
+                  <div class="gui-grid">
+                    <article class="gui-card">
+                      <span class="gui-badge">Web Components</span>
+                      <h2 data-i18n="overview.nativeTitle">Native browser primitives</h2>
+                      <p class="gui-muted" data-i18n="overview.nativeBody">Accessible components with no framework lock-in.</p>
+                    </article>
+                    <article class="gui-card">
+                      <span class="gui-badge">CSS tokens</span>
+                      <h2 data-i18n="overview.themeTitle">Themeable by design</h2>
+                      <p class="gui-muted" data-i18n="overview.themeBody">Change the visual system through a compact set of variables.</p>
+                    </article>
+                  </div>
+                </section>
+                <section data-tab-panel="activity">
+                  <article class="gui-card">
+                    <ul class="demo-list">
+                      <li><span class="gui-cluster"><span class="demo-avatar">PY</span><span>Python host</span></span><span class="gui-badge" data-i18n="status.ready">Ready</span></li>
+                      <li><span class="gui-cluster"><span class="demo-avatar">C#</span><span>C# WebView2</span></span><span class="gui-badge" data-i18n="status.ready">Ready</span></li>
+                      <li><span class="gui-cluster"><span class="demo-avatar">WEB</span><span>Browser / PWA</span></span><span class="gui-badge" data-i18n="status.ready">Ready</span></li>
+                    </ul>
+                  </article>
+                </section>
+                <section data-tab-panel="bridge">
+                  <article class="gui-card gui-stack">
+                    <div>
+                      <h2 data-i18n="bridge.title">Call native code</h2>
+                      <p class="gui-muted" data-i18n="bridge.body">The same promise-based API works with Python, C#, and browser mocks.</p>
+                    </div>
+                    <pre class="demo-code"><code>const result = await bridge.invoke("app.info");</code></pre>
+                    <div>
+                      <button class="gui-button gui-button--primary" id="bridge-demo" type="button" data-i18n="bridge.action">Test bridge</button>
+                    </div>
+                  </article>
+                </section>
+              </gui-tabs>
+            </div>
+          </section>
+
+          <section data-page="components">
+            <div class="gui-stack">
+              <div class="gui-cluster" style="justify-content:space-between">
+                <div>
+                  <p class="gui-eyebrow" data-i18n="components.eyebrow">Component gallery</p>
+                  <h2 class="gui-title" data-i18n="components.title">Small pieces, composed freely.</h2>
+                </div>
+                <button class="gui-button" type="button" data-gui-page-back data-i18n="actions.back">Back</button>
+              </div>
+              <div class="gui-grid">
+                <article class="gui-card gui-stack">
+                  <h3 data-i18n="components.controls">Controls</h3>
+                  <label class="gui-field">
+                    <span data-i18n="components.projectName">Project name</span>
+                    <input class="gui-input" value="My application">
+                  </label>
+                  <div class="gui-cluster">
+                    <button class="gui-button gui-button--primary" type="button" data-i18n="actions.save">Save</button>
+                    <button class="gui-button" type="button" data-i18n="actions.cancel">Cancel</button>
+                  </div>
+                </article>
+                <article class="gui-card">
+                  <h3 data-i18n="components.tokens">Design tokens</h3>
+                  <p class="gui-muted" data-i18n="components.tokensBody">Colors, spacing, type, radius, motion, and elevation are all customizable.</p>
+                  <div class="gui-cluster">
+                    <span class="gui-badge">--gui-accent</span>
+                    <span class="gui-badge">--gui-space-4</span>
+                    <span class="gui-badge">--gui-radius-md</span>
+                  </div>
+                </article>
+                <article class="gui-card gui-stack">
+                  <div>
+                    <h3 data-i18n="toasts.title">Toast notifications</h3>
+                    <p class="gui-muted" data-i18n="toasts.body">Queued, accessible, actionable, and automatically dismissed.</p>
+                  </div>
+                  <div class="gui-cluster">
+                    <button class="gui-button" type="button" data-toast-variant="info" data-i18n="toasts.info">Info</button>
+                    <button class="gui-button" type="button" data-toast-variant="success" data-i18n="toasts.success">Success</button>
+                    <button class="gui-button" type="button" data-toast-variant="warning" data-i18n="toasts.warning">Warning</button>
+                    <button class="gui-button" type="button" data-toast-variant="error" data-i18n="toasts.error">Error</button>
+                  </div>
+                </article>
+              </div>
+            </div>
+          </section>
+
+          <section data-page="charts">
+            <div class="gui-stack">
+              <div class="gui-cluster" style="justify-content:space-between">
+                <div>
+                  <p class="gui-eyebrow" data-i18n="charts.eyebrow">Streaming telemetry</p>
+                  <h2 class="gui-title" data-i18n="charts.title">Thousands of points, continuously updated.</h2>
+                  <p class="gui-muted" data-i18n="charts.body">Canvas rendering, bounded memory, and peak-preserving downsampling keep updates fluid.</p>
+                </div>
+                <button class="gui-button" type="button" data-gui-page-back data-i18n="actions.back">Back</button>
+              </div>
+              <article class="gui-card gui-stack">
+                <div class="gui-cluster" style="justify-content:space-between">
+                  <div>
+                    <strong data-i18n="charts.telemetry">System telemetry</strong>
+                    <span class="gui-badge"><span id="chart-point-count">20,000</span>&nbsp;<span data-i18n="charts.points">points</span></span>
+                  </div>
+                  <div class="gui-cluster">
+                    <button class="gui-button" id="chart-toggle" type="button" data-i18n="charts.pause">Pause</button>
+                    <button class="gui-button" id="chart-burst" type="button" data-i18n="charts.burst">Add 5,000</button>
+                    <button class="gui-button" id="chart-clear" type="button" data-i18n="charts.clear">Clear</button>
+                  </div>
+                </div>
+                <gui-live-chart
+                  id="telemetry-chart"
+                  max-points="20000"
+                  window-points="5000"
+                  label="Live system telemetry chart">
+                </gui-live-chart>
+              </article>
+            </div>
+          </section>
+
+          <section data-page="settings">
+            <div class="gui-stack">
+              <div class="gui-cluster" style="justify-content:space-between">
+                <div>
+                  <p class="gui-eyebrow" data-i18n="settings.eyebrow">Preferences</p>
+                  <h2 class="gui-title" data-i18n="settings.title">Make it yours.</h2>
+                </div>
+                <button class="gui-button" type="button" data-gui-page-back data-i18n="actions.back">Back</button>
+              </div>
+              <article class="gui-card gui-stack">
+                <label class="gui-field">
+                  <span data-i18n="settings.language">Language</span>
+                  <select class="gui-select" id="settings-language">
+                    <option value="en">English</option>
+                    <option value="de">Deutsch</option>
+                    <option value="es">Español</option>
+                  </select>
+                </label>
+                <label class="gui-field">
+                  <span data-i18n="settings.theme">Theme</span>
+                  <select class="gui-select" id="theme-select">
+                    <option value="system" data-i18n="themes.system">System</option>
+                    <option value="light" data-i18n="themes.light">Light</option>
+                    <option value="dark" data-i18n="themes.dark">Dark</option>
+                  </select>
+                </label>
+              </article>
+            </div>
+          </section>
+        </gui-pages>
+      </main>
+    </div>
+
+    <script type="module">
+      import { bridge, i18n, initializeGui, setTheme, toast } from "./src/gui.js";
+
+      const locales = ["en", "de", "es"];
+      const storage = {
+        get(key) {
+          try { return localStorage.getItem(key); } catch { return null; }
+        },
+        set(key, value) {
+          try { localStorage.setItem(key, value); } catch { /* optional */ }
+        },
+      };
+      await Promise.all(locales.map((locale) => i18n.load(locale, `./locales/${locale}.json`)));
+
+      const savedLocale = storage.get("gui-locale");
+      const browserLocale = navigator.language.slice(0, 2);
+      const initialLocale = savedLocale || (locales.includes(browserLocale) ? browserLocale : "en");
+      initializeGui({ locale: initialLocale });
+
+      const languageControls = [
+        document.querySelector("#language-select"),
+        document.querySelector("#settings-language"),
+      ];
+      languageControls.forEach((control) => {
+        control.value = initialLocale;
+        control.addEventListener("change", () => {
+          languageControls.forEach((item) => { item.value = control.value; });
+          storage.set("gui-locale", control.value);
+          i18n.setLocale(control.value);
+        });
+      });
+
+      const themeSelect = document.querySelector("#theme-select");
+      themeSelect.value = storage.get("gui-theme") || "system";
+      themeSelect.addEventListener("change", () => setTheme(themeSelect.value));
+      document.querySelector("#theme-toggle").addEventListener("click", () => {
+        const current = document.documentElement.dataset.theme;
+        const next = current === "dark" ? "light" : "dark";
+        themeSelect.value = next;
+        setTheme(next);
+      });
+
+      const hostKind = document.querySelector("#host-kind");
+      hostKind.textContent = bridge.hostKind;
+      window.addEventListener("pywebviewready", () => {
+        hostKind.textContent = bridge.hostKind;
+      });
+
+      // A browser-only mock makes the native bridge demonstrable in the web showcase.
+      window.addEventListener("gui:host-request", (event) => {
+        event.preventDefault();
+        event.detail.resolve({
+          host: "Browser mock",
+          platform: navigator.platform,
+          time: new Date().toLocaleTimeString(),
+        });
+      });
+
+      document.querySelector("#bridge-demo").addEventListener("click", async () => {
+        try {
+          const info = await bridge.invoke("app.info");
+          toast.success(`${info.host} · ${info.platform} · ${info.time}`, {
+            title: i18n.t("bridge.connected"),
+          });
+        } catch (error) {
+          toast.error(error.message);
+        }
+      });
+
+      document.querySelectorAll("[data-toast-variant]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const variant = button.dataset.toastVariant;
+          toast[variant](i18n.t(`toasts.${variant}Message`), {
+            title: i18n.t(`toasts.${variant}`),
+            action: variant === "info" ? {
+              label: i18n.t("toasts.undo"),
+              onClick: () => toast.success(i18n.t("toasts.undone")),
+            } : undefined,
+          });
+        });
+      });
+
+      const liveChart = document.querySelector("#telemetry-chart");
+      const pointCount = document.querySelector("#chart-point-count");
+      const seedSize = 10_000;
+      const startedAt = Date.now() - seedSize * 100;
+      const cpu = [];
+      const memory = [];
+      for (let index = 0; index < seedSize; index += 1) {
+        const x = startedAt + index * 100;
+        cpu.push({ x, y: 52 + Math.sin(index / 95) * 18 + Math.random() * 8 });
+        memory.push({ x, y: 64 + Math.sin(index / 230) * 9 + Math.random() * 4 });
+      }
+      liveChart.setSeries([
+        { id: "cpu", label: "CPU", data: cpu },
+        { id: "memory", label: "Memory", data: memory },
+      ]);
+
+      let chartRunning = true;
+      let sample = seedSize;
+      const updatePointCount = () => {
+        pointCount.textContent = liveChart.pointCount.toLocaleString();
+      };
+      const liveTimer = setInterval(() => {
+        if (!chartRunning) return;
+        const x = Date.now();
+        liveChart.append("cpu", { x, y: 52 + Math.sin(sample / 95) * 18 + Math.random() * 8 });
+        liveChart.append("memory", { x, y: 64 + Math.sin(sample / 230) * 9 + Math.random() * 4 });
+        sample += 1;
+        updatePointCount();
+      }, 100);
+
+      const chartToggle = document.querySelector("#chart-toggle");
+      chartToggle.addEventListener("click", () => {
+        chartRunning = !chartRunning;
+        chartToggle.dataset.i18n = chartRunning ? "charts.pause" : "charts.resume";
+        chartToggle.textContent = i18n.t(chartToggle.dataset.i18n);
+      });
+      document.querySelector("#chart-burst").addEventListener("click", () => {
+        const burstCpu = [];
+        const burstMemory = [];
+        const baseTime = Date.now();
+        for (let index = 0; index < 5_000; index += 1) {
+          const x = baseTime + index;
+          burstCpu.push({ x, y: 52 + Math.sin((sample + index) / 95) * 18 + Math.random() * 8 });
+          burstMemory.push({ x, y: 64 + Math.sin((sample + index) / 230) * 9 + Math.random() * 4 });
+        }
+        sample += 5_000;
+        liveChart.appendBatch("cpu", burstCpu);
+        liveChart.appendBatch("memory", burstMemory);
+        updatePointCount();
+        toast.success(i18n.t("charts.burstComplete"));
+      });
+      document.querySelector("#chart-clear").addEventListener("click", () => {
+        liveChart.clear();
+        updatePointCount();
+        toast.info(i18n.t("charts.cleared"));
+      });
+
+      document.querySelector("#main-pages").addEventListener("gui:page-change", (event) => {
+        document.querySelectorAll(".gui-nav button").forEach((button) => {
+          if (button.dataset.guiPageOpen === event.detail.active) {
+            button.setAttribute("aria-current", "page");
+          } else {
+            button.removeAttribute("aria-current");
+          }
+        });
+        document.querySelector("#main-sidebar").toggle(false);
+      });
+    </script>
+  </body>
+</html>
