@@ -8,6 +8,8 @@ All notable changes to GuiKit are documented here. The format follows
 
 ### Added
 
+- Tag-driven GitHub Release packaging with semantic-version validation,
+  checksums, retained workflow artifacts, and build-provenance attestations.
 - Canvas-based `<gui-live-chart>` with multiple series, responsive rendering,
   bounded typed-array storage, and min/max downsampling.
 - Accessible toast manager with info, success, warning, and error variants.

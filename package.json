@@ -2,6 +2,14 @@
   "name": "@gui-template/core",
   "version": "0.1.0",
   "description": "A lightweight, cross-platform UI foundation for browsers and native webviews.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HighlyConfusedEngineer/GuiKit.git"
+  },
+  "homepage": "https://github.com/HighlyConfusedEngineer/GuiKit#readme",
+  "bugs": {
+    "url": "https://github.com/HighlyConfusedEngineer/GuiKit/issues"
+  },
   "type": "module",
   "types": "./src/gui.d.ts",
   "exports": {
@@ -40,14 +48,23 @@
   "files": [
     "src",
     "locales",
+    "docs",
+    "examples",
     "tools/create-module.mjs",
+    "index.html",
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
     "README.md",
+    "SECURITY.md",
     "LICENSE"
   ],
   "scripts": {
     "dev": "node tools/dev-server.mjs",
     "check": "node --check src/gui.js && node --check src/core/module-registry.js && node --check src/modules/node-editor/index.js && node --check src/modules/media-player/index.js && node --check src/modules/logging/index.js && node --check src/modules/logging/node.js && node --check tools/create-module.mjs && node --test",
     "test": "node --test",
+    "prepack": "npm run check",
+    "release:check": "npm pack --dry-run --ignore-scripts",
     "create:module": "node tools/create-module.mjs"
   },
   "keywords": [
