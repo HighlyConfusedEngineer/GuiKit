@@ -111,6 +111,14 @@
             <span aria-hidden="true">⌁</span>
             <span class="gui-sidebar-label" data-i18n="nav.charts">Live charts</span>
           </button>
+          <button type="button" data-gui-page-open="node-editor" data-i18n-aria-label="nav.nodeEditor">
+            <span aria-hidden="true">⌘</span>
+            <span class="gui-sidebar-label" data-i18n="nav.nodeEditor">Node editor</span>
+          </button>
+          <button type="button" data-gui-page-open="media" data-i18n-aria-label="nav.media">
+            <span aria-hidden="true">▶</span>
+            <span class="gui-sidebar-label" data-i18n="nav.media">Live media</span>
+          </button>
           <button type="button" data-gui-page-open="settings" data-i18n-aria-label="nav.settings">
             <span aria-hidden="true">⚙</span>
             <span class="gui-sidebar-label" data-i18n="nav.settings">Settings</span>
@@ -296,6 +304,65 @@
             </div>
           </section>
 
+          <section data-page="node-editor">
+            <div class="gui-stack">
+              <div class="gui-cluster" style="justify-content:space-between">
+                <div>
+                  <p class="gui-eyebrow" data-i18n="nodeEditor.eyebrow">Visual workflows</p>
+                  <h2 class="gui-title" data-i18n="nodeEditor.title">Connect ideas, data, and actions.</h2>
+                  <p class="gui-muted" data-i18n="nodeEditor.body">Drag nodes and ports, pan the canvas, zoom, or double-click empty space to create a node.</p>
+                </div>
+                <button class="gui-button" type="button" data-gui-page-back data-i18n="actions.back">Back</button>
+              </div>
+              <div class="gui-cluster">
+                <button class="gui-button gui-button--primary" id="node-add" type="button" data-i18n="nodeEditor.add">Add node</button>
+                <button class="gui-button" id="node-fit" type="button" data-i18n="nodeEditor.fit">Fit graph</button>
+                <button class="gui-button" id="node-reset" type="button" data-i18n="nodeEditor.reset">Reset example</button>
+                <button class="gui-button" id="node-export" type="button" data-i18n="nodeEditor.export">Inspect graph</button>
+              </div>
+              <gui-node-editor
+                id="workflow-editor"
+                snap="16"
+                grid-size="24"
+                label="Visual processing workflow"
+                style="height:min(68vh,42rem)">
+              </gui-node-editor>
+            </div>
+          </section>
+
+          <section data-page="media">
+            <div class="gui-stack">
+              <div class="gui-cluster" style="justify-content:space-between">
+                <div>
+                  <p class="gui-eyebrow" data-i18n="media.eyebrow">Responsive playback</p>
+                  <h2 class="gui-title" data-i18n="media.title">Live streams and web video, beautifully controlled.</h2>
+                  <p class="gui-muted" data-i18n="media.body">MediaStream, native formats, captions, fullscreen, Picture-in-Picture, and adapter-based HLS or DASH.</p>
+                </div>
+                <button class="gui-button" type="button" data-gui-page-back data-i18n="actions.back">Back</button>
+              </div>
+              <gui-media-player
+                id="live-media-player"
+                autoplay
+                muted
+                live
+                label="Live generated MediaStream demonstration">
+              </gui-media-player>
+              <article class="gui-card gui-stack">
+                <div class="gui-cluster">
+                  <button class="gui-button gui-button--primary" id="media-live-start" type="button" data-i18n="media.startLive">Start live demo</button>
+                  <button class="gui-button" id="media-stop" type="button" data-i18n="media.stop">Stop</button>
+                </div>
+                <label class="gui-field">
+                  <span data-i18n="media.url">Video or native HLS URL</span>
+                  <span class="gui-cluster" style="align-items:stretch">
+                    <input class="gui-input" id="media-url" type="url" placeholder="https://example.com/video.mp4" style="flex:1 1 20rem">
+                    <button class="gui-button" id="media-load-url" type="button" data-i18n="media.load">Load URL</button>
+                  </span>
+                </label>
+              </article>
+            </div>
+          </section>
+
           <section data-page="settings">
             <div class="gui-stack">
               <div class="gui-cluster" style="justify-content:space-between">
@@ -468,6 +535,195 @@
         toast.info(i18n.t("charts.cleared"));
       });
 
+      const nodeEditor = document.querySelector("#workflow-editor");
+      const exampleGraph = {
+        nodes: [
+          {
+            id: "source",
+            title: "Image Source",
+            type: "input",
+            description: "Loads the next frame from a native or web source.",
+            color: "#3285d8",
+            x: 0,
+            y: 120,
+            outputs: [
+              { id: "source:image", label: "Image", type: "image" },
+              { id: "source:time", label: "Timestamp", type: "number" },
+            ],
+          },
+          {
+            id: "filter",
+            title: "Edge Detection",
+            type: "process",
+            description: "Applies a configurable edge filter.",
+            color: "#8b5cf6",
+            x: 320,
+            y: 64,
+            inputs: [
+              { id: "filter:image", label: "Image", type: "image" },
+              { id: "filter:strength", label: "Strength", type: "number" },
+            ],
+            outputs: [{ id: "filter:image-out", label: "Result", type: "image" }],
+          },
+          {
+            id: "preview",
+            title: "Preview",
+            type: "output",
+            description: "Displays the processed image in the application.",
+            color: "#0e9f87",
+            x: 650,
+            y: 40,
+            inputs: [{ id: "preview:image", label: "Image", type: "image" }],
+          },
+          {
+            id: "threshold",
+            title: "Threshold",
+            type: "value",
+            color: "#df7a18",
+            x: 40,
+            y: 340,
+            outputs: [{ id: "threshold:value", label: "Value", type: "number" }],
+          },
+        ],
+        links: [
+          { id: "image-to-filter", from: "source:image", to: "filter:image" },
+          { id: "filter-to-preview", from: "filter:image-out", to: "preview:image" },
+          { id: "strength", from: "threshold:value", to: "filter:strength" },
+        ],
+      };
+      nodeEditor.setGraph(exampleGraph);
+      let nodeSequence = 0;
+      const addWorkflowNode = (position = { x: 230, y: 240 }) => {
+        nodeSequence += 1;
+        nodeEditor.addNode({
+          id: `custom-${nodeSequence}`,
+          title: `${i18n.t("nodeEditor.custom")} ${nodeSequence}`,
+          type: "process",
+          x: position.x,
+          y: position.y,
+          inputs: [{ id: `custom-${nodeSequence}:in`, label: "Value", type: "number" }],
+          outputs: [{ id: `custom-${nodeSequence}:out`, label: "Value", type: "number" }],
+        });
+      };
+      document.querySelector("#node-add").addEventListener("click", () => addWorkflowNode());
+      document.querySelector("#node-fit").addEventListener("click", () => nodeEditor.zoomToFit());
+      document.querySelector("#node-reset").addEventListener("click", () => {
+        nodeEditor.setGraph(exampleGraph);
+        requestAnimationFrame(() => nodeEditor.zoomToFit());
+      });
+      document.querySelector("#node-export").addEventListener("click", () => {
+        const graph = nodeEditor.getGraph();
+        toast.info(i18n.t("nodeEditor.graphSummary", {
+          nodes: graph.nodes.length,
+          links: graph.links.length,
+        }));
+      });
+      nodeEditor.addEventListener("gui:node-create-request", (event) => {
+        addWorkflowNode(event.detail.position);
+      });
+      nodeEditor.addEventListener("gui:node-connect", () => {
+        toast.success(i18n.t("nodeEditor.connected"));
+      });
+      nodeEditor.addEventListener("gui:node-error", (event) => {
+        toast.error(event.detail.error.message);
+      });
+
+      const mediaPlayer = document.querySelector("#live-media-player");
+      let mediaDemoStream;
+      let mediaDemoFrame;
+      const stopMediaDemo = async () => {
+        cancelAnimationFrame(mediaDemoFrame);
+        mediaDemoFrame = undefined;
+        if (mediaPlayer.source) {
+          await mediaPlayer.detach({ stopTracks: true });
+        }
+        mediaDemoStream = undefined;
+      };
+      const startMediaDemo = async () => {
+        await stopMediaDemo();
+        const canvas = document.createElement("canvas");
+        canvas.width = 1280;
+        canvas.height = 720;
+        if (typeof canvas.captureStream !== "function") {
+          toast.warning(i18n.t("media.captureUnavailable"));
+          return;
+        }
+        const context = canvas.getContext("2d");
+        const started = performance.now();
+        const drawFrame = (time) => {
+          const elapsed = (time - started) / 1000;
+          const hue = (elapsed * 22) % 360;
+          const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+          gradient.addColorStop(0, `hsl(${hue} 72% 34%)`);
+          gradient.addColorStop(1, `hsl(${(hue + 95) % 360} 68% 12%)`);
+          context.fillStyle = gradient;
+          context.fillRect(0, 0, canvas.width, canvas.height);
+
+          context.strokeStyle = "rgb(255 255 255 / 0.09)";
+          context.lineWidth = 1;
+          for (let x = 0; x < canvas.width; x += 64) {
+            context.beginPath();
+            context.moveTo(x, 0);
+            context.lineTo(x, canvas.height);
+            context.stroke();
+          }
+          for (let y = 0; y < canvas.height; y += 64) {
+            context.beginPath();
+            context.moveTo(0, y);
+            context.lineTo(canvas.width, y);
+            context.stroke();
+          }
+
+          for (let index = 0; index < 5; index += 1) {
+            const radius = 54 + index * 18;
+            const x = canvas.width / 2 + Math.sin(elapsed * (0.45 + index * 0.08)) * (260 - index * 24);
+            const y = canvas.height / 2 + Math.cos(elapsed * (0.55 + index * 0.06)) * (150 - index * 12);
+            context.beginPath();
+            context.arc(x, y, radius, 0, Math.PI * 2);
+            context.fillStyle = `hsl(${(hue + index * 42) % 360} 86% 65% / 0.22)`;
+            context.fill();
+            context.strokeStyle = `hsl(${(hue + index * 42) % 360} 90% 82% / 0.5)`;
+            context.lineWidth = 3;
+            context.stroke();
+          }
+
+          context.fillStyle = "white";
+          context.font = "700 58px system-ui";
+          context.fillText("LIVE MEDIASTREAM", 72, 104);
+          context.fillStyle = "rgb(255 255 255 / 0.72)";
+          context.font = "500 28px system-ui";
+          context.fillText(new Date().toLocaleTimeString(), 76, 150);
+          context.fillText("Generated locally · no external video source", 76, 650);
+          mediaDemoFrame = requestAnimationFrame(drawFrame);
+        };
+        drawFrame(performance.now());
+        mediaDemoStream = canvas.captureStream(30);
+        await mediaPlayer.attachStream(mediaDemoStream, {
+          live: true,
+          autoplay: true,
+          label: "Generated live demonstration",
+        });
+      };
+      document.querySelector("#media-live-start").addEventListener("click", () => {
+        startMediaDemo().catch((error) => toast.error(error.message));
+      });
+      document.querySelector("#media-stop").addEventListener("click", () => {
+        stopMediaDemo().catch((error) => toast.error(error.message));
+      });
+      document.querySelector("#media-load-url").addEventListener("click", async () => {
+        const url = document.querySelector("#media-url").value.trim();
+        if (!url) return;
+        await stopMediaDemo();
+        mediaPlayer.setSource({
+          src: url,
+          live: /\.m3u8(?:$|\?)/i.test(url),
+          autoplay: true,
+        }).catch(() => {});
+      });
+      mediaPlayer.addEventListener("gui:media-error", (event) => {
+        toast.error(event.detail.error.message);
+      });
+
       document.querySelector("#main-pages").addEventListener("gui:page-change", (event) => {
         document.querySelectorAll(".gui-nav button").forEach((button) => {
           if (button.dataset.guiPageOpen === event.detail.active) {
@@ -477,6 +733,14 @@
           }
         });
         document.querySelector("#main-sidebar").toggle(false);
+        if (event.detail.active === "node-editor") {
+          setTimeout(() => nodeEditor.zoomToFit(), 420);
+        }
+        if (event.detail.active === "media") {
+          startMediaDemo().catch((error) => toast.error(error.message));
+        } else if (event.detail.previous === "media") {
+          stopMediaDemo().catch((error) => toast.error(error.message));
+        }
       });
     </script>
   </body>

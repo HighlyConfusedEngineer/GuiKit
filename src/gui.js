@@ -3,6 +3,36 @@
  * A dependency-free UI foundation built on Web Components and web standards.
  */
 
+import {
+  GuiModuleRegistry,
+  defineGuiModule,
+  guiModules,
+} from "./core/module-registry.js";
+import {
+  GuiNodeEditor,
+  GuiNodeGraph,
+  nodeEditorModule,
+} from "./modules/node-editor/index.js";
+import {
+  GuiMediaAdapterRegistry,
+  GuiMediaPlayer,
+  mediaAdapters,
+  mediaPlayerModule,
+} from "./modules/media-player/index.js";
+
+export {
+  GuiModuleRegistry,
+  GuiMediaAdapterRegistry,
+  GuiMediaPlayer,
+  GuiNodeEditor,
+  GuiNodeGraph,
+  defineGuiModule,
+  guiModules,
+  mediaAdapters,
+  mediaPlayerModule,
+  nodeEditorModule,
+};
+
 const hasDOM = typeof window !== "undefined" && typeof document !== "undefined";
 const GuiElement = hasDOM ? HTMLElement : class {};
 let guiInitialized = false;
@@ -1221,7 +1251,16 @@ export function setTheme(theme) {
 }
 
 export function initializeGui(options = {}) {
-  if (!hasDOM) return { i18n, bridge };
+  if (!hasDOM) {
+    return {
+      i18n,
+      bridge,
+      toast,
+      modules: guiModules,
+      mediaAdapters,
+      ready: guiModules.initializeAll({ i18n, bridge, toast, mediaAdapters }),
+    };
+  }
 
   const storedTheme = readStorage("gui-theme");
   setTheme(options.theme ?? storedTheme ?? "system");
@@ -1269,7 +1308,14 @@ export function initializeGui(options = {}) {
   }
 
   i18n.translate(document);
-  return { i18n, bridge };
+  return {
+    i18n,
+    bridge,
+    toast,
+    modules: guiModules,
+    mediaAdapters,
+    ready: guiModules.initializeAll({ i18n, bridge, toast, mediaAdapters }),
+  };
 }
 
 registerElement("gui-tabs", GuiTabs);
@@ -1278,10 +1324,45 @@ registerElement("gui-pages", GuiPages);
 registerElement("gui-live-chart", GuiLiveChart);
 registerElement("gui-toast-stack", GuiToastStack);
 
+[
+  {
+    id: "core",
+    version: "0.1.0",
+    description: "Initialization, themes, localization, and native host bridge.",
+  },
+  {
+    id: "navigation",
+    version: "0.1.0",
+    description: "Tabs, responsive sidebars, and sliding page navigation.",
+    dependencies: ["core"],
+    components: ["gui-tabs", "gui-sidebar", "gui-pages"],
+  },
+  {
+    id: "live-chart",
+    version: "0.1.0",
+    description: "Responsive canvas charts with bounded live data buffers.",
+    dependencies: ["core"],
+    components: ["gui-live-chart"],
+  },
+  {
+    id: "toasts",
+    version: "0.1.0",
+    description: "Accessible queued toast notifications.",
+    dependencies: ["core"],
+    components: ["gui-toast-stack"],
+  },
+  nodeEditorModule,
+  mediaPlayerModule,
+].forEach((module) => {
+  if (!guiModules.has(module.id)) defineGuiModule(module);
+});
+
 if (hasDOM) {
   window.GuiTemplate = {
     bridge,
     i18n,
+    modules: guiModules,
+    mediaAdapters,
     toast,
     initialize: initializeGui,
     setTheme,

@@ -20,6 +20,31 @@ Web platform
     └── custom elements, canvas, CSS, DOM events, postMessage
 ```
 
+## Source boundaries
+
+```text
+src/
+  gui.js                       stable default-bundle entry point
+  gui.css                      shared design tokens and base components
+  core/
+    module-registry.js         dependency and setup lifecycle
+  modules/
+    <feature>/
+      index.js                 public implementation and manifest
+      index.d.ts               public type contract
+      README.md                focused maintainer guide
+```
+
+`gui.js` is the compatibility entry point for the default bundle. New,
+self-contained features belong under `src/modules/` and receive a package
+subpath export. A module must not reach into another module's private files.
+Shared infrastructure moves to `src/core/` only after at least two modules need
+it.
+
+The module registry owns initialization order, not feature logic. Module
+manifests name dependencies by stable ids, which keeps filesystem organization
+and runtime composition independent.
+
 ## Web Components
 
 Components use standard custom elements so a page can consume them without a
@@ -49,6 +74,16 @@ GuiKit owns only presentation state:
 Application state stays outside the library. Public events use the `gui:`
 prefix and bubble when they originate from DOM components.
 
+Features with structural rules split those rules into a DOM-independent model.
+`GuiNodeGraph` validates graph structure while `<gui-node-editor>` owns pointer
+and keyboard interaction. This model/view boundary is the preferred pattern for
+data grids, form builders, timelines, and other complex future modules.
+
+`<gui-media-player>` demonstrates the capability-adapter pattern. The core
+uses native playback and `MediaStream`; protocol engines register against
+`mediaAdapters` and own their cleanup. Optional integrations therefore do not
+inflate the base runtime.
+
 ## Native hosts
 
 Host languages are transport adapters, not UI implementations. The front end
@@ -61,3 +96,10 @@ The target is current evergreen browser engines and the webviews based on them:
 Chromium/WebView2, WebKit/WKWebView, and pywebview backends. The library uses no
 browser-specific styling API. A resize-event fallback is provided when
 `ResizeObserver` is unavailable.
+
+## Extending the architecture
+
+Run `npm run create:module -- <id>` instead of copying an existing feature by
+hand. The generated files encode the expected API, types, tests, documentation,
+and package export. The full contract and review checklist are in
+[MODULES.md](MODULES.md).

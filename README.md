@@ -13,6 +13,9 @@ The current `0.1` foundation includes:
 - interruption-safe animated tabs and sliding pages with back history;
 - responsive live charts for thousands of continuously updated data points;
 - accessible toast notifications with actions and four severity levels;
+- a visual node editor with typed ports, links, pan, zoom, and serialization;
+- responsive native video and live MediaStream playback with adapter support;
+- a dependency-aware module registry and feature generator;
 - light, dark, and system themes powered by CSS variables;
 - runtime localization with fallback and interpolation;
 - a promise-based host bridge for pywebview, WebView2, WebKit, and browser mocks;
@@ -137,6 +140,49 @@ toast.success("Settings saved", {
 Notifications support info, success, warning, and error states. Dismiss timers
 pause during hover and keyboard focus.
 
+### Node editor
+
+```html
+<gui-node-editor id="workflow" snap="16"></gui-node-editor>
+```
+
+```js
+const editor = document.querySelector("#workflow");
+editor.setGraph({
+  nodes: [
+    {
+      id: "source",
+      outputs: [{ id: "source:value", type: "number" }],
+    },
+    {
+      id: "display",
+      x: 320,
+      inputs: [{ id: "display:value", type: "number" }],
+    },
+  ],
+  links: [
+    { id: "value-link", from: "source:value", to: "display:value" },
+  ],
+});
+```
+
+The pure `GuiNodeGraph` model validates types and link limits without a DOM.
+See [the node-editor guide](docs/NODE_EDITOR.md).
+
+### Live media
+
+```html
+<gui-media-player autoplay muted live></gui-media-player>
+```
+
+```js
+await player.attachStream(webRtcStream, { live: true, autoplay: true });
+```
+
+The module supports native video, live `MediaStream`, captions, fullscreen,
+Picture-in-Picture, live-edge seeking, and pluggable HLS/DASH adapters. See
+[the media-player guide](docs/MEDIA_PLAYER.md).
+
 ## Localization
 
 Catalogs are plain nested JSON objects:
@@ -234,6 +280,8 @@ src/
   gui.js          components, localization, themes, native bridge
   gui.css         tokens, layouts, components, utilities
   gui.d.ts        TypeScript declarations
+  core/           module lifecycle and shared extension infrastructure
+  modules/        self-contained optional features
 locales/          showcase translation catalogs
 examples/
   python/         cross-platform pywebview host
@@ -253,12 +301,29 @@ host languages without teaching UI components about Python or .NET.
 The core intentionally avoids a build step. A later package can add optional
 framework bindings or advanced components without increasing the base runtime.
 
+## Add a module
+
+Generate the standard implementation, types, documentation, tests, and package
+export:
+
+```powershell
+npm run create:module -- command-palette
+```
+
+The [module authoring guide](docs/MODULES.md) defines lifecycle, API, event,
+styling, accessibility, testing, and documentation conventions. The node editor
+is the reference implementation for larger features.
+
 ## Documentation
 
 - [API reference](docs/API.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Native bridge protocol](docs/BRIDGE.md)
 - [Chart performance](docs/PERFORMANCE.md)
+- [Node editor](docs/NODE_EDITOR.md)
+- [Media player](docs/MEDIA_PLAYER.md)
+- [Module authoring](docs/MODULES.md)
+- [Framework roadmap](docs/ROADMAP.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)
 - [Changelog](CHANGELOG.md)

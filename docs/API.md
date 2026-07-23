@@ -171,3 +171,54 @@ API. See the main README for markup attributes.
 `bridge.invoke(method, params?, options?)` returns a Promise and rejects on host
 errors or timeout. `bridge.hostKind` reports the currently detected transport.
 See [BRIDGE.md](BRIDGE.md) for the wire protocol.
+
+## Node editor
+
+The default bundle exports `GuiNodeEditor`, `GuiNodeGraph`, and
+`nodeEditorModule`. A smaller subpath import is also available:
+
+```js
+import {
+  GuiNodeEditor,
+  GuiNodeGraph,
+} from "@gui-template/core/node-editor";
+```
+
+See [NODE_EDITOR.md](NODE_EDITOR.md) for schemas, interaction, methods, events,
+and performance guidance.
+
+## Module registry
+
+`GuiModuleRegistry` provides dependency-aware feature initialization.
+`guiModules` is the default registry and `defineGuiModule(manifest)` registers
+a manifest with it.
+
+```js
+import {
+  defineGuiModule,
+  guiModules,
+} from "@gui-template/core/modules";
+
+defineGuiModule(featureModule);
+await guiModules.initialize(featureModule.id, applicationContext);
+```
+
+`initializeGui()` now returns
+`{ i18n, bridge, toast, modules, mediaAdapters, ready }`. Await `ready` when
+application startup depends on module setup results. See
+[MODULES.md](MODULES.md) for the complete extension contract.
+
+## Media player
+
+The default bundle exports `GuiMediaPlayer`, `GuiMediaAdapterRegistry`,
+`mediaAdapters`, and `mediaPlayerModule`. A direct subpath is available:
+
+```js
+import {
+  GuiMediaPlayer,
+  mediaAdapters,
+} from "@gui-template/core/media-player";
+```
+
+See [MEDIA_PLAYER.md](MEDIA_PLAYER.md) for native video, MediaStream, HLS/DASH
+adapters, captions, methods, events, keyboard behavior, and lifecycle rules.

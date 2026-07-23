@@ -136,13 +136,51 @@ export function initializeGui(options?: {
   locale?: string;
   fallbackLocale?: string;
   theme?: GuiTheme;
-}): { i18n: GuiI18n; bridge: GuiBridge };
+}): {
+  i18n: GuiI18n;
+  bridge: GuiBridge;
+  toast: GuiToastManager;
+  modules: import("./core/module-registry.js").GuiModuleRegistry;
+  mediaAdapters: import("./modules/media-player/index.js").GuiMediaAdapterRegistry;
+  ready: Promise<Map<string, unknown>>;
+};
+
+export {
+  GuiModuleContext,
+  GuiModuleManifest,
+  GuiModuleRegistry,
+  defineGuiModule,
+  guiModules,
+} from "./core/module-registry.js";
+
+export {
+  GuiNodeDefinition,
+  GuiNodeEditor,
+  GuiNodeGraph,
+  GuiNodeGraphData,
+  GuiNodeLink,
+  GuiNodePort,
+  GuiNodePortDirection,
+  nodeEditorModule,
+} from "./modules/node-editor/index.js";
+
+export {
+  GuiMediaAdapter,
+  GuiMediaAdapterRegistry,
+  GuiMediaPlayer,
+  GuiMediaSource,
+  GuiMediaTrack,
+  mediaAdapters,
+  mediaPlayerModule,
+} from "./modules/media-player/index.js";
 
 declare global {
   interface Window {
     GuiTemplate: {
       bridge: GuiBridge;
       i18n: GuiI18n;
+      modules: import("./core/module-registry.js").GuiModuleRegistry;
+      mediaAdapters: import("./modules/media-player/index.js").GuiMediaAdapterRegistry;
       toast: GuiToastManager;
       initialize: typeof initializeGui;
       setTheme: typeof setTheme;

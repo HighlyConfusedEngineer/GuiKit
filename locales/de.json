@@ -3,6 +3,8 @@
     "dashboard": "Übersicht",
     "components": "Komponenten",
     "charts": "Live-Diagramme",
+    "nodeEditor": "Knoten-Editor",
+    "media": "Live-Medien",
     "settings": "Einstellungen"
   },
   "sidebar": { "runtime": "Laufzeit" },
@@ -70,6 +72,28 @@
     "errorMessage": "Der Vorgang konnte nicht abgeschlossen werden.",
     "undo": "Rückgängig",
     "undone": "Die Aktion wurde rückgängig gemacht."
+  },
+  "nodeEditor": {
+    "eyebrow": "Visuelle Arbeitsabläufe",
+    "title": "Ideen, Daten und Aktionen verbinden.",
+    "body": "Ziehe Knoten und Anschlüsse, verschiebe die Fläche, zoome oder doppelklicke auf freien Raum.",
+    "add": "Knoten hinzufügen",
+    "fit": "Graph einpassen",
+    "reset": "Beispiel zurücksetzen",
+    "export": "Graph prüfen",
+    "custom": "Eigener Knoten",
+    "connected": "Knoten verbunden.",
+    "graphSummary": "Der Graph enthält {nodes} Knoten und {links} Verbindungen."
+  },
+  "media": {
+    "eyebrow": "Responsive Wiedergabe",
+    "title": "Live-Streams und Webvideos, elegant gesteuert.",
+    "body": "MediaStream, native Formate, Untertitel, Vollbild, Bild-in-Bild und Adapter für HLS oder DASH.",
+    "startLive": "Live-Demo starten",
+    "stop": "Stoppen",
+    "url": "Video- oder native HLS-URL",
+    "load": "URL laden",
+    "captureUnavailable": "Dieser Browser kann die lokale MediaStream-Demo nicht erzeugen."
   },
   "settings": {
     "eyebrow": "Präferenzen",

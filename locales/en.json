@@ -3,6 +3,8 @@
     "dashboard": "Dashboard",
     "components": "Components",
     "charts": "Live charts",
+    "nodeEditor": "Node editor",
+    "media": "Live media",
     "settings": "Settings"
   },
   "sidebar": { "runtime": "Runtime" },
@@ -70,6 +72,28 @@
     "errorMessage": "The operation could not be completed.",
     "undo": "Undo",
     "undone": "The action was undone."
+  },
+  "nodeEditor": {
+    "eyebrow": "Visual workflows",
+    "title": "Connect ideas, data, and actions.",
+    "body": "Drag nodes and ports, pan the canvas, zoom, or double-click empty space to create a node.",
+    "add": "Add node",
+    "fit": "Fit graph",
+    "reset": "Reset example",
+    "export": "Inspect graph",
+    "custom": "Custom node",
+    "connected": "Nodes connected.",
+    "graphSummary": "Graph contains {nodes} nodes and {links} links."
+  },
+  "media": {
+    "eyebrow": "Responsive playback",
+    "title": "Live streams and web video, beautifully controlled.",
+    "body": "MediaStream, native formats, captions, fullscreen, Picture-in-Picture, and adapter-based HLS or DASH.",
+    "startLive": "Start live demo",
+    "stop": "Stop",
+    "url": "Video or native HLS URL",
+    "load": "Load URL",
+    "captureUnavailable": "This browser cannot create the local MediaStream demonstration."
   },
   "settings": {
     "eyebrow": "Preferences",

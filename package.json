@@ -10,18 +10,35 @@
       "import": "./src/gui.js",
       "default": "./src/gui.js"
     },
-    "./styles": "./src/gui.css"
+    "./styles": "./src/gui.css",
+    "./modules": {
+      "types": "./src/core/module-registry.d.ts",
+      "import": "./src/core/module-registry.js",
+      "default": "./src/core/module-registry.js"
+    },
+    "./node-editor": {
+      "types": "./src/modules/node-editor/index.d.ts",
+      "import": "./src/modules/node-editor/index.js",
+      "default": "./src/modules/node-editor/index.js"
+    },
+    "./media-player": {
+      "types": "./src/modules/media-player/index.d.ts",
+      "import": "./src/modules/media-player/index.js",
+      "default": "./src/modules/media-player/index.js"
+    }
   },
   "files": [
     "src",
     "locales",
+    "tools/create-module.mjs",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
     "dev": "node tools/dev-server.mjs",
-    "check": "node --check src/gui.js && node --test",
-    "test": "node --test"
+    "check": "node --check src/gui.js && node --check src/core/module-registry.js && node --check src/modules/node-editor/index.js && node --check src/modules/media-player/index.js && node --check tools/create-module.mjs && node --test",
+    "test": "node --test",
+    "create:module": "node tools/create-module.mjs"
   },
   "keywords": [
     "gui",
@@ -30,7 +47,12 @@
     "cross-platform",
     "i18n",
     "live-chart",
-    "toast"
+    "toast",
+    "node-editor",
+    "visual-programming",
+    "video-player",
+    "live-stream",
+    "media-stream"
   ],
   "license": "MIT"
 }

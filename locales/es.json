@@ -3,6 +3,8 @@
     "dashboard": "Panel",
     "components": "Componentes",
     "charts": "Gráficos en vivo",
+    "nodeEditor": "Editor de nodos",
+    "media": "Medios en vivo",
     "settings": "Ajustes"
   },
   "sidebar": { "runtime": "Entorno" },
@@ -70,6 +72,28 @@
     "errorMessage": "No se pudo completar la operación.",
     "undo": "Deshacer",
     "undone": "La acción se deshizo."
+  },
+  "nodeEditor": {
+    "eyebrow": "Flujos visuales",
+    "title": "Conecta ideas, datos y acciones.",
+    "body": "Arrastra nodos y puertos, desplaza el lienzo, usa el zoom o haz doble clic para crear un nodo.",
+    "add": "Añadir nodo",
+    "fit": "Ajustar grafo",
+    "reset": "Restablecer ejemplo",
+    "export": "Inspeccionar grafo",
+    "custom": "Nodo personalizado",
+    "connected": "Nodos conectados.",
+    "graphSummary": "El grafo contiene {nodes} nodos y {links} enlaces."
+  },
+  "media": {
+    "eyebrow": "Reproducción adaptable",
+    "title": "Streams en vivo y vídeo web con controles elegantes.",
+    "body": "MediaStream, formatos nativos, subtítulos, pantalla completa, Picture-in-Picture y adaptadores HLS o DASH.",
+    "startLive": "Iniciar demo en vivo",
+    "stop": "Detener",
+    "url": "URL de vídeo o HLS nativo",
+    "load": "Cargar URL",
+    "captureUnavailable": "Este navegador no puede crear la demostración MediaStream local."
   },
   "settings": {
     "eyebrow": "Preferencias",
