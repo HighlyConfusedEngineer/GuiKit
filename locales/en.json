@@ -5,6 +5,7 @@
     "charts": "Live charts",
     "nodeEditor": "Node editor",
     "media": "Live media",
+    "logging": "Logging",
     "settings": "Settings"
   },
   "sidebar": { "runtime": "Runtime" },
@@ -94,6 +95,22 @@
     "url": "Video or native HLS URL",
     "load": "Load URL",
     "captureUnavailable": "This browser cannot create the local MediaStream demonstration."
+  },
+  "logging": {
+    "eyebrow": "Observability",
+    "title": "Structured logs, from interface to backend.",
+    "body": "Filter live records, inspect context, correlate spans, and safely forward batches to a native host.",
+    "span": "Run traced task",
+    "viewer": {
+      "minimumLevel": "Minimum log level",
+      "filter": "Filter logs",
+      "pause": "Pause",
+      "resume": "Resume",
+      "clear": "Clear",
+      "export": "Export JSONL",
+      "empty": "No matching log records.",
+      "count": "{shown} shown · {buffered} buffered"
+    }
   },
   "settings": {
     "eyebrow": "Preferences",

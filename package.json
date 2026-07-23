@@ -25,6 +25,16 @@
       "types": "./src/modules/media-player/index.d.ts",
       "import": "./src/modules/media-player/index.js",
       "default": "./src/modules/media-player/index.js"
+    },
+    "./logging": {
+      "types": "./src/modules/logging/index.d.ts",
+      "import": "./src/modules/logging/index.js",
+      "default": "./src/modules/logging/index.js"
+    },
+    "./logging/node": {
+      "types": "./src/modules/logging/node.d.ts",
+      "import": "./src/modules/logging/node.js",
+      "default": "./src/modules/logging/node.js"
     }
   },
   "files": [
@@ -36,7 +46,7 @@
   ],
   "scripts": {
     "dev": "node tools/dev-server.mjs",
-    "check": "node --check src/gui.js && node --check src/core/module-registry.js && node --check src/modules/node-editor/index.js && node --check src/modules/media-player/index.js && node --check tools/create-module.mjs && node --test",
+    "check": "node --check src/gui.js && node --check src/core/module-registry.js && node --check src/modules/node-editor/index.js && node --check src/modules/media-player/index.js && node --check src/modules/logging/index.js && node --check src/modules/logging/node.js && node --check tools/create-module.mjs && node --test",
     "test": "node --test",
     "create:module": "node tools/create-module.mjs"
   },
@@ -52,7 +62,9 @@
     "visual-programming",
     "video-player",
     "live-stream",
-    "media-stream"
+    "media-stream",
+    "structured-logging",
+    "observability"
   ],
   "license": "MIT"
 }

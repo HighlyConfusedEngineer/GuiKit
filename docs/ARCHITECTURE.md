@@ -29,6 +29,7 @@ src/
   core/
     module-registry.js         dependency and setup lifecycle
   modules/
+    logging/                   runtime-neutral records and transport sinks
     <feature>/
       index.js                 public implementation and manifest
       index.d.ts               public type contract
@@ -40,6 +41,11 @@ self-contained features belong under `src/modules/` and receive a package
 subpath export. A module must not reach into another module's private files.
 Shared infrastructure moves to `src/core/` only after at least two modules need
 it.
+
+Cross-cutting modules receive a logger through setup or constructor context.
+They do not import a global logger internally. The logging core remains
+runtime-neutral; platform-specific persistence is isolated behind the
+`logging/node` subpath. This keeps the browser bundle free of Node built-ins.
 
 The module registry owns initialization order, not feature logic. Module
 manifests name dependencies by stable ids, which keeps filesystem organization

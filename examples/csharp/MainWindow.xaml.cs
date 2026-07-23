@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -66,9 +67,44 @@ public partial class MainWindow : Window
                 runtime = Environment.Version.ToString()
             },
             "app.echo" => parameters ?? new(),
+            "logging.write" => WriteLogs(parameters),
             _ => throw new InvalidOperationException($"Unknown host method: {method}")
         };
         return Task.FromResult(result);
+    }
+
+    private static object WriteLogs(Dictionary<string, JsonElement>? parameters)
+    {
+        if (parameters is null
+            || !parameters.TryGetValue("records", out var records)
+            || records.ValueKind != JsonValueKind.Array)
+        {
+            return new { accepted = 0 };
+        }
+
+        var accepted = 0;
+        foreach (var record in records.EnumerateArray())
+        {
+            if (accepted >= 1000) break;
+            if (!record.TryGetProperty("schema", out var schema)
+                || schema.GetString() != "guikit.log/v1")
+            {
+                continue;
+            }
+
+            var level = record.TryGetProperty("level", out var levelValue)
+                ? levelValue.GetString()?.ToUpperInvariant()
+                : "INFO";
+            var logger = record.TryGetProperty("logger", out var loggerValue)
+                ? loggerValue.GetString()
+                : "frontend";
+            var message = record.TryGetProperty("message", out var messageValue)
+                ? messageValue.GetString()
+                : "";
+            Trace.WriteLine($"{level} [{logger}] {message} | {record.GetRawText()}", "GuiKit");
+            accepted += 1;
+        }
+        return new { accepted };
     }
 
     private void Reply(string id, object? result, object? error)

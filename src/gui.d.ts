@@ -140,6 +140,8 @@ export function initializeGui(options?: {
   i18n: GuiI18n;
   bridge: GuiBridge;
   toast: GuiToastManager;
+  logs: import("./modules/logging/index.js").GuiLogManager;
+  logger: import("./modules/logging/index.js").GuiLogger;
   modules: import("./core/module-registry.js").GuiModuleRegistry;
   mediaAdapters: import("./modules/media-player/index.js").GuiMediaAdapterRegistry;
   ready: Promise<Map<string, unknown>>;
@@ -174,6 +176,26 @@ export {
   mediaPlayerModule,
 } from "./modules/media-player/index.js";
 
+export {
+  GUI_LOG_LEVELS,
+  GUI_LOG_SCHEMA,
+  GuiBatchSink,
+  GuiBridgeLogSink,
+  GuiConsoleSink,
+  GuiHttpLogSink,
+  GuiLogger,
+  GuiLogManager,
+  GuiLogRecord,
+  GuiLogSink,
+  GuiLogSpan,
+  GuiLogTrace,
+  GuiLogViewer,
+  GuiMemorySink,
+  logger,
+  loggingModule,
+  logs,
+} from "./modules/logging/index.js";
+
 declare global {
   interface Window {
     GuiTemplate: {
@@ -181,6 +203,8 @@ declare global {
       i18n: GuiI18n;
       modules: import("./core/module-registry.js").GuiModuleRegistry;
       mediaAdapters: import("./modules/media-player/index.js").GuiMediaAdapterRegistry;
+      logs: import("./modules/logging/index.js").GuiLogManager;
+      logger: import("./modules/logging/index.js").GuiLogger;
       toast: GuiToastManager;
       initialize: typeof initializeGui;
       setTheme: typeof setTheme;
@@ -194,5 +218,6 @@ declare global {
     "gui-pages": GuiPages;
     "gui-live-chart": GuiLiveChart;
     "gui-toast-stack": GuiToastStack;
+    "gui-log-viewer": import("./modules/logging/index.js").GuiLogViewer;
   }
 }

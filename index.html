@@ -119,6 +119,10 @@
             <span aria-hidden="true">▶</span>
             <span class="gui-sidebar-label" data-i18n="nav.media">Live media</span>
           </button>
+          <button type="button" data-gui-page-open="logging" data-i18n-aria-label="nav.logging">
+            <span aria-hidden="true">≡</span>
+            <span class="gui-sidebar-label" data-i18n="nav.logging">Logging</span>
+          </button>
           <button type="button" data-gui-page-open="settings" data-i18n-aria-label="nav.settings">
             <span aria-hidden="true">⚙</span>
             <span class="gui-sidebar-label" data-i18n="nav.settings">Settings</span>
@@ -363,6 +367,27 @@
             </div>
           </section>
 
+          <section data-page="logging">
+            <div class="gui-stack">
+              <div class="gui-cluster" style="justify-content:space-between">
+                <div>
+                  <p class="gui-eyebrow" data-i18n="logging.eyebrow">Observability</p>
+                  <h2 class="gui-title" data-i18n="logging.title">Structured logs, from interface to backend.</h2>
+                  <p class="gui-muted" data-i18n="logging.body">Filter live records, inspect context, correlate spans, and safely forward batches to a native host.</p>
+                </div>
+                <button class="gui-button" type="button" data-gui-page-back data-i18n="actions.back">Back</button>
+              </div>
+              <div class="gui-cluster">
+                <button class="gui-button" type="button" data-log-level="debug">Debug</button>
+                <button class="gui-button gui-button--primary" type="button" data-log-level="info">Info</button>
+                <button class="gui-button" type="button" data-log-level="warn">Warning</button>
+                <button class="gui-button gui-button--danger" type="button" data-log-level="error">Error</button>
+                <button class="gui-button" id="log-span" type="button" data-i18n="logging.span">Run traced task</button>
+              </div>
+              <gui-log-viewer limit="1000"></gui-log-viewer>
+            </div>
+          </section>
+
           <section data-page="settings">
             <div class="gui-stack">
               <div class="gui-cluster" style="justify-content:space-between">
@@ -397,7 +422,7 @@
     </div>
 
     <script type="module">
-      import { bridge, i18n, initializeGui, setTheme, toast } from "./src/gui.js";
+      import { bridge, i18n, initializeGui, logger, setTheme, toast } from "./src/gui.js";
 
       const locales = ["en", "de", "es"];
       const storage = {
@@ -414,6 +439,33 @@
       const browserLocale = navigator.language.slice(0, 2);
       const initialLocale = savedLocale || (locales.includes(browserLocale) ? browserLocale : "en");
       initializeGui({ locale: initialLocale });
+      const showcaseLog = logger.child("showcase", {
+        runtime: "browser",
+        sessionId: crypto.randomUUID?.() ?? String(Date.now()),
+      });
+      showcaseLog.info("Showcase initialized", { locale: initialLocale });
+
+      document.querySelectorAll("[data-log-level]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const level = button.dataset.logLevel;
+          if (level === "error") {
+            showcaseLog.error("Example operation failed", new Error("Demonstration error"), {
+              operation: "preview",
+              apiToken: "this value is automatically redacted",
+            });
+          } else {
+            showcaseLog[level](`Example ${level} record`, {
+              pointCount: document.querySelector("#telemetry-chart").pointCount,
+              locale: i18n.locale,
+            });
+          }
+        });
+      });
+      document.querySelector("#log-span").addEventListener("click", async () => {
+        const span = showcaseLog.startSpan("example.task", { source: "showcase" });
+        await new Promise((resolve) => setTimeout(resolve, 180));
+        span.end({ recordsProcessed: 250 });
+      });
 
       const languageControls = [
         document.querySelector("#language-select"),

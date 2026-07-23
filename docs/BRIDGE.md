@@ -84,3 +84,12 @@ The native host must:
 4. return JSON-serializable values;
 5. avoid leaking exception stack traces or local paths;
 6. apply its own authorization and user-consent policy.
+
+## Logging batches
+
+The optional logging module reserves `logging.write`. Its params contain a
+`records` array of `guikit.log/v1` objects and its result is
+`{ "accepted": number }`. Use `GuiBatchSink` around `GuiBridgeLogSink` to bound
+traffic and expose dropped queued records. Hosts must validate the schema,
+batch length, and payload size before forwarding or persisting data. See
+[LOGGING.md](LOGGING.md).

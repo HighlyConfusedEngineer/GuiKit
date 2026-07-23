@@ -9,6 +9,8 @@ Run from the repository root:
 
 from __future__ import annotations
 
+import json
+import logging
 import os
 import platform
 import threading
@@ -20,6 +22,19 @@ import webview
 
 
 ROOT = Path(__file__).resolve().parents[2]
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+)
+BACKEND_LOGGER = logging.getLogger("guikit.webview")
+PYTHON_LEVELS = {
+    "trace": logging.DEBUG,
+    "debug": logging.DEBUG,
+    "info": logging.INFO,
+    "warn": logging.WARNING,
+    "error": logging.ERROR,
+    "fatal": logging.CRITICAL,
+}
 
 
 class HostApi:
@@ -30,6 +45,7 @@ class HostApi:
         handlers = {
             "app.info": self.app_info,
             "app.echo": lambda: params,
+            "logging.write": lambda: self.write_logs(params),
         }
         if method not in handlers:
             raise ValueError(f"Unknown host method: {method}")
@@ -42,6 +58,35 @@ class HostApi:
             "platform": platform.platform(),
             "process": str(os.getpid()),
         }
+
+    @staticmethod
+    def write_logs(params: dict[str, Any]) -> dict[str, int]:
+        """Accept a batch of immutable guikit.log/v1 records from the webview."""
+        records = params.get("records", [])
+        if not isinstance(records, list):
+            return {"accepted": 0}
+        accepted = 0
+        for record in records[:1000]:
+            if not isinstance(record, dict) or record.get("schema") != "guikit.log/v1":
+                continue
+            source = str(record.get("logger", "frontend"))
+            message = str(record.get("message", ""))
+            details = {
+                key: record[key]
+                for key in ("context", "data", "error", "trace", "transport")
+                if key in record
+            }
+            BACKEND_LOGGER.log(
+                PYTHON_LEVELS.get(str(record.get("level")), logging.INFO),
+                "[%s] %s%s",
+                source,
+                message,
+                f" | {json.dumps(details, ensure_ascii=False, default=str)}"
+                if details
+                else "",
+            )
+            accepted += 1
+        return {"accepted": accepted}
 
 
 class QuietHandler(SimpleHTTPRequestHandler):

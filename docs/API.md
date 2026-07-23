@@ -204,7 +204,7 @@ await guiModules.initialize(featureModule.id, applicationContext);
 ```
 
 `initializeGui()` now returns
-`{ i18n, bridge, toast, modules, mediaAdapters, ready }`. Await `ready` when
+`{ i18n, bridge, toast, logs, logger, modules, mediaAdapters, ready }`. Await `ready` when
 application startup depends on module setup results. See
 [MODULES.md](MODULES.md) for the complete extension contract.
 
@@ -222,3 +222,19 @@ import {
 
 See [MEDIA_PLAYER.md](MEDIA_PLAYER.md) for native video, MediaStream, HLS/DASH
 adapters, captions, methods, events, keyboard behavior, and lifecycle rules.
+
+## Structured logging
+
+The default bundle exports `logs`, `logger`, `GuiLogManager`,
+`GuiMemorySink`, `GuiConsoleSink`, `GuiBatchSink`, `GuiBridgeLogSink`, and
+`GuiHttpLogSink`. Node file output has a separate platform-safe subpath:
+
+```js
+import { logger, logs } from "@gui-template/core/logging";
+import { GuiNodeFileSink } from "@gui-template/core/logging/node";
+```
+
+Use `logger.child(name, context)` for a module, `startSpan()` for correlated
+work, and `logs.flush()` at a durability boundary. See
+[LOGGING.md](LOGGING.md) for the record contract, privacy behavior, transports,
+viewer, and backend examples.

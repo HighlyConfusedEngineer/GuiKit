@@ -15,6 +15,8 @@ The current `0.1` foundation includes:
 - accessible toast notifications with actions and four severity levels;
 - a visual node editor with typed ports, links, pan, zoom, and serialization;
 - responsive native video and live MediaStream playback with adapter support;
+- structured cross-runtime logging with redaction, spans, batching, transports,
+  rotating Node JSONL files, and a live viewer;
 - a dependency-aware module registry and feature generator;
 - light, dark, and system themes powered by CSS variables;
 - runtime localization with fallback and interpolation;
@@ -44,6 +46,31 @@ npm run check
 
 The HTML can also be served by any static server or packaged directly with a
 native application.
+
+### Logging
+
+```js
+import {
+  bridge,
+  GuiBatchSink,
+  GuiBridgeLogSink,
+  logger,
+  logs,
+} from "@gui-template/core";
+
+const moduleLog = logger.child("backend.sync", { service: "inventory" });
+moduleLog.info("Synchronization started", { items: 1200 });
+
+logs.addSink(new GuiBatchSink(new GuiBridgeLogSink(bridge), {
+  batchSize: 50,
+  interval: 1000,
+}));
+```
+
+Records share one JSON-safe schema across frontend and backend runtimes.
+Sensitive fields are redacted before transport. See
+[Structured logging](docs/LOGGING.md) for Node file rotation, HTTP and native
+bridge sinks, tracing, shutdown flushing, and the live viewer.
 
 ## Use the library
 

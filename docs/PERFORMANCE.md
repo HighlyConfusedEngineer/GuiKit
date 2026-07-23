@@ -51,3 +51,15 @@ chart.addEventListener("gui:chart-render", ({ detail }) => {
 
 Measure in the actual deployment webview because GPU, pixel density, window
 size, and host-engine versions affect canvas performance.
+
+## Logging
+
+Logging serialization is synchronous so a completed call always has an
+immutable, JSON-safe record. Keep high-volume `trace` data simple and raise the
+manager level in production when it is not needed.
+
+`GuiMemorySink` and `<gui-log-viewer>` have explicit record limits.
+`GuiBatchSink` bounds its pending queue and reports how many old records were
+dropped when a transport cannot keep up. Use batching for native and network
+transports, and call `flush()` at shutdown instead of using a zero interval for
+every record.

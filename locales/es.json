@@ -5,6 +5,7 @@
     "charts": "Gráficos en vivo",
     "nodeEditor": "Editor de nodos",
     "media": "Medios en vivo",
+    "logging": "Registros",
     "settings": "Ajustes"
   },
   "sidebar": { "runtime": "Entorno" },
@@ -94,6 +95,22 @@
     "url": "URL de vídeo o HLS nativo",
     "load": "Cargar URL",
     "captureUnavailable": "Este navegador no puede crear la demostración MediaStream local."
+  },
+  "logging": {
+    "eyebrow": "Observabilidad",
+    "title": "Registros estructurados, de la interfaz al backend.",
+    "body": "Filtra registros en vivo, inspecciona el contexto, correlaciona trazas y envía lotes de forma segura a un host nativo.",
+    "span": "Ejecutar tarea trazada",
+    "viewer": {
+      "minimumLevel": "Nivel mínimo",
+      "filter": "Filtrar registros",
+      "pause": "Pausar",
+      "resume": "Reanudar",
+      "clear": "Limpiar",
+      "export": "Exportar JSONL",
+      "empty": "No hay registros coincidentes.",
+      "count": "{shown} mostrados · {buffered} almacenados"
+    }
   },
   "settings": {
     "eyebrow": "Preferencias",

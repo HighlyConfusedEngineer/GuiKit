@@ -19,15 +19,45 @@ import {
   mediaAdapters,
   mediaPlayerModule,
 } from "./modules/media-player/index.js";
+import {
+  GUI_LOG_LEVELS,
+  GUI_LOG_SCHEMA,
+  GuiBatchSink,
+  GuiBridgeLogSink,
+  GuiConsoleSink,
+  GuiHttpLogSink,
+  GuiLogger,
+  GuiLogManager,
+  GuiLogSpan,
+  GuiLogViewer,
+  GuiMemorySink,
+  logger,
+  loggingModule,
+  logs,
+} from "./modules/logging/index.js";
 
 export {
+  GUI_LOG_LEVELS,
+  GUI_LOG_SCHEMA,
+  GuiBatchSink,
+  GuiBridgeLogSink,
+  GuiConsoleSink,
+  GuiHttpLogSink,
+  GuiLogger,
+  GuiLogManager,
+  GuiLogSpan,
+  GuiLogViewer,
   GuiModuleRegistry,
   GuiMediaAdapterRegistry,
   GuiMediaPlayer,
+  GuiMemorySink,
   GuiNodeEditor,
   GuiNodeGraph,
   defineGuiModule,
   guiModules,
+  logger,
+  loggingModule,
+  logs,
   mediaAdapters,
   mediaPlayerModule,
   nodeEditorModule,
@@ -1256,9 +1286,11 @@ export function initializeGui(options = {}) {
       i18n,
       bridge,
       toast,
+      logs,
+      logger,
       modules: guiModules,
       mediaAdapters,
-      ready: guiModules.initializeAll({ i18n, bridge, toast, mediaAdapters }),
+      ready: guiModules.initializeAll({ i18n, bridge, toast, logs, logger, mediaAdapters }),
     };
   }
 
@@ -1312,9 +1344,11 @@ export function initializeGui(options = {}) {
     i18n,
     bridge,
     toast,
+    logs,
+    logger,
     modules: guiModules,
     mediaAdapters,
-    ready: guiModules.initializeAll({ i18n, bridge, toast, mediaAdapters }),
+    ready: guiModules.initializeAll({ i18n, bridge, toast, logs, logger, mediaAdapters }),
   };
 }
 
@@ -1353,6 +1387,7 @@ registerElement("gui-toast-stack", GuiToastStack);
   },
   nodeEditorModule,
   mediaPlayerModule,
+  loggingModule,
 ].forEach((module) => {
   if (!guiModules.has(module.id)) defineGuiModule(module);
 });
@@ -1363,6 +1398,8 @@ if (hasDOM) {
     i18n,
     modules: guiModules,
     mediaAdapters,
+    logs,
+    logger,
     toast,
     initialize: initializeGui,
     setTheme,

@@ -24,6 +24,9 @@ All notable changes to GuiKit are documented here. The format follows
 - Priority-based media adapter registry for optional HLS, DASH, or custom
   streaming engines.
 - Framework quality bar and capability roadmap.
+- Structured cross-runtime logging with child context, error serialization,
+  trace spans, secret redaction, bounded memory and batching, console, bridge,
+  HTTP, rotating Node JSONL sinks, and `<gui-log-viewer>`.
 - Architecture, API, performance, bridge, security, and contribution guides.
 - Dependency-free tests and continuous integration configuration.
 

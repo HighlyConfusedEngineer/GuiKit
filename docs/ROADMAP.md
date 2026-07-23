@@ -29,6 +29,7 @@ A production-ready GuiKit module has:
 | Visualization | Responsive multi-series live charts with bounded buffers |
 | Workflows | Typed visual node editor with graph model and serialization |
 | Media | Native video, live MediaStream, captions, PiP, fullscreen, adapters |
+| Observability | Structured logs, privacy limits, spans, batching, live viewer, backend sinks |
 | Platform | Themes, localization, native bridge, Web Components, TypeScript |
 | Extensibility | Module registry, dependency lifecycle, generator, subpath exports |
 | Governance | CI, security policy, contribution guide, API and architecture docs |

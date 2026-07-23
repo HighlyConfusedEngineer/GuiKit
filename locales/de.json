@@ -5,6 +5,7 @@
     "charts": "Live-Diagramme",
     "nodeEditor": "Knoten-Editor",
     "media": "Live-Medien",
+    "logging": "Protokolle",
     "settings": "Einstellungen"
   },
   "sidebar": { "runtime": "Laufzeit" },
@@ -94,6 +95,22 @@
     "url": "Video- oder native HLS-URL",
     "load": "URL laden",
     "captureUnavailable": "Dieser Browser kann die lokale MediaStream-Demo nicht erzeugen."
+  },
+  "logging": {
+    "eyebrow": "Observability",
+    "title": "Strukturierte Protokolle, von der Oberfläche bis zum Backend.",
+    "body": "Live-Einträge filtern, Kontext prüfen, Abläufe korrelieren und Stapel sicher an einen nativen Host senden.",
+    "span": "Verfolgte Aufgabe starten",
+    "viewer": {
+      "minimumLevel": "Mindeststufe",
+      "filter": "Protokolle filtern",
+      "pause": "Pausieren",
+      "resume": "Fortsetzen",
+      "clear": "Leeren",
+      "export": "JSONL exportieren",
+      "empty": "Keine passenden Protokolleinträge.",
+      "count": "{shown} angezeigt · {buffered} gepuffert"
+    }
   },
   "settings": {
     "eyebrow": "Präferenzen",
