@@ -89,6 +89,7 @@ jobs:
           echo "path=release/$release_name" >> "$GITHUB_OUTPUT"
 
       - name: Generate build provenance
+        if: ${{ !github.event.repository.private }}
         uses: actions/attest@v4
         with:
           subject-path: ${{ steps.archive.outputs.path }}

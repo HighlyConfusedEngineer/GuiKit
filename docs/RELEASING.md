@@ -6,7 +6,7 @@ tag. A release contains:
 - an installable `GuiKit-<version>.tgz` package;
 - `SHA256SUMS.txt`;
 - GitHub-generated release notes and source archives;
-- a GitHub build-provenance attestation.
+- a GitHub build-provenance attestation when the repository supports it.
 
 The release workflow does not publish to npm. GitHub Releases therefore require
 no npm account, organization, or registry token.
@@ -47,13 +47,19 @@ corrections.
 - runs the JavaScript suite and Python syntax validation;
 - packages only the files allowed by `package.json`;
 - creates a SHA-256 checksum;
-- generates build provenance with GitHub artifact attestations;
+- generates build provenance with GitHub artifact attestations for public
+  repositories;
 - marks suffix versions as prereleases;
 - categorizes generated notes using `.github/release.yml`;
 - refuses to create a release when the remote tag does not exist.
 
 The workflow can be retried manually through **Actions → Release → Run
 workflow** by supplying an existing tag. It never creates a version tag itself.
+
+GitHub does not currently provide artifact attestations for private
+repositories owned by an individual account. The provenance step is skipped in
+that configuration and activates automatically if the repository becomes
+public or otherwise gains attestation support.
 
 ## Inspecting the package
 
