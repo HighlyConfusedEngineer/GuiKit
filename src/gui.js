@@ -12,6 +12,7 @@ import {
   GuiNodeEditor,
   GuiNodeGraph,
   nodeEditorModule,
+  routeNodeConnection,
 } from "./modules/node-editor/index.js";
 import {
   GuiMediaAdapterRegistry,
@@ -73,6 +74,7 @@ export {
   mediaAdapters,
   mediaPlayerModule,
   nodeEditorModule,
+  routeNodeConnection,
   statusbarModule,
   wizardModule,
 };

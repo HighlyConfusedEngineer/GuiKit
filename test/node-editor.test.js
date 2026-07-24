@@ -6,7 +6,9 @@ import {
   GuiNodeEditor,
   GuiNodeGraph,
   nodeEditorModule,
+  routeNodeConnection,
 } from "../src/modules/node-editor/index.js";
+import { routeNodeConnection as bundledRouteNodeConnection } from "../src/gui.js";
 
 function createGraph() {
   return new GuiNodeGraph({
@@ -37,7 +39,10 @@ test("node editor module exposes its model, component, and manifest", () => {
   assert.equal(typeof GuiNodeEditor.prototype.closeNodeSettings, "function");
   assert.equal(typeof GuiNodeEditor.prototype.getNodeParameter, "function");
   assert.equal(typeof GuiNodeEditor.prototype.setNodeParameter, "function");
+  assert.equal(typeof routeNodeConnection, "function");
+  assert.equal(bundledRouteNodeConnection, routeNodeConnection);
   assert.equal(nodeEditorModule.id, "node-editor");
+  assert.equal(nodeEditorModule.version, "0.2.0");
   assert.deepEqual(nodeEditorModule.components, ["gui-node-editor"]);
 });
 
@@ -50,6 +55,10 @@ test("node editor uses documented view defaults when attributes are absent", () 
   assert.equal(editor.maxZoom, 2.5);
   assert.equal(editor.gridSize, 24);
   assert.equal(editor.snapSize, 0);
+  assert.equal(editor.flowDirection, "horizontal");
+
+  editor.getAttribute = (name) => name === "flow-direction" ? "vertical" : null;
+  assert.equal(editor.flowDirection, "vertical");
 });
 
 test("node editor registers only after its browser resources initialize", async () => {
@@ -65,6 +74,62 @@ test("node editor registers only after its browser resources initialize", async 
   assert.ok(styles >= 0);
   assert.ok(automaticRegistration > styles);
   assert.match(source, /if \(!this\.#viewport\) return;/);
+  assert.match(source, /static observedAttributes = \["readonly", "label", "flow-direction"\]/);
+});
+
+function segmentIntersectsRectangle(first, second, rectangle) {
+  if (first.y === second.y) {
+    return first.y > rectangle.top
+      && first.y < rectangle.bottom
+      && Math.max(first.x, second.x) > rectangle.left
+      && Math.min(first.x, second.x) < rectangle.right;
+  }
+  return first.x > rectangle.left
+    && first.x < rectangle.right
+    && Math.max(first.y, second.y) > rectangle.top
+    && Math.min(first.y, second.y) < rectangle.bottom;
+}
+
+function routeIntersectsRectangle(route, rectangle) {
+  return route.points.slice(1).some((point, index) => (
+    segmentIntersectsRectangle(route.points[index], point, rectangle)
+  ));
+}
+
+test("horizontal routes leave to the right and avoid intervening nodes", () => {
+  const obstacle = { left: 140, top: 0, right: 260, bottom: 180 };
+  const route = routeNodeConnection(
+    { x: 0.123456, y: 90.123456 },
+    { x: 400.654321, y: 90.123456 },
+    { obstacles: [obstacle] },
+  );
+
+  assert.equal(route.direction, "horizontal");
+  assert.equal(route.routed, true);
+  assert.equal(route.points[1].x > route.points[0].x, true);
+  assert.equal(routeIntersectsRectangle(route, obstacle), false);
+  assert.match(route.path, /^M /);
+  assert.match(route.path, / Q /);
+  const firstLine = /^M [-\d.]+ ([-\d.]+) L [-\d.]+ ([-\d.]+)/.exec(route.path);
+  assert.ok(firstLine);
+  assert.equal(Math.abs(Number(firstLine[1]) - Number(firstLine[2])) < 0.001, true);
+});
+
+test("vertical routes leave downward and avoid intervening nodes", () => {
+  const obstacle = { x: 0, y: 140, width: 180, height: 120 };
+  const rectangle = { left: 0, top: 140, right: 180, bottom: 260 };
+  const route = routeNodeConnection(
+    { x: 90, y: 0 },
+    { x: 90, y: 400 },
+    { flowDirection: "vertical", obstacles: [obstacle] },
+  );
+
+  assert.equal(route.direction, "vertical");
+  assert.equal(route.routed, true);
+  assert.equal(route.points[1].y > route.points[0].y, true);
+  assert.equal(routeIntersectsRectangle(route, rectangle), false);
+  assert.match(route.path, /^M /);
+  assert.match(route.path, / Q /);
 });
 
 test("graph connects compatible output and input ports", () => {

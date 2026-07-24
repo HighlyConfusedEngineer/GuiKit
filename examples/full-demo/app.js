@@ -955,7 +955,9 @@ const graphExample = {
 };
 const nodeEditor = document.querySelector("#full-node-editor");
 const graphJson = document.querySelector("#graph-json");
+const nodeFlowDirection = document.querySelector("#node-flow-direction");
 let addedNodes = 0;
+let currentNodeFlowDirection = "horizontal";
 
 function fitNodeEditor() {
   // The editor lives on an initially hidden sliding page. Wait until both the
@@ -964,7 +966,14 @@ function fitNodeEditor() {
 }
 
 function loadGraphExample() {
-  nodeEditor.setGraph(graphExample);
+  const graph = structuredClone(graphExample);
+  if (currentNodeFlowDirection === "vertical") {
+    graph.nodes.forEach((node) => {
+      [node.x, node.y] = [node.y, node.x];
+    });
+  }
+  nodeEditor.flowDirection = currentNodeFlowDirection;
+  nodeEditor.setGraph(graph);
   graphJson.value = JSON.stringify(nodeEditor.getGraph(), null, 2);
   fitNodeEditor();
 }
@@ -1012,6 +1021,22 @@ document.querySelector("#node-import").addEventListener("click", () => {
 });
 document.querySelector("#node-readonly").addEventListener("change", (event) => {
   nodeEditor.readOnly = event.currentTarget.checked;
+});
+nodeFlowDirection.addEventListener("change", () => {
+  const direction = nodeFlowDirection.value === "vertical"
+    ? "vertical"
+    : "horizontal";
+  if (direction === currentNodeFlowDirection) return;
+  const graph = nodeEditor.getGraph();
+  graph.nodes.forEach((node) => {
+    [node.x, node.y] = [node.y, node.x];
+  });
+  currentNodeFlowDirection = direction;
+  nodeEditor.flowDirection = direction;
+  nodeEditor.setGraph(graph);
+  graphJson.value = JSON.stringify(nodeEditor.getGraph(), null, 2);
+  fitNodeEditor();
+  toast.info(`${direction === "vertical" ? "Vertical" : "Horizontal"} node flow enabled.`);
 });
 nodeEditor.addEventListener("gui:node-create-request", (event) => {
   addedNodes += 1;

@@ -184,7 +184,11 @@ pause during hover and keyboard focus.
 ### Node editor
 
 ```html
-<gui-node-editor id="workflow" snap="16"></gui-node-editor>
+<gui-node-editor
+  id="workflow"
+  flow-direction="vertical"
+  snap="16">
+</gui-node-editor>
 ```
 
 ```js
@@ -224,7 +228,9 @@ Nodes can selectively expose typed parameters directly on their surface with
 `inline: true`; text, number, range, select, boolean, and read-only displays are
 supported. Each node also includes a settings icon for editing its name, type,
 description, accent, and JSON data. Cancel `gui:node-settings-request` to
-provide a custom domain-specific inspector instead.
+provide a custom domain-specific inspector instead. Set `flow-direction` to
+`horizontal` or `vertical`; ports and obstacle-aware rounded links follow the
+selected direction and route around intervening node surfaces.
 See [the node-editor guide](docs/NODE_EDITOR.md).
 
 ### Wizard

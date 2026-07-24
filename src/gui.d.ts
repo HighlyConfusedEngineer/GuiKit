@@ -156,8 +156,10 @@ export {
 } from "./core/module-registry.js";
 
 export {
+  GuiNodeConnectionRoute,
   GuiNodeDefinition,
   GuiNodeEditor,
+  GuiNodeFlowDirection,
   GuiNodeGraph,
   GuiNodeGraphData,
   GuiNodeLink,
@@ -166,7 +168,11 @@ export {
   GuiNodeParameterType,
   GuiNodePort,
   GuiNodePortDirection,
+  GuiNodeRoutingObstacle,
+  GuiNodeRoutingOptions,
+  GuiNodeRoutingPoint,
   nodeEditorModule,
+  routeNodeConnection,
 } from "./modules/node-editor/index.js";
 
 export {

@@ -377,8 +377,317 @@ function serializePort(port) {
   return serialized;
 }
 
+function normalizeFlowDirection(value) {
+  return String(value ?? "").toLowerCase() === "vertical"
+    ? "vertical"
+    : "horizontal";
+}
+
+function normalizeRoutingPoint(point) {
+  return {
+    x: finite(point?.x),
+    y: finite(point?.y),
+  };
+}
+
+function normalizeRoutingObstacle(obstacle, clearance) {
+  const left = finite(obstacle?.left, finite(obstacle?.x));
+  const top = finite(obstacle?.top, finite(obstacle?.y));
+  const right = finite(
+    obstacle?.right,
+    left + Math.max(0, finite(obstacle?.width)),
+  );
+  const bottom = finite(
+    obstacle?.bottom,
+    top + Math.max(0, finite(obstacle?.height)),
+  );
+  return {
+    left: Math.min(left, right) - clearance,
+    top: Math.min(top, bottom) - clearance,
+    right: Math.max(left, right) + clearance,
+    bottom: Math.max(top, bottom) + clearance,
+  };
+}
+
+function pointInsideObstacle(point, obstacle) {
+  const epsilon = 0.001;
+  return point.x > obstacle.left + epsilon
+    && point.x < obstacle.right - epsilon
+    && point.y > obstacle.top + epsilon
+    && point.y < obstacle.bottom - epsilon;
+}
+
+function segmentCrossesObstacle(first, second, obstacle) {
+  const epsilon = 0.001;
+  if (Math.abs(first.y - second.y) < epsilon) {
+    const left = Math.min(first.x, second.x);
+    const right = Math.max(first.x, second.x);
+    return first.y > obstacle.top + epsilon
+      && first.y < obstacle.bottom - epsilon
+      && right > obstacle.left + epsilon
+      && left < obstacle.right - epsilon;
+  }
+  if (Math.abs(first.x - second.x) < epsilon) {
+    const top = Math.min(first.y, second.y);
+    const bottom = Math.max(first.y, second.y);
+    return first.x > obstacle.left + epsilon
+      && first.x < obstacle.right - epsilon
+      && bottom > obstacle.top + epsilon
+      && top < obstacle.bottom - epsilon;
+  }
+  return true;
+}
+
+function segmentIsClear(first, second, obstacles) {
+  return !obstacles.some((obstacle) => (
+    segmentCrossesObstacle(first, second, obstacle)
+  ));
+}
+
+function coordinateKey(value) {
+  return Number(value.toFixed(4));
+}
+
+function pointKey(x, y) {
+  return `${coordinateKey(x)}:${coordinateKey(y)}`;
+}
+
+function connectRoutingNeighbors(adjacency, first, second, points, obstacles) {
+  if (!segmentIsClear(points[first], points[second], obstacles)) return;
+  const distance = Math.abs(points[first].x - points[second].x)
+    + Math.abs(points[first].y - points[second].y);
+  if (!distance) return;
+  adjacency[first].push({ index: second, distance });
+  adjacency[second].push({ index: first, distance });
+}
+
+function findOrthogonalRoute(start, end, obstacles) {
+  const xValues = new Set([coordinateKey(start.x), coordinateKey(end.x)]);
+  const yValues = new Set([coordinateKey(start.y), coordinateKey(end.y)]);
+  obstacles.forEach((obstacle) => {
+    xValues.add(coordinateKey(obstacle.left));
+    xValues.add(coordinateKey(obstacle.right));
+    yValues.add(coordinateKey(obstacle.top));
+    yValues.add(coordinateKey(obstacle.bottom));
+  });
+  const xs = [...xValues].sort((a, b) => a - b);
+  const ys = [...yValues].sort((a, b) => a - b);
+  const points = [];
+  const pointIndexes = new Map();
+
+  ys.forEach((y) => {
+    xs.forEach((x) => {
+      const point = { x, y };
+      if (obstacles.some((obstacle) => pointInsideObstacle(point, obstacle))) return;
+      pointIndexes.set(pointKey(x, y), points.length);
+      points.push(point);
+    });
+  });
+
+  const startIndex = pointIndexes.get(pointKey(start.x, start.y));
+  const endIndex = pointIndexes.get(pointKey(end.x, end.y));
+  if (startIndex === undefined || endIndex === undefined) return null;
+
+  const adjacency = points.map(() => []);
+  ys.forEach((y) => {
+    const row = xs
+      .map((x) => pointIndexes.get(pointKey(x, y)))
+      .filter((index) => index !== undefined);
+    for (let index = 1; index < row.length; index += 1) {
+      connectRoutingNeighbors(
+        adjacency,
+        row[index - 1],
+        row[index],
+        points,
+        obstacles,
+      );
+    }
+  });
+  xs.forEach((x) => {
+    const column = ys
+      .map((y) => pointIndexes.get(pointKey(x, y)))
+      .filter((index) => index !== undefined);
+    for (let index = 1; index < column.length; index += 1) {
+      connectRoutingNeighbors(
+        adjacency,
+        column[index - 1],
+        column[index],
+        points,
+        obstacles,
+      );
+    }
+  });
+
+  const states = new Map();
+  const queue = [];
+  const push = (state) => {
+    queue.push(state);
+    let index = queue.length - 1;
+    while (index > 0) {
+      const parent = Math.floor((index - 1) / 2);
+      if (queue[parent].cost <= state.cost) break;
+      queue[index] = queue[parent];
+      index = parent;
+    }
+    queue[index] = state;
+  };
+  const pop = () => {
+    const first = queue[0];
+    const last = queue.pop();
+    if (queue.length && last) {
+      let index = 0;
+      while (true) {
+        const left = index * 2 + 1;
+        const right = left + 1;
+        if (left >= queue.length) break;
+        const child = right < queue.length && queue[right].cost < queue[left].cost
+          ? right
+          : left;
+        if (queue[child].cost >= last.cost) break;
+        queue[index] = queue[child];
+        index = child;
+      }
+      queue[index] = last;
+    }
+    return first;
+  };
+
+  const initialKey = `${startIndex}:none`;
+  states.set(initialKey, { cost: 0, previous: null, index: startIndex, axis: "none" });
+  push({ key: initialKey, cost: 0 });
+  let finishedKey = null;
+
+  while (queue.length) {
+    const currentQueue = pop();
+    const current = states.get(currentQueue.key);
+    if (!current || current.cost !== currentQueue.cost) continue;
+    if (current.index === endIndex) {
+      finishedKey = currentQueue.key;
+      break;
+    }
+    for (const neighbor of adjacency[current.index]) {
+      const first = points[current.index];
+      const second = points[neighbor.index];
+      const axis = Math.abs(first.x - second.x) > 0.001 ? "horizontal" : "vertical";
+      const turnCost = current.axis !== "none" && current.axis !== axis ? 14 : 0;
+      const cost = current.cost + neighbor.distance + turnCost;
+      const key = `${neighbor.index}:${axis}`;
+      if (cost >= (states.get(key)?.cost ?? Infinity)) continue;
+      states.set(key, {
+        cost,
+        previous: currentQueue.key,
+        index: neighbor.index,
+        axis,
+      });
+      push({ key, cost });
+    }
+  }
+
+  if (!finishedKey) return null;
+  const route = [];
+  for (let key = finishedKey; key; key = states.get(key).previous) {
+    route.push(points[states.get(key).index]);
+  }
+  return route.reverse();
+}
+
+function simplifyOrthogonalPoints(points) {
+  const unique = points.filter((point, index) => (
+    index === 0
+    || Math.abs(point.x - points[index - 1].x) > 0.001
+    || Math.abs(point.y - points[index - 1].y) > 0.001
+  ));
+  return unique.filter((point, index) => {
+    if (index === 0 || index === unique.length - 1) return true;
+    const previous = unique[index - 1];
+    const next = unique[index + 1];
+    return !(
+      (Math.abs(previous.x - point.x) < 0.001
+        && Math.abs(point.x - next.x) < 0.001)
+      || (Math.abs(previous.y - point.y) < 0.001
+        && Math.abs(point.y - next.y) < 0.001)
+    );
+  });
+}
+
+function routingPath(points, cornerRadius) {
+  if (points.length < 2) return "";
+  const direction = (difference) => (
+    Math.abs(difference) < 0.001 ? 0 : Math.sign(difference)
+  );
+  let path = `M ${points[0].x} ${points[0].y}`;
+  for (let index = 1; index < points.length - 1; index += 1) {
+    const previous = points[index - 1];
+    const current = points[index];
+    const next = points[index + 1];
+    const incoming = Math.abs(current.x - previous.x)
+      + Math.abs(current.y - previous.y);
+    const outgoing = Math.abs(next.x - current.x)
+      + Math.abs(next.y - current.y);
+    const radius = Math.min(cornerRadius, incoming / 2, outgoing / 2);
+    const before = {
+      x: current.x + direction(previous.x - current.x) * radius,
+      y: current.y + direction(previous.y - current.y) * radius,
+    };
+    const after = {
+      x: current.x + direction(next.x - current.x) * radius,
+      y: current.y + direction(next.y - current.y) * radius,
+    };
+    path += ` L ${before.x} ${before.y} Q ${current.x} ${current.y} ${after.x} ${after.y}`;
+  }
+  const last = points.at(-1);
+  return `${path} L ${last.x} ${last.y}`;
+}
+
+/**
+ * Produces a rounded orthogonal SVG route while keeping the link outside the
+ * supplied node rectangles. It is DOM-independent for alternate renderers and
+ * geometry tests.
+ */
+export function routeNodeConnection(from, to, options = {}) {
+  const direction = normalizeFlowDirection(options.flowDirection);
+  const clearance = Math.max(0, finite(options.clearance, 18));
+  const stub = Math.max(0, finite(options.stub, 26));
+  const cornerRadius = Math.max(0, finite(options.cornerRadius, 8));
+  const start = normalizeRoutingPoint(from);
+  const end = normalizeRoutingPoint(to);
+  const startExit = direction === "vertical"
+    ? { x: start.x, y: start.y + stub }
+    : { x: start.x + stub, y: start.y };
+  const endExit = direction === "vertical"
+    ? { x: end.x, y: end.y - stub }
+    : { x: end.x - stub, y: end.y };
+  const obstacles = (options.obstacles ?? [])
+    .map((obstacle) => normalizeRoutingObstacle(obstacle, clearance));
+  const middle = findOrthogonalRoute(startExit, endExit, obstacles);
+  const fallback = direction === "vertical"
+    ? [
+        startExit,
+        { x: startExit.x, y: (startExit.y + endExit.y) / 2 },
+        { x: endExit.x, y: (startExit.y + endExit.y) / 2 },
+        endExit,
+      ]
+    : [
+        startExit,
+        { x: (startExit.x + endExit.x) / 2, y: startExit.y },
+        { x: (startExit.x + endExit.x) / 2, y: endExit.y },
+        endExit,
+      ];
+  const points = simplifyOrthogonalPoints([
+    start,
+    ...(middle ?? fallback),
+    end,
+  ]);
+  return {
+    direction,
+    points: points.map((point) => ({ ...point })),
+    path: routingPath(points, cornerRadius),
+    routed: Boolean(middle),
+  };
+}
+
 export class GuiNodeEditor extends GuiElement {
-  static observedAttributes = ["readonly", "label"];
+  static observedAttributes = ["readonly", "label", "flow-direction"];
 
   #graph = new GuiNodeGraph();
   #viewport;
@@ -429,6 +738,9 @@ export class GuiNodeEditor extends GuiElement {
       this.#syncSettingsReadOnly();
       this.#syncParameterReadOnly();
     }
+    if (name === "flow-direction") {
+      requestAnimationFrame(this.#scheduleConnections);
+    }
   }
 
   get label() {
@@ -441,6 +753,16 @@ export class GuiNodeEditor extends GuiElement {
 
   set readOnly(value) {
     this.toggleAttribute("readonly", Boolean(value));
+  }
+
+  get flowDirection() {
+    return normalizeFlowDirection(this.getAttribute("flow-direction"));
+  }
+
+  set flowDirection(value) {
+    const direction = normalizeFlowDirection(value);
+    if (direction === "vertical") this.setAttribute("flow-direction", direction);
+    else this.removeAttribute("flow-direction");
   }
 
   get graph() {
@@ -1259,7 +1581,7 @@ export class GuiNodeEditor extends GuiElement {
       const from = this.#portCenter(link.from);
       const to = this.#portCenter(link.to);
       if (!from || !to) continue;
-      const pathData = this.#connectionPath(from, to);
+      const pathData = this.#connectionPath(from, to, link.from, link.to);
       const visible = document.createElementNS("http://www.w3.org/2000/svg", "path");
       visible.classList.add("link");
       visible.dataset.linkId = link.id;
@@ -1280,7 +1602,15 @@ export class GuiNodeEditor extends GuiElement {
         const to = port.direction === "output" ? this.#interaction.current : start;
         const preview = document.createElementNS("http://www.w3.org/2000/svg", "path");
         preview.classList.add("link", "link--preview");
-        preview.setAttribute("d", this.#connectionPath(from, to));
+        preview.setAttribute(
+          "d",
+          this.#connectionPath(
+            from,
+            to,
+            port.direction === "output" ? port.id : null,
+            port.direction === "input" ? port.id : null,
+          ),
+        );
         this.#linkLayer.append(preview);
       }
     }
@@ -1304,10 +1634,41 @@ export class GuiNodeEditor extends GuiElement {
     );
   }
 
-  #connectionPath(from, to) {
-    const distance = Math.abs(to.x - from.x);
-    const control = Math.max(48, Math.min(180, distance * 0.52));
-    return `M ${from.x} ${from.y} C ${from.x + control} ${from.y}, ${to.x - control} ${to.y}, ${to.x} ${to.y}`;
+  #connectionPath(from, to, fromPortId = null, toPortId = null) {
+    const excludedNodeIds = new Set(
+      [fromPortId, toPortId]
+        .filter(Boolean)
+        .map((portId) => this.#graph.getPort(portId)?.nodeId)
+        .filter(Boolean),
+    );
+    const routingMargin = 180;
+    const corridor = {
+      left: Math.min(from.x, to.x) - routingMargin,
+      top: Math.min(from.y, to.y) - routingMargin,
+      right: Math.max(from.x, to.x) + routingMargin,
+      bottom: Math.max(from.y, to.y) + routingMargin,
+    };
+    const obstacles = this.#graph.nodes
+      .filter((node) => !excludedNodeIds.has(node.id))
+      .map((node) => {
+        const element = this.#nodeElements.get(node.id);
+        return {
+          left: node.x,
+          top: node.y,
+          right: node.x + (element?.offsetWidth ?? node.width),
+          bottom: node.y + (element?.offsetHeight ?? 160),
+        };
+      })
+      .filter((obstacle) => (
+        obstacle.right >= corridor.left
+        && obstacle.left <= corridor.right
+        && obstacle.bottom >= corridor.top
+        && obstacle.top <= corridor.bottom
+      ));
+    return routeNodeConnection(from, to, {
+      flowDirection: this.flowDirection,
+      obstacles,
+    }).path;
   }
 
   #clientToWorld(clientX, clientY) {
@@ -1549,15 +1910,15 @@ export class GuiNodeEditor extends GuiElement {
 
 export const nodeEditorModule = Object.freeze({
   id: "node-editor",
-  version: "0.1.0",
-  description: "Interactive node graph editor with pan, zoom, links, and serialization.",
+  version: "0.2.0",
+  description: "Directional node graph editor with obstacle-aware links and serialization.",
   dependencies: ["core"],
   components: ["gui-node-editor"],
   setup() {
     if (hasDOM && !customElements.get("gui-node-editor")) {
       customElements.define("gui-node-editor", GuiNodeEditor);
     }
-    return { GuiNodeEditor, GuiNodeGraph };
+    return { GuiNodeEditor, GuiNodeGraph, routeNodeConnection };
   },
 });
 
@@ -1818,6 +2179,67 @@ const NODE_EDITOR_STYLES = `
     border-radius: .35rem;
     outline: 2px solid var(--gui-focus, rgb(91 92 226 / .35));
     outline-offset: 0;
+  }
+
+  :host([flow-direction="vertical"]) .node-body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "inputs"
+      "description"
+      "parameters"
+      "outputs";
+    gap: .4rem;
+    padding: 0;
+  }
+
+  :host([flow-direction="vertical"]) .port-list {
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .25rem .55rem;
+  }
+
+  :host([flow-direction="vertical"]) .port-list--inputs {
+    grid-area: inputs;
+    align-items: flex-start;
+  }
+
+  :host([flow-direction="vertical"]) .port-list--outputs {
+    grid-area: outputs;
+    align-items: flex-end;
+  }
+
+  :host([flow-direction="vertical"]) .port-row,
+  :host([flow-direction="vertical"]) .port-row--output {
+    min-width: 0;
+    text-align: center;
+  }
+
+  :host([flow-direction="vertical"]) .port {
+    flex-direction: column;
+    gap: .28rem;
+    padding: .35rem .45rem;
+  }
+
+  :host([flow-direction="vertical"]) .port--input {
+    margin: -.75rem 0 0;
+  }
+
+  :host([flow-direction="vertical"]) .port--output {
+    margin: 0 0 -.75rem;
+  }
+
+  :host([flow-direction="vertical"]) .node-description {
+    grid-area: description;
+    margin: .2rem .8rem;
+    text-align: center;
+  }
+
+  :host([flow-direction="vertical"]) .node-parameters {
+    grid-area: parameters;
+    margin-top: 0;
+    padding-bottom: .55rem;
   }
 
   .node-description {

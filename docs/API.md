@@ -181,11 +181,14 @@ The default bundle exports `GuiNodeEditor`, `GuiNodeGraph`, and
 import {
   GuiNodeEditor,
   GuiNodeGraph,
+  routeNodeConnection,
 } from "@gui-template/core/node-editor";
 ```
 
-See [NODE_EDITOR.md](NODE_EDITOR.md) for schemas, interaction, methods, events,
-and performance guidance.
+Use `flow-direction="vertical"` (or `editor.flowDirection`) for top-to-bottom
+graphs. `routeNodeConnection()` provides the same obstacle-aware orthogonal
+router to alternate renderers. See [NODE_EDITOR.md](NODE_EDITOR.md) for schemas,
+interaction, routing, methods, events, and performance guidance.
 
 ## Wizard
 

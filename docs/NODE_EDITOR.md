@@ -9,6 +9,7 @@ interaction through the `GuiNodeGraph` model.
 ```html
 <gui-node-editor
   id="pipeline"
+  flow-direction="horizontal"
   snap="16"
   grid-size="24"
   label="Image processing pipeline">
@@ -128,6 +129,7 @@ Attributes:
 | --- | --- | --- |
 | `label` | `Node editor` | Accessible editor name |
 | `readonly` | absent | Prevent graph mutations while retaining navigation |
+| `flow-direction` | `horizontal` | Port placement and primary link direction: `horizontal` or `vertical` |
 | `grid-size` | `24` | Visual grid size in graph units |
 | `snap` | absent | Enable node snapping; empty uses the grid size |
 | `min-zoom` | `0.25` | Minimum viewport zoom |
@@ -146,6 +148,52 @@ Important methods:
 - `closeNodeSettings()` closes the settings dialog.
 - `setView({ x, y, zoom })` and `zoomToFit(padding?)`.
 - `clear()` removes all nodes and links.
+
+The `flowDirection` property reflects `flow-direction`, so applications can
+switch direction without rebuilding the component:
+
+```js
+editor.flowDirection = "vertical";
+```
+
+Changing direction does not rewrite graph coordinates. This keeps persisted
+layouts stable and lets the application decide whether to retain, transpose,
+or auto-layout node positions.
+
+## Link routing
+
+Connections use rounded orthogonal routing. The editor measures every visible
+node, expands each intervening rectangle by a clearance margin, and finds the
+shortest available horizontal/vertical channel. Endpoint nodes are excluded so
+the link can leave its output and enter its input cleanly. This prevents links
+from being painted underneath unrelated nodes.
+
+Horizontal flow places inputs on the left and outputs on the right. Vertical
+flow places inputs at the top and outputs at the bottom. Drag previews use the
+same router as committed links.
+
+`routeNodeConnection()` exposes the DOM-independent geometry helper for custom
+renderers and tests:
+
+```js
+import { routeNodeConnection } from "@gui-template/core/node-editor";
+
+const route = routeNodeConnection(
+  { x: 20, y: 80 },
+  { x: 420, y: 80 },
+  {
+    flowDirection: "horizontal",
+    obstacles: [{ x: 160, y: 20, width: 140, height: 120 }],
+    clearance: 18,
+  },
+);
+
+svgPath.setAttribute("d", route.path);
+```
+
+The result contains `direction`, simplified `points`, the SVG `path`, and a
+`routed` flag. Router inputs use graph/world coordinates. Obstacles accept
+either `{ x, y, width, height }` or `{ left, top, right, bottom }`.
 
 ## Events
 
@@ -224,6 +272,7 @@ editor.addEventListener("gui:node-parameter-change", (event) => {
 - Edit the parameters exposed directly on a node without opening its dialog.
 - Use the settings icon in a node header to inspect or edit its configuration.
 - Drag one port to a compatible opposite-direction port to connect.
+- Switch `flow-direction` when a workflow reads more naturally top-to-bottom.
 - Click a node or link to select it.
 - Ctrl/Cmd-click nodes for additive selection.
 - Delete or Backspace removes the selection.
@@ -251,7 +300,8 @@ alternate renderers.
 ## Performance boundary
 
 The editor rerenders node markup for structural changes and updates only
-transforms and link paths while dragging. It is intended for interactive
-workflows with tens to hundreds of visible nodes. For very large graphs,
-partition the workflow into subgraphs or add viewport virtualization as a
-separate module.
+transforms and link paths while dragging. Routing considers nodes in a bounded
+corridor around each connection so distant nodes do not add work. The editor is
+intended for interactive workflows with tens to hundreds of visible nodes. For
+very large graphs, partition the workflow into subgraphs or add viewport
+virtualization as a separate module.

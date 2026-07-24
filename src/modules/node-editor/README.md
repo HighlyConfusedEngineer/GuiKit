@@ -7,7 +7,8 @@ It supports:
 
 - draggable and keyboard-movable nodes;
 - typed input and output ports;
-- validated Bézier links;
+- horizontal or vertical flow with direction-aware port placement;
+- rounded orthogonal links routed around intervening nodes;
 - click and keyboard selection;
 - Delete/Backspace removal;
 - pan, zoom, grid snapping, and fit-to-view;
@@ -30,8 +31,9 @@ Or import only this module:
 import {
   GuiNodeEditor,
   GuiNodeGraph,
+  routeNodeConnection,
 } from "@gui-template/core/node-editor";
 ```
 
 See [the node-editor API](../../../docs/NODE_EDITOR.md) for graph schemas,
-events, and integration examples.
+direction settings, routing geometry, events, and integration examples.

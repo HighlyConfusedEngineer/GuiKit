@@ -70,6 +70,13 @@ test("full demo exercises wizard validation, persistence, and completion", () =>
   assert.match(app, /guikit-full-demo-wizard-v1/);
 });
 
+test("full demo switches node-editor flow direction and layout", () => {
+  assert.match(html, /id="node-flow-direction"/);
+  assert.match(html, /<option value="vertical">Vertical<\/option>/);
+  assert.match(app, /nodeEditor\.flowDirection = direction/);
+  assert.match(app, /\[node\.x, node\.y\] = \[node\.y, node\.x\]/);
+});
+
 test("full demo exercises services, transports, and module extension", () => {
   [
     "GuiDataBuffer",

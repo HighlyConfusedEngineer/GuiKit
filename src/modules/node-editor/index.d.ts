@@ -71,6 +71,45 @@ export interface GuiNodeGraphData {
   links?: GuiNodeLink[];
 }
 
+export type GuiNodeFlowDirection = "horizontal" | "vertical";
+
+export interface GuiNodeRoutingPoint {
+  x: number;
+  y: number;
+}
+
+export interface GuiNodeRoutingObstacle {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  left?: number;
+  top?: number;
+  right?: number;
+  bottom?: number;
+}
+
+export interface GuiNodeRoutingOptions {
+  flowDirection?: GuiNodeFlowDirection;
+  obstacles?: GuiNodeRoutingObstacle[];
+  clearance?: number;
+  stub?: number;
+  cornerRadius?: number;
+}
+
+export interface GuiNodeConnectionRoute {
+  direction: GuiNodeFlowDirection;
+  points: GuiNodeRoutingPoint[];
+  path: string;
+  routed: boolean;
+}
+
+export function routeNodeConnection(
+  from: GuiNodeRoutingPoint,
+  to: GuiNodeRoutingPoint,
+  options?: GuiNodeRoutingOptions,
+): GuiNodeConnectionRoute;
+
 export class GuiNodeGraph {
   constructor(graph?: GuiNodeGraphData);
   readonly nodes: GuiNodeDefinition[];
@@ -96,6 +135,7 @@ export class GuiNodeGraph {
 export class GuiNodeEditor extends HTMLElement {
   readonly label: string;
   readOnly: boolean;
+  flowDirection: GuiNodeFlowDirection;
   readonly graph: GuiNodeGraph;
   readonly selectedNodes: string[];
   readonly selectedLink: string | null;
@@ -135,11 +175,15 @@ export class GuiNodeEditor extends HTMLElement {
 
 export const nodeEditorModule: {
   readonly id: "node-editor";
-  readonly version: string;
+  readonly version: "0.2.0";
   readonly description: string;
   readonly dependencies: readonly ["core"];
   readonly components: readonly ["gui-node-editor"];
-  setup(): { GuiNodeEditor: typeof GuiNodeEditor; GuiNodeGraph: typeof GuiNodeGraph };
+  setup(): {
+    GuiNodeEditor: typeof GuiNodeEditor;
+    GuiNodeGraph: typeof GuiNodeGraph;
+    routeNodeConnection: typeof routeNodeConnection;
+  };
 };
 
 declare global {

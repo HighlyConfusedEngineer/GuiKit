@@ -328,6 +328,20 @@ body {
   min-height: 28rem;
 }
 
+.demo-node-direction {
+  min-width: 10rem;
+  gap: .25rem;
+}
+
+.demo-node-direction > span {
+  font-size: .72rem;
+}
+
+.demo-node-direction .gui-input {
+  min-height: 2.35rem;
+  padding-block: .35rem;
+}
+
 .demo-code-area {
   min-height: 11rem;
   resize: vertical;
