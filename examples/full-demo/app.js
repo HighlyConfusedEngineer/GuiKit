@@ -142,6 +142,7 @@ const observedNames = [
   "gui:node-settings-open",
   "gui:node-settings-save",
   "gui:node-settings-close",
+  "gui:node-parameter-change",
   "gui:node-error",
   "gui:statusbar-action",
   "gui:statusbar-position-change",
@@ -575,6 +576,36 @@ const graphExample = {
         { id: "camera:image", label: "Image", type: "image" },
         { id: "camera:time", label: "Timestamp", type: "number" },
       ],
+      parameters: [
+        {
+          id: "device",
+          label: "Device",
+          type: "select",
+          inline: true,
+          value: "front",
+          options: [
+            { value: "front", label: "Front camera" },
+            { value: "rear", label: "Rear camera" },
+          ],
+        },
+        {
+          id: "fps",
+          label: "Frame rate",
+          type: "number",
+          inline: true,
+          value: 30,
+          min: 1,
+          max: 120,
+          step: 1,
+          unit: "fps",
+        },
+        {
+          id: "backendProfile",
+          label: "Backend profile",
+          type: "text",
+          value: "low-latency",
+        },
+      ],
     },
     {
       id: "edges",
@@ -589,6 +620,30 @@ const graphExample = {
         { id: "edges:amount", label: "Amount", type: "number" },
       ],
       outputs: [{ id: "edges:result", label: "Result", type: "image" }],
+      parameters: [
+        {
+          id: "threshold",
+          label: "Threshold",
+          type: "range",
+          inline: true,
+          value: 0.42,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        {
+          id: "method",
+          label: "Method",
+          type: "select",
+          inline: true,
+          value: "sobel",
+          options: [
+            { value: "sobel", label: "Sobel" },
+            { value: "canny", label: "Canny" },
+            { value: "laplace", label: "Laplacian" },
+          ],
+        },
+      ],
     },
     {
       id: "preview",
@@ -599,6 +654,22 @@ const graphExample = {
       x: 690,
       y: 90,
       inputs: [{ id: "preview:image", label: "Image", type: "image" }],
+      parameters: [
+        {
+          id: "overlay",
+          label: "Show overlay",
+          type: "boolean",
+          inline: true,
+          value: true,
+        },
+        {
+          id: "resolution",
+          label: "Output",
+          type: "readonly",
+          inline: true,
+          value: "1920 × 1080",
+        },
+      ],
     },
     {
       id: "strength",
@@ -608,6 +679,18 @@ const graphExample = {
       x: 60,
       y: 390,
       outputs: [{ id: "strength:value", label: "Value", type: "number" }],
+      parameters: [
+        {
+          id: "value",
+          label: "Value",
+          type: "range",
+          inline: true,
+          value: 0.7,
+          min: 0,
+          max: 1,
+          step: 0.05,
+        },
+      ],
     },
   ],
   links: [
@@ -645,6 +728,17 @@ document.querySelector("#node-add").addEventListener("click", () => {
     y: 260 + addedNodes * 20,
     inputs: [{ id: `processor-${addedNodes}:in`, label: "Value", type: "number" }],
     outputs: [{ id: `processor-${addedNodes}:out`, label: "Value", type: "number" }],
+    parameters: [{
+      id: "gain",
+      label: "Gain",
+      type: "number",
+      inline: true,
+      value: 1,
+      min: 0,
+      max: 10,
+      step: 0.1,
+      unit: "×",
+    }],
   });
 });
 document.querySelector("#node-fit").addEventListener("click", () => nodeEditor.zoomToFit());
@@ -674,6 +768,13 @@ nodeEditor.addEventListener("gui:node-create-request", (event) => {
     y: event.detail.position.y,
     inputs: [{ id: `canvas-node-${addedNodes}:in`, label: "Input", type: "any" }],
     outputs: [{ id: `canvas-node-${addedNodes}:out`, label: "Output", type: "any" }],
+    parameters: [{
+      id: "enabled",
+      label: "Enabled",
+      type: "boolean",
+      inline: true,
+      value: true,
+    }],
   });
 });
 

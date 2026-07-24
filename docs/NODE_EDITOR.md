@@ -62,6 +62,26 @@ Nodes require a globally unique `id`. Ports also use globally unique ids.
   outputs: [
     { id: "filter:result", label: "Result", type: "image" },
   ],
+  parameters: [
+    {
+      id: "strength",
+      label: "Strength",
+      type: "range",
+      value: 0.8,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      inline: true,
+    },
+    {
+      id: "algorithm",
+      label: "Algorithm",
+      type: "select",
+      value: "sobel",
+      options: ["sobel", "canny"],
+      inline: true,
+    },
+  ],
   data: { strength: 0.8 },
 }
 ```
@@ -78,6 +98,27 @@ Links are directed from an output to an input:
 
 Node `data` and link `data` should remain structured-clone-compatible so
 `getGraph()` can be serialized and sent through the native bridge.
+
+### Inline parameters
+
+Use a node's `parameters` array for values that belong to that node. Set
+`inline: true` only on the parameters users should see directly on its surface;
+the remaining parameters stay in the graph data for an inspector or backend.
+Parameter ids need only be unique within their node.
+
+| Type | Value and presentation |
+| --- | --- |
+| `text` | Single-line text input |
+| `number` | Numeric input with optional `min`, `max`, `step`, and `unit` |
+| `range` | Slider with a live value; defaults to 0–100 |
+| `select` | Select using string/number values or `{ value, label, disabled }` options |
+| `boolean` | Checkbox |
+| `readonly` | Non-editable text or serialized structured value |
+
+Set `disabled: true` to show an individual control without allowing edits.
+`description` becomes its tooltip. Parameter changes are normalized before
+they enter the graph: numeric values are bounded, booleans are coerced, and an
+invalid select value falls back to the first enabled option.
 
 ## Component API
 
@@ -97,6 +138,8 @@ Important methods:
 - `setGraph(graph)` replaces the graph.
 - `getGraph()` returns a serializable snapshot.
 - `addNode(node)`, `updateNode(id, patch)`, and `removeNode(id)`.
+- `getNodeParameter(nodeId, parameterId)` returns a detached parameter definition.
+- `setNodeParameter(nodeId, parameterId, value)` validates and updates a value.
 - `connect(from, to, options)` and `disconnect(id)`.
 - `selectNode(id, additive?)`, `selectLink(id)`, and `clearSelection()`.
 - `openNodeSettings(id)` opens the built-in settings dialog.
@@ -119,6 +162,8 @@ Important methods:
 | `gui:node-settings-save-request` | yes | `{ node, patch }` |
 | `gui:node-settings-save` | no | `{ node, previous, patch }` |
 | `gui:node-settings-close` | no | `{ node, reason }` |
+| `gui:node-parameter-change-request` | yes | `{ node, parameter, value, previousValue }` |
+| `gui:node-parameter-change` | no | `{ node, parameter, value, previousValue }` |
 | `gui:node-error` | no | `{ operation, error }` |
 | `gui:graph-change` | no | `{ operation, graph, ... }` |
 
@@ -155,11 +200,28 @@ editor.addEventListener("gui:node-settings-request", (event) => {
 
 Use `gui:node-settings-save-request` to veto a built-in edit during validation.
 
+Parameter validation can use the same pattern:
+
+```js
+editor.addEventListener("gui:node-parameter-change-request", (event) => {
+  if (!backendAccepts(event.detail.parameter.id, event.detail.value)) {
+    event.preventDefault();
+  }
+});
+
+editor.addEventListener("gui:node-parameter-change", (event) => {
+  backend.configure(event.detail.node.id, {
+    [event.detail.parameter.id]: event.detail.value,
+  });
+});
+```
+
 ## Interaction
 
 - Drag empty space to pan.
 - Use the mouse wheel or toolbar to zoom.
 - Drag a node header to move it.
+- Edit the parameters exposed directly on a node without opening its dialog.
 - Use the settings icon in a node header to inspect or edit its configuration.
 - Drag one port to a compatible opposite-direction port to connect.
 - Click a node or link to select it.

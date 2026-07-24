@@ -12,6 +12,7 @@ It supports:
 - Delete/Backspace removal;
 - pan, zoom, grid snapping, and fit-to-view;
 - graph serialization;
+- inline text, number, range, select, boolean, and read-only parameters;
 - per-node settings dialog with extensible open and save events;
 - cancellable connection requests;
 - read-only mode;

@@ -41,9 +41,108 @@ function normalizePort(port, direction, nodeId, index) {
   };
 }
 
+const PARAMETER_TYPES = new Set([
+  "text",
+  "number",
+  "range",
+  "select",
+  "boolean",
+  "readonly",
+]);
+
+function normalizeParameterOption(option) {
+  if (option && typeof option === "object") {
+    const value = String(option.value ?? option.label ?? "");
+    return {
+      ...clone(option),
+      value,
+      label: String(option.label ?? value),
+      disabled: Boolean(option.disabled),
+    };
+  }
+  const value = String(option ?? "");
+  return { value, label: value, disabled: false };
+}
+
+function normalizeBoolean(value) {
+  if (typeof value === "string") {
+    return !["", "0", "false", "no", "off"].includes(value.trim().toLowerCase());
+  }
+  return Boolean(value);
+}
+
+function normalizeParameterValue(parameter, value) {
+  if (parameter.type === "boolean") return normalizeBoolean(value);
+  if (parameter.type === "number" || parameter.type === "range") {
+    const fallback = finite(parameter.value, finite(parameter.min, 0));
+    return Math.min(
+      parameter.max ?? Infinity,
+      Math.max(parameter.min ?? -Infinity, finite(value, fallback)),
+    );
+  }
+  if (parameter.type === "select") {
+    const selected = String(value ?? "");
+    if (!parameter.options.length) return selected;
+    return parameter.options.some((option) => option.value === selected)
+      ? selected
+      : parameter.options.find((option) => !option.disabled)?.value ?? selected;
+  }
+  if (parameter.type === "readonly") return clone(value);
+  return String(value ?? "");
+}
+
+function normalizeParameter(parameter, nodeId, index) {
+  if (!parameter || typeof parameter !== "object") {
+    throw new TypeError(`Parameter ${index + 1} on node "${nodeId}" must be an object.`);
+  }
+  if (!parameter.id) {
+    throw new TypeError(`A parameter on node "${nodeId}" requires a non-empty id.`);
+  }
+  const type = PARAMETER_TYPES.has(parameter.type) ? parameter.type : "text";
+  const range = type === "range";
+  const min = parameter.min === undefined ? (range ? 0 : undefined) : finite(parameter.min);
+  const max = parameter.max === undefined ? (range ? 100 : undefined) : finite(parameter.max);
+  const normalized = {
+    ...clone(parameter),
+    id: String(parameter.id),
+    label: String(parameter.label ?? parameter.id),
+    type,
+    inline: Boolean(parameter.inline),
+    disabled: Boolean(parameter.disabled),
+  };
+  if (parameter.unit !== undefined) normalized.unit = String(parameter.unit);
+  if (parameter.placeholder !== undefined) {
+    normalized.placeholder = String(parameter.placeholder);
+  }
+  if (type === "number" || type === "range") {
+    if (min !== undefined) normalized.min = min;
+    if (max !== undefined) normalized.max = Math.max(min ?? -Infinity, max);
+    if (parameter.step !== undefined || range) {
+      normalized.step = Math.max(
+        Number.EPSILON,
+        finite(parameter.step, range ? 1 : 1),
+      );
+    }
+  }
+  if (type === "select") {
+    normalized.options = (parameter.options ?? []).map(normalizeParameterOption);
+  }
+  normalized.value = normalizeParameterValue(normalized, parameter.value);
+  return normalized;
+}
+
 function normalizeNode(node) {
   if (!node?.id) throw new TypeError("A node requires a non-empty id.");
   const id = String(node.id);
+  const parameters = (node.parameters ?? [])
+    .map((parameter, index) => normalizeParameter(parameter, id, index));
+  const parameterIds = new Set();
+  for (const parameter of parameters) {
+    if (parameterIds.has(parameter.id)) {
+      throw new Error(`Parameter "${parameter.id}" already exists on node "${id}".`);
+    }
+    parameterIds.add(parameter.id);
+  }
   return {
     ...clone(node),
     id,
@@ -54,6 +153,7 @@ function normalizeNode(node) {
     width: Math.max(160, finite(node.width, 220)),
     inputs: (node.inputs ?? []).map((port, index) => normalizePort(port, "input", id, index)),
     outputs: (node.outputs ?? []).map((port, index) => normalizePort(port, "output", id, index)),
+    parameters,
   };
 }
 
@@ -288,6 +388,7 @@ export class GuiNodeEditor extends GuiElement {
   #zoomLabel;
   #nodeElements = new Map();
   #portElements = new Map();
+  #parameterElements = new Map();
   #selectedNodes = new Set();
   #selectedLink = null;
   #view = { x: 64, y: 48, zoom: 1 };
@@ -324,7 +425,10 @@ export class GuiNodeEditor extends GuiElement {
     // the shadow view, even though the element is already connected.
     if (!this.#viewport) return;
     if (name === "label") this.#viewport.setAttribute("aria-label", this.label);
-    if (name === "readonly") this.#syncSettingsReadOnly();
+    if (name === "readonly") {
+      this.#syncSettingsReadOnly();
+      this.#syncParameterReadOnly();
+    }
   }
 
   get label() {
@@ -378,6 +482,57 @@ export class GuiNodeEditor extends GuiElement {
     this.#render();
     this.#graphChanged("node-update", { node: updated });
     return updated;
+  }
+
+  getNodeParameter(nodeId, parameterId) {
+    const node = this.#graph.getNode(nodeId);
+    const parameter = node?.parameters?.find(
+      (candidate) => candidate.id === String(parameterId),
+    );
+    return parameter ? clone(parameter) : undefined;
+  }
+
+  setNodeParameter(nodeId, parameterId, value) {
+    const node = this.#graph.getNode(nodeId);
+    if (!node) throw new Error(`Unknown node "${nodeId}".`);
+    const id = String(parameterId);
+    const parameter = node.parameters.find((candidate) => candidate.id === id);
+    if (!parameter) {
+      throw new Error(`Unknown parameter "${id}" on node "${node.id}".`);
+    }
+    const nextValue = normalizeParameterValue(parameter, value);
+    if (Object.is(nextValue, parameter.value)) {
+      this.#syncParameterElement(node.id, parameter);
+      return clone(parameter);
+    }
+    const allowed = dispatch(this, "gui:node-parameter-change-request", {
+      node,
+      parameter,
+      value: nextValue,
+      previousValue: clone(parameter.value),
+    }, true);
+    if (!allowed) {
+      this.#syncParameterElement(node.id, parameter);
+      return null;
+    }
+
+    const parameters = node.parameters.map((candidate) => (
+      candidate.id === id ? { ...candidate, value: nextValue } : candidate
+    ));
+    const updatedNode = this.#graph.updateNode(node.id, { parameters });
+    const updated = updatedNode.parameters.find((candidate) => candidate.id === id);
+    this.#syncParameterElement(node.id, updated);
+    dispatch(this, "gui:node-parameter-change", {
+      node: updatedNode,
+      parameter: updated,
+      value: clone(updated.value),
+      previousValue: clone(parameter.value),
+    });
+    this.#graphChanged("parameter-change", {
+      node: updatedNode,
+      parameter: updated,
+    });
+    return clone(updated);
   }
 
   removeNode(id) {
@@ -869,6 +1024,7 @@ export class GuiNodeEditor extends GuiElement {
     if (!this.#nodeLayer) return;
     this.#nodeElements.clear();
     this.#portElements.clear();
+    this.#parameterElements.clear();
     this.#nodeLayer.replaceChildren();
     for (const node of this.#graph.nodes) {
       const element = this.#createNodeElement(node);
@@ -877,6 +1033,7 @@ export class GuiNodeEditor extends GuiElement {
     }
     this.#applyView();
     this.#syncSelection();
+    this.#syncParameterReadOnly();
     this.#scheduleConnections();
   }
 
@@ -930,6 +1087,16 @@ export class GuiNodeEditor extends GuiElement {
       description.textContent = node.description;
       body.append(description);
     }
+    const inlineParameters = node.parameters.filter((parameter) => parameter.inline);
+    if (inlineParameters.length) {
+      const parameters = document.createElement("section");
+      parameters.className = "node-parameters";
+      parameters.setAttribute("aria-label", `${node.title} parameters`);
+      inlineParameters.forEach((parameter) => {
+        parameters.append(this.#createParameterElement(parameter, node.id));
+      });
+      body.append(parameters);
+    }
     element.append(header, body);
     element.addEventListener("focus", () => this.selectNode(node.id));
     element.addEventListener("animationend", this.#scheduleConnections, { once: true });
@@ -960,6 +1127,129 @@ export class GuiNodeEditor extends GuiElement {
     row.append(button);
     this.#portElements.set(port.id, button);
     return row;
+  }
+
+  #createParameterElement(parameter, nodeId) {
+    const row = document.createElement(parameter.type === "readonly" ? "div" : "label");
+    row.className = `node-parameter node-parameter--${parameter.type}`;
+    row.dataset.parameterId = parameter.id;
+    const label = document.createElement("span");
+    label.className = "node-parameter-label";
+    label.textContent = parameter.label;
+    if (parameter.description) row.title = String(parameter.description);
+
+    let control;
+    let output;
+    if (parameter.type === "boolean") {
+      control = document.createElement("input");
+      control.type = "checkbox";
+      control.checked = parameter.value;
+      row.append(control, label);
+    } else if (parameter.type === "select") {
+      control = document.createElement("select");
+      parameter.options.forEach((option) => {
+        const element = document.createElement("option");
+        element.value = option.value;
+        element.textContent = option.label;
+        element.disabled = option.disabled;
+        control.append(element);
+      });
+      control.value = parameter.value;
+      row.append(label, control);
+    } else if (parameter.type === "readonly") {
+      output = document.createElement("strong");
+      output.className = "node-parameter-value";
+      output.textContent = this.#formatParameterValue(parameter);
+      row.append(label, output);
+    } else {
+      control = document.createElement("input");
+      control.type = parameter.type === "range" ? "range" : parameter.type;
+      control.value = parameter.value;
+      if (parameter.min !== undefined) control.min = String(parameter.min);
+      if (parameter.max !== undefined) control.max = String(parameter.max);
+      if (parameter.step !== undefined) control.step = String(parameter.step);
+      if (parameter.placeholder) control.placeholder = parameter.placeholder;
+      row.append(label);
+      if (parameter.type === "range") {
+        const field = document.createElement("span");
+        field.className = "node-parameter-range";
+        output = document.createElement("output");
+        output.className = "node-parameter-value";
+        output.textContent = this.#formatParameterValue(parameter);
+        field.append(control, output);
+        row.append(field);
+        control.addEventListener("input", () => {
+          output.textContent = this.#formatParameterValue({
+            ...parameter,
+            value: control.value,
+          });
+        });
+      } else {
+        if (parameter.unit) {
+          const field = document.createElement("span");
+          field.className = "node-parameter-input";
+          const unit = document.createElement("span");
+          unit.textContent = parameter.unit;
+          field.append(control, unit);
+          row.append(field);
+        } else {
+          row.append(control);
+        }
+      }
+    }
+
+    if (control) {
+      control.disabled = this.readOnly || parameter.disabled;
+      control.addEventListener("pointerdown", (event) => event.stopPropagation());
+      control.addEventListener("keydown", (event) => event.stopPropagation());
+      control.addEventListener("change", () => {
+        const value = parameter.type === "boolean" ? control.checked : control.value;
+        this.setNodeParameter(nodeId, parameter.id, value);
+      });
+    }
+    this.#parameterElements.set(this.#parameterKey(nodeId, parameter.id), {
+      control,
+      output,
+    });
+    return row;
+  }
+
+  #parameterKey(nodeId, parameterId) {
+    return `${nodeId}\u0000${parameterId}`;
+  }
+
+  #formatParameterValue(parameter) {
+    const value = parameter.value;
+    let formatted;
+    try {
+      formatted = value && typeof value === "object"
+        ? JSON.stringify(value)
+        : String(value ?? "");
+    } catch {
+      formatted = String(value ?? "");
+    }
+    return `${formatted}${parameter.unit ? ` ${parameter.unit}` : ""}`;
+  }
+
+  #syncParameterElement(nodeId, parameter) {
+    const entry = this.#parameterElements.get(this.#parameterKey(nodeId, parameter.id));
+    if (!entry) return;
+    if (entry.control) {
+      if (parameter.type === "boolean") entry.control.checked = parameter.value;
+      else entry.control.value = parameter.value;
+      entry.control.disabled = this.readOnly || parameter.disabled;
+    }
+    if (entry.output) {
+      entry.output.textContent = this.#formatParameterValue(parameter);
+    }
+  }
+
+  #syncParameterReadOnly() {
+    this.#graph.nodes.forEach((node) => {
+      node.parameters.forEach((parameter) => {
+        this.#syncParameterElement(node.id, parameter);
+      });
+    });
   }
 
   #renderConnections() {
@@ -1535,6 +1825,110 @@ const NODE_EDITOR_STYLES = `
     margin: .25rem .8rem 0;
     color: var(--gui-text-muted, #666b78);
     font: .7rem/1.4 var(--gui-font, ui-sans-serif, system-ui);
+  }
+
+  .node-parameters {
+    display: grid;
+    grid-column: 1 / -1;
+    gap: .48rem;
+    margin-top: .1rem;
+    padding: .65rem .8rem .15rem;
+    border-top: 1px solid var(--gui-border, #dfe2ea);
+  }
+
+  .node-parameter {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(4.5rem, .9fr);
+    align-items: center;
+    gap: .55rem;
+    min-width: 0;
+    color: var(--gui-text-muted, #666b78);
+    font: 620 .68rem/1.25 var(--gui-font, ui-sans-serif, system-ui);
+  }
+
+  .node-parameter-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .node-parameter input[type="text"],
+  .node-parameter input[type="number"],
+  .node-parameter select {
+    width: 100%;
+    min-width: 0;
+    height: 1.75rem;
+    padding: .25rem .42rem;
+    border: 1px solid var(--gui-border, #dfe2ea);
+    border-radius: .42rem;
+    outline: none;
+    background: var(--gui-surface, white);
+    color: var(--gui-text, #17181c);
+    font: 600 .68rem/1.1 var(--gui-font, ui-sans-serif, system-ui);
+  }
+
+  .node-parameter select {
+    padding-right: .2rem;
+  }
+
+  .node-parameter input:focus,
+  .node-parameter select:focus {
+    border-color: var(--node-color);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--node-color) 22%, transparent);
+  }
+
+  .node-parameter--boolean {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .node-parameter--boolean input {
+    order: 2;
+    width: 1.8rem;
+    height: 1rem;
+    margin: 0;
+    accent-color: var(--node-color);
+  }
+
+  .node-parameter-range {
+    display: grid;
+    grid-template-columns: minmax(3.4rem, 1fr) auto;
+    align-items: center;
+    gap: .35rem;
+    min-width: 0;
+  }
+
+  .node-parameter input[type="range"] {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    accent-color: var(--node-color);
+  }
+
+  .node-parameter-input {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .3rem;
+  }
+
+  .node-parameter-input > span {
+    color: var(--gui-text-muted, #666b78);
+    font-size: .62rem;
+  }
+
+  .node-parameter-value {
+    overflow: hidden;
+    color: var(--gui-text, #17181c);
+    font: 720 .66rem/1.2 var(--gui-font-mono, ui-monospace, monospace);
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .node-parameter :disabled {
+    cursor: not-allowed;
+    opacity: .55;
   }
 
   .node-settings-dialog {

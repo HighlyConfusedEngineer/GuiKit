@@ -8,6 +8,8 @@ All notable changes to GuiKit are documented here. The format follows
 
 ### Added
 
+- Typed inline node parameters with selective per-node visibility, live editing,
+  validation, units, read-only values, and cancelable change events.
 - Configurable `<gui-statusbar>` with top/bottom and sticky/fixed placement,
   keyed live items, status variants, progress, actions, responsive priority,
   start/center/end alignment, live announcements, and custom slots.

@@ -35,6 +35,8 @@ test("node editor module exposes its model, component, and manifest", () => {
   assert.equal(typeof GuiNodeEditor, "function");
   assert.equal(typeof GuiNodeEditor.prototype.openNodeSettings, "function");
   assert.equal(typeof GuiNodeEditor.prototype.closeNodeSettings, "function");
+  assert.equal(typeof GuiNodeEditor.prototype.getNodeParameter, "function");
+  assert.equal(typeof GuiNodeEditor.prototype.setNodeParameter, "function");
   assert.equal(nodeEditorModule.id, "node-editor");
   assert.deepEqual(nodeEditorModule.components, ["gui-node-editor"]);
 });
@@ -97,6 +99,90 @@ test("node and port ids are unique", () => {
   assert.throws(
     () => graph.addNode({ id: "duplicates", inputs: ["same"], outputs: ["same"] }),
     /Port "same" already exists/,
+  );
+});
+
+test("node parameters normalize typed values and enforce node-local ids", () => {
+  const graph = new GuiNodeGraph({
+    nodes: [{
+      id: "processor",
+      parameters: [
+        {
+          id: "gain",
+          label: "Gain",
+          type: "range",
+          value: 12,
+          min: 0,
+          max: 10,
+          step: 0.5,
+          unit: "dB",
+          inline: true,
+        },
+        {
+          id: "mode",
+          type: "select",
+          value: "unknown",
+          options: [
+            { value: "safe", label: "Safe", disabled: true },
+            { value: "fast", label: "Fast" },
+          ],
+        },
+        { id: "enabled", type: "boolean", value: "off" },
+        { id: "summary", type: "readonly", value: { state: "ready" }, inline: true },
+      ],
+    }],
+  });
+  const parameters = graph.getNode("processor").parameters;
+
+  assert.equal(parameters[0].value, 10);
+  assert.equal(parameters[0].unit, "dB");
+  assert.equal(parameters[0].inline, true);
+  assert.equal(parameters[1].value, "fast");
+  assert.equal(parameters[1].inline, false);
+  assert.equal(parameters[2].value, false);
+  assert.deepEqual(parameters[3].value, { state: "ready" });
+
+  assert.throws(
+    () => graph.addNode({
+      id: "duplicates",
+      parameters: [{ id: "same" }, { id: "same" }],
+    }),
+    /Parameter "same" already exists/,
+  );
+});
+
+test("editor reads and updates normalized node parameter values", () => {
+  const editor = new GuiNodeEditor();
+  editor.setGraph({
+    nodes: [{
+      id: "processor",
+      parameters: [
+        {
+          id: "gain",
+          type: "range",
+          value: 2,
+          min: 0,
+          max: 10,
+          inline: true,
+        },
+      ],
+    }],
+  });
+
+  const detached = editor.getNodeParameter("processor", "gain");
+  detached.value = 9;
+  assert.equal(editor.getNodeParameter("processor", "gain").value, 2);
+
+  const updated = editor.setNodeParameter("processor", "gain", 12);
+  assert.equal(updated.value, 10);
+  assert.equal(editor.getGraph().nodes[0].parameters[0].value, 10);
+  assert.throws(
+    () => editor.setNodeParameter("processor", "missing", 1),
+    /Unknown parameter "missing"/,
+  );
+  assert.throws(
+    () => editor.setNodeParameter("missing", "gain", 1),
+    /Unknown node "missing"/,
   );
 });
 

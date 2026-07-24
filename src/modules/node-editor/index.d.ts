@@ -9,6 +9,39 @@ export interface GuiNodePort {
   [key: string]: unknown;
 }
 
+export type GuiNodeParameterType =
+  | "text"
+  | "number"
+  | "range"
+  | "select"
+  | "boolean"
+  | "readonly";
+
+export interface GuiNodeParameterOption {
+  value: string | number;
+  label?: string;
+  disabled?: boolean;
+  [key: string]: unknown;
+}
+
+export interface GuiNodeParameter {
+  id: string;
+  label?: string;
+  type?: GuiNodeParameterType;
+  value?: unknown;
+  inline?: boolean;
+  disabled?: boolean;
+  unit?: string;
+  placeholder?: string;
+  description?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  options?: Array<string | number | GuiNodeParameterOption>;
+  data?: unknown;
+  [key: string]: unknown;
+}
+
 export interface GuiNodeDefinition {
   id: string;
   title?: string;
@@ -20,6 +53,7 @@ export interface GuiNodeDefinition {
   width?: number;
   inputs?: Array<string | GuiNodePort>;
   outputs?: Array<string | GuiNodePort>;
+  parameters?: GuiNodeParameter[];
   data?: unknown;
   [key: string]: unknown;
 }
@@ -73,6 +107,15 @@ export class GuiNodeEditor extends HTMLElement {
   getGraph(): Required<GuiNodeGraphData>;
   addNode(node: GuiNodeDefinition): GuiNodeDefinition;
   updateNode(id: string, patch: Partial<GuiNodeDefinition>): GuiNodeDefinition;
+  getNodeParameter(
+    nodeId: string,
+    parameterId: string,
+  ): GuiNodeParameter | undefined;
+  setNodeParameter(
+    nodeId: string,
+    parameterId: string,
+    value: unknown,
+  ): GuiNodeParameter | null;
   removeNode(id: string): boolean;
   connect(
     from: string,

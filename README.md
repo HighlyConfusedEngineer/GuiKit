@@ -193,6 +193,18 @@ editor.setGraph({
     {
       id: "source",
       outputs: [{ id: "source:value", type: "number" }],
+      parameters: [
+        {
+          id: "rate",
+          label: "Rate",
+          type: "range",
+          value: 30,
+          min: 1,
+          max: 60,
+          unit: "fps",
+          inline: true,
+        },
+      ],
     },
     {
       id: "display",
@@ -207,9 +219,11 @@ editor.setGraph({
 ```
 
 The pure `GuiNodeGraph` model validates types and link limits without a DOM.
-Each node includes a settings icon for editing its name, type, description,
-accent, and JSON data. Cancel `gui:node-settings-request` to provide a custom
-domain-specific inspector instead.
+Nodes can selectively expose typed parameters directly on their surface with
+`inline: true`; text, number, range, select, boolean, and read-only displays are
+supported. Each node also includes a settings icon for editing its name, type,
+description, accent, and JSON data. Cancel `gui:node-settings-request` to
+provide a custom domain-specific inspector instead.
 See [the node-editor guide](docs/NODE_EDITOR.md).
 
 ### Live media
