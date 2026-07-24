@@ -207,6 +207,9 @@ editor.setGraph({
 ```
 
 The pure `GuiNodeGraph` model validates types and link limits without a DOM.
+Each node includes a settings icon for editing its name, type, description,
+accent, and JSON data. Cancel `gui:node-settings-request` to provide a custom
+domain-specific inspector instead.
 See [the node-editor guide](docs/NODE_EDITOR.md).
 
 ### Live media

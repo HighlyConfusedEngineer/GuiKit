@@ -29,7 +29,7 @@ and keeps every frontend feature operational.
 | Navigation | Collapsible sidebar, mobile drawer, tabs, nested tabs, sliding pages, history |
 | Components | Inputs, selects, switches, buttons, cards, badges, design tokens, all toast variants and actions |
 | Live charts | Three responsive series, 30,000 initial points, bounded buffers, append, batch append, clear and render events |
-| Node editor | Typed ports, links, drag, pan, zoom, selection, snapping, read-only mode, JSON import/export |
+| Node editor | Typed ports, links, drag, pan, zoom, selection, snapping, per-node settings, read-only mode, JSON import/export |
 | Media | Direct `MediaStream`, custom media adapter, native URL loading, live controls, PiP and fullscreen capability detection |
 | Logging | Levels, child context, errors, redaction, nested spans, memory, console, viewer, batch, bridge and HTTP sinks |
 | Platform | English/German/Spanish localization, light/dark/system themes, native bridge calls/events, module registry |

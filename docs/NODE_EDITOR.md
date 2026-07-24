@@ -99,6 +99,8 @@ Important methods:
 - `addNode(node)`, `updateNode(id, patch)`, and `removeNode(id)`.
 - `connect(from, to, options)` and `disconnect(id)`.
 - `selectNode(id, additive?)`, `selectLink(id)`, and `clearSelection()`.
+- `openNodeSettings(id)` opens the built-in settings dialog.
+- `closeNodeSettings()` closes the settings dialog.
 - `setView({ x, y, zoom })` and `zoomToFit(padding?)`.
 - `clear()` removes all nodes and links.
 
@@ -112,6 +114,11 @@ Important methods:
 | `gui:node-move` | no | `{ node }` |
 | `gui:node-select` | no | `{ nodes, link }` |
 | `gui:node-create-request` | no | `{ position }` |
+| `gui:node-settings-request` | yes | `{ node }` |
+| `gui:node-settings-open` | no | `{ node }` |
+| `gui:node-settings-save-request` | yes | `{ node, patch }` |
+| `gui:node-settings-save` | no | `{ node, previous, patch }` |
+| `gui:node-settings-close` | no | `{ node, reason }` |
 | `gui:node-error` | no | `{ operation, error }` |
 | `gui:graph-change` | no | `{ operation, graph, ... }` |
 
@@ -126,11 +133,34 @@ editor.addEventListener("gui:node-connect-request", (event) => {
 Double-clicking empty space emits a creation request rather than inventing a
 domain-specific node. The application decides which node type to add.
 
+## Node settings
+
+Every node header includes an accessible settings icon. The built-in modal
+editor updates the node name, type, description, accent color, and serializable
+`data` value. Saving uses `updateNode()`, preserves ports and links, and emits
+the regular `gui:graph-change` event in addition to the settings events above.
+In read-only mode the dialog remains available for inspection while its fields
+and save action are disabled.
+
+Applications can replace the built-in dialog with a domain-specific settings
+surface by canceling `gui:node-settings-request`:
+
+```js
+editor.addEventListener("gui:node-settings-request", (event) => {
+  if (!usesCustomInspector(event.detail.node.type)) return;
+  event.preventDefault();
+  inspector.open(event.detail.node);
+});
+```
+
+Use `gui:node-settings-save-request` to veto a built-in edit during validation.
+
 ## Interaction
 
 - Drag empty space to pan.
 - Use the mouse wheel or toolbar to zoom.
 - Drag a node header to move it.
+- Use the settings icon in a node header to inspect or edit its configuration.
 - Drag one port to a compatible opposite-direction port to connect.
 - Click a node or link to select it.
 - Ctrl/Cmd-click nodes for additive selection.

@@ -33,6 +33,8 @@ function createGraph() {
 
 test("node editor module exposes its model, component, and manifest", () => {
   assert.equal(typeof GuiNodeEditor, "function");
+  assert.equal(typeof GuiNodeEditor.prototype.openNodeSettings, "function");
+  assert.equal(typeof GuiNodeEditor.prototype.closeNodeSettings, "function");
   assert.equal(nodeEditorModule.id, "node-editor");
   assert.deepEqual(nodeEditorModule.components, ["gui-node-editor"]);
 });
@@ -152,12 +154,20 @@ test("moving and updating nodes preserve valid graph state", () => {
   const graph = createGraph();
   graph.connect("source:image", "filter:image", { id: "connection" });
   graph.moveNode("filter", 144, 288);
-  graph.updateNode("filter", { title: "Updated filter" });
+  graph.updateNode("filter", {
+    title: "Updated filter",
+    description: "Configured in the settings dialog.",
+    color: "#8b5cf6",
+    data: { strength: 0.8 },
+  });
 
   assert.deepEqual(
     { x: graph.getNode("filter").x, y: graph.getNode("filter").y },
     { x: 144, y: 288 },
   );
   assert.equal(graph.getNode("filter").title, "Updated filter");
+  assert.equal(graph.getNode("filter").description, "Configured in the settings dialog.");
+  assert.equal(graph.getNode("filter").color, "#8b5cf6");
+  assert.deepEqual(graph.getNode("filter").data, { strength: 0.8 });
   assert.equal(graph.getLink("connection").to, "filter:image");
 });

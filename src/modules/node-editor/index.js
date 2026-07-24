@@ -294,6 +294,12 @@ export class GuiNodeEditor extends GuiElement {
   #interaction = null;
   #connectionFrame;
   #resizeObserver;
+  #settingsDialog;
+  #settingsForm;
+  #settingsFields;
+  #settingsError;
+  #settingsNodeId = null;
+  #settingsTrigger = null;
 
   connectedCallback() {
     if (!this.shadowRoot) this.#createView();
@@ -318,6 +324,7 @@ export class GuiNodeEditor extends GuiElement {
     // the shadow view, even though the element is already connected.
     if (!this.#viewport) return;
     if (name === "label") this.#viewport.setAttribute("aria-label", this.label);
+    if (name === "readonly") this.#syncSettingsReadOnly();
   }
 
   get label() {
@@ -345,6 +352,7 @@ export class GuiNodeEditor extends GuiElement {
   }
 
   setGraph(graph) {
+    this.#hideNodeSettings("graph-change");
     this.#graph = graph instanceof GuiNodeGraph
       ? new GuiNodeGraph(graph.toJSON())
       : new GuiNodeGraph(graph);
@@ -373,6 +381,7 @@ export class GuiNodeEditor extends GuiElement {
   }
 
   removeNode(id) {
+    if (String(id) === this.#settingsNodeId) this.#hideNodeSettings("node-remove");
     const removed = this.#graph.removeNode(id);
     if (!removed) return false;
     this.#selectedNodes.delete(String(id));
@@ -415,6 +424,7 @@ export class GuiNodeEditor extends GuiElement {
   }
 
   clear() {
+    this.#hideNodeSettings("clear");
     this.#graph.clear();
     this.#selectedNodes.clear();
     this.#selectedLink = null;
@@ -451,6 +461,14 @@ export class GuiNodeEditor extends GuiElement {
     this.#selectedLink = null;
     this.#syncSelection();
     dispatch(this, "gui:node-select", { nodes: [], link: null });
+  }
+
+  openNodeSettings(id) {
+    return this.#showNodeSettings(String(id), this.shadowRoot?.activeElement);
+  }
+
+  closeNodeSettings() {
+    return this.#hideNodeSettings("cancel");
   }
 
   setView({ x = this.#view.x, y = this.#view.y, zoom = this.#view.zoom }) {
@@ -559,7 +577,8 @@ export class GuiNodeEditor extends GuiElement {
     help.textContent = "Drag to pan · Wheel to zoom · Double-click to create";
 
     this.#viewport.append(this.#world, toolbar, help);
-    root.append(style, this.#viewport);
+    this.#settingsDialog = this.#createSettingsDialog();
+    root.append(style, this.#viewport, this.#settingsDialog);
 
     this.#viewport.addEventListener("pointerdown", this.#onPointerDown);
     this.#viewport.addEventListener("pointermove", this.#onPointerMove);
@@ -578,6 +597,273 @@ export class GuiNodeEditor extends GuiElement {
     button.addEventListener("click", action);
     return button;
   }
+
+  #createSettingsDialog() {
+    const dialog = document.createElement("dialog");
+    dialog.className = "node-settings-dialog";
+    dialog.setAttribute("aria-labelledby", "node-settings-title");
+
+    this.#settingsForm = document.createElement("form");
+    this.#settingsForm.className = "node-settings-form";
+    this.#settingsForm.noValidate = true;
+
+    const header = document.createElement("header");
+    header.className = "node-settings-header";
+    const heading = document.createElement("div");
+    const eyebrow = document.createElement("span");
+    eyebrow.className = "node-settings-eyebrow";
+    eyebrow.textContent = "Node configuration";
+    const title = document.createElement("h2");
+    title.id = "node-settings-title";
+    title.textContent = "Node settings";
+    const nodeId = document.createElement("code");
+    nodeId.className = "node-settings-id";
+    heading.append(eyebrow, title, nodeId);
+
+    const close = this.#settingsIconButton(
+      "Close node settings",
+      "M6.4 6.4 17.6 17.6M17.6 6.4 6.4 17.6",
+    );
+    close.classList.add("node-settings-close");
+    close.addEventListener("click", () => this.#hideNodeSettings("cancel"));
+    header.append(heading, close);
+
+    const body = document.createElement("div");
+    body.className = "node-settings-body";
+    const name = document.createElement("input");
+    name.type = "text";
+    name.required = true;
+    name.autocomplete = "off";
+    const type = document.createElement("input");
+    type.type = "text";
+    type.required = true;
+    type.autocomplete = "off";
+    const description = document.createElement("textarea");
+    description.rows = 3;
+    const color = document.createElement("input");
+    color.type = "color";
+    color.value = "#5b5ce2";
+    const useTheme = document.createElement("input");
+    useTheme.type = "checkbox";
+    const data = document.createElement("textarea");
+    data.rows = 7;
+    data.spellcheck = false;
+    data.className = "node-settings-json";
+
+    const identity = document.createElement("div");
+    identity.className = "node-settings-grid";
+    identity.append(
+      this.#settingsField("Name", name),
+      this.#settingsField("Type", type),
+    );
+
+    const colorField = document.createElement("div");
+    colorField.className = "node-settings-color";
+    colorField.append(color);
+    const useThemeLabel = document.createElement("label");
+    useThemeLabel.className = "node-settings-check";
+    useThemeLabel.append(useTheme, document.createTextNode("Use theme accent"));
+    colorField.append(useThemeLabel);
+
+    this.#settingsError = document.createElement("p");
+    this.#settingsError.className = "node-settings-error";
+    this.#settingsError.setAttribute("role", "alert");
+    this.#settingsError.hidden = true;
+
+    body.append(
+      identity,
+      this.#settingsField("Description", description),
+      this.#settingsField("Accent", colorField),
+      this.#settingsField("Node data (JSON)", data),
+      this.#settingsError,
+    );
+
+    const footer = document.createElement("footer");
+    footer.className = "node-settings-footer";
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.className = "node-settings-button node-settings-button--secondary";
+    cancel.textContent = "Cancel";
+    cancel.addEventListener("click", () => this.#hideNodeSettings("cancel"));
+    const save = document.createElement("button");
+    save.type = "submit";
+    save.className = "node-settings-button node-settings-button--primary";
+    save.textContent = "Save changes";
+    footer.append(cancel, save);
+
+    this.#settingsFields = {
+      name,
+      type,
+      description,
+      color,
+      useTheme,
+      data,
+      nodeId,
+      save,
+    };
+    useTheme.addEventListener("change", () => {
+      color.disabled = useTheme.checked || this.readOnly;
+    });
+    this.#settingsForm.addEventListener("submit", this.#saveNodeSettings);
+    this.#settingsForm.append(header, body, footer);
+    dialog.append(this.#settingsForm);
+    dialog.addEventListener("cancel", (event) => {
+      event.preventDefault();
+      this.#hideNodeSettings("cancel");
+    });
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) this.#hideNodeSettings("backdrop");
+    });
+    return dialog;
+  }
+
+  #settingsField(labelText, control) {
+    const label = document.createElement(control.tagName === "DIV" ? "div" : "label");
+    label.className = "node-settings-field";
+    const text = document.createElement("span");
+    text.textContent = labelText;
+    label.append(text, control);
+    return label;
+  }
+
+  #settingsIconButton(label, pathData) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.setAttribute("aria-label", label);
+    button.title = label;
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    icon.setAttribute("viewBox", "0 0 24 24");
+    icon.setAttribute("aria-hidden", "true");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", pathData);
+    icon.append(path);
+    button.append(icon);
+    return button;
+  }
+
+  #showNodeSettings(nodeId, trigger) {
+    const node = this.#graph.getNode(nodeId);
+    if (!node || !this.#settingsDialog) return false;
+    if (!dispatch(this, "gui:node-settings-request", { node }, true)) return false;
+
+    this.#settingsNodeId = node.id;
+    this.#settingsTrigger = trigger ?? null;
+    this.#settingsFields.name.value = node.title;
+    this.#settingsFields.type.value = node.type;
+    this.#settingsFields.description.value = node.description ?? "";
+    this.#settingsFields.useTheme.checked = !node.color;
+    this.#settingsFields.color.value = this.#normalizeSettingsColor(node.color);
+    this.#settingsFields.data.value = node.data === undefined
+      ? "{}"
+      : JSON.stringify(node.data, null, 2);
+    this.#settingsFields.nodeId.textContent = node.id;
+    this.#settingsError.hidden = true;
+    this.#settingsError.textContent = "";
+    this.#syncSettingsReadOnly();
+
+    if (!this.#settingsDialog.open) {
+      if (typeof this.#settingsDialog.showModal === "function") {
+        this.#settingsDialog.showModal();
+      } else {
+        this.#settingsDialog.setAttribute("open", "");
+      }
+    }
+    requestAnimationFrame(() => {
+      (this.readOnly
+        ? this.#settingsDialog.querySelector(".node-settings-close")
+        : this.#settingsFields.name)?.focus();
+    });
+    dispatch(this, "gui:node-settings-open", { node });
+    return true;
+  }
+
+  #hideNodeSettings(reason) {
+    if (!this.#settingsDialog?.open && !this.#settingsDialog?.hasAttribute("open")) {
+      return false;
+    }
+    const nodeId = this.#settingsNodeId;
+    const node = nodeId ? this.#graph.getNode(nodeId) : undefined;
+    if (typeof this.#settingsDialog.close === "function") this.#settingsDialog.close();
+    else this.#settingsDialog.removeAttribute("open");
+    this.#settingsNodeId = null;
+    dispatch(this, "gui:node-settings-close", { node, reason });
+
+    requestAnimationFrame(() => {
+      if (this.#settingsTrigger?.isConnected) this.#settingsTrigger.focus();
+      else if (nodeId) {
+        this.#nodeElements.get(nodeId)
+          ?.querySelector(".node-settings-trigger")
+          ?.focus();
+      }
+      this.#settingsTrigger = null;
+    });
+    return true;
+  }
+
+  #syncSettingsReadOnly() {
+    if (!this.#settingsFields) return;
+    const disabled = this.readOnly;
+    const { name, type, description, color, useTheme, data, save } =
+      this.#settingsFields;
+    name.disabled = disabled;
+    type.disabled = disabled;
+    description.disabled = disabled;
+    useTheme.disabled = disabled;
+    color.disabled = disabled || useTheme.checked;
+    data.disabled = disabled;
+    save.disabled = disabled;
+    save.hidden = disabled;
+  }
+
+  #normalizeSettingsColor(value) {
+    const color = String(value ?? "").trim();
+    if (/^#[\da-f]{6}$/i.test(color)) return color;
+    if (/^#[\da-f]{3}$/i.test(color)) {
+      return `#${[...color.slice(1)].map((part) => `${part}${part}`).join("")}`;
+    }
+    return "#5b5ce2";
+  }
+
+  #saveNodeSettings = (event) => {
+    event.preventDefault();
+    if (this.readOnly || !this.#settingsNodeId) return;
+    if (!this.#settingsForm.reportValidity()) return;
+
+    let data;
+    try {
+      data = JSON.parse(this.#settingsFields.data.value || "null");
+    } catch (error) {
+      this.#settingsError.textContent = `Node data must be valid JSON: ${error.message}`;
+      this.#settingsError.hidden = false;
+      this.#settingsFields.data.focus();
+      return;
+    }
+
+    const previous = this.#graph.getNode(this.#settingsNodeId);
+    if (!previous) {
+      this.#hideNodeSettings("missing");
+      return;
+    }
+    const patch = {
+      title: this.#settingsFields.name.value.trim(),
+      type: this.#settingsFields.type.value.trim(),
+      description: this.#settingsFields.description.value.trim(),
+      color: this.#settingsFields.useTheme.checked
+        ? undefined
+        : this.#settingsFields.color.value,
+      data,
+    };
+    if (!dispatch(
+      this,
+      "gui:node-settings-save-request",
+      { node: previous, patch },
+      true,
+    )) return;
+
+    const updated = this.updateNode(previous.id, patch);
+    dispatch(this, "gui:node-settings-save", { node: updated, previous, patch });
+    this.#hideNodeSettings("save");
+  };
 
   #render() {
     if (!this.#nodeLayer) return;
@@ -610,8 +896,23 @@ export class GuiNodeEditor extends GuiElement {
     const title = document.createElement("strong");
     title.textContent = node.title;
     const type = document.createElement("span");
+    type.className = "node-type";
     type.textContent = node.type;
-    header.append(title, type);
+    const settings = this.#settingsIconButton(
+      `Settings for ${node.title}`,
+      "M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M10 14v6",
+    );
+    settings.className = "node-settings-trigger";
+    settings.addEventListener("pointerdown", (event) => event.stopPropagation());
+    settings.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.selectNode(node.id);
+      this.#showNodeSettings(node.id, settings);
+    });
+    const actions = document.createElement("div");
+    actions.className = "node-header-actions";
+    actions.append(type, settings);
+    header.append(title, actions);
 
     const body = document.createElement("div");
     body.className = "node-body";
@@ -1113,7 +1414,14 @@ const NODE_EDITOR_STYLES = `
     white-space: nowrap;
   }
 
-  .node-header span {
+  .node-header-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: .3rem;
+  }
+
+  .node-header .node-type {
     padding: .16rem .38rem;
     border-radius: 999px;
     background: color-mix(in srgb, var(--node-color) 13%, transparent);
@@ -1121,6 +1429,45 @@ const NODE_EDITOR_STYLES = `
     font: 750 .62rem/1.2 var(--gui-font, ui-sans-serif, system-ui);
     letter-spacing: .04em;
     text-transform: uppercase;
+  }
+
+  .node-settings-trigger {
+    display: grid;
+    width: 1.7rem;
+    height: 1.7rem;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: .45rem;
+    background: transparent;
+    color: var(--gui-text-muted, #666b78);
+    cursor: pointer;
+    opacity: .68;
+    transition: background 160ms, color 160ms, opacity 160ms, transform 160ms;
+  }
+
+  .node-settings-trigger:hover,
+  .node-settings-trigger:focus-visible {
+    background: color-mix(in srgb, var(--node-color) 14%, transparent);
+    color: var(--node-color);
+    opacity: 1;
+  }
+
+  .node-settings-trigger:active { transform: scale(.92); }
+  .node-settings-trigger:focus-visible {
+    outline: 2px solid var(--gui-focus, rgb(91 92 226 / .35));
+    outline-offset: 1px;
+  }
+
+  .node-settings-trigger svg,
+  .node-settings-close svg {
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
   }
 
   .node-body {
@@ -1190,6 +1537,206 @@ const NODE_EDITOR_STYLES = `
     font: .7rem/1.4 var(--gui-font, ui-sans-serif, system-ui);
   }
 
+  .node-settings-dialog {
+    width: min(34rem, calc(100vw - 2rem));
+    max-height: min(46rem, calc(100vh - 2rem));
+    margin: auto;
+    padding: 0;
+    overflow: auto;
+    border: 1px solid var(--gui-border, #dfe2ea);
+    border-radius: 1rem;
+    background: var(--gui-surface-raised, white);
+    color: var(--gui-text, #17181c);
+    box-shadow: 0 28px 90px rgb(18 23 38 / .32);
+    animation: node-settings-arrive 220ms cubic-bezier(.22, 1, .36, 1);
+  }
+
+  .node-settings-dialog::backdrop {
+    background: rgb(18 23 38 / .48);
+    backdrop-filter: blur(5px);
+    animation: node-settings-backdrop 180ms ease-out;
+  }
+
+  .node-settings-form { min-width: 0; }
+
+  .node-settings-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.25rem 1.25rem 1rem;
+    border-bottom: 1px solid var(--gui-border, #dfe2ea);
+    background:
+      linear-gradient(135deg, var(--gui-accent-soft, #ededff), transparent 60%),
+      var(--gui-surface-raised, white);
+  }
+
+  .node-settings-eyebrow {
+    display: block;
+    margin-bottom: .3rem;
+    color: var(--gui-accent, #5b5ce2);
+    font: 750 .66rem/1.2 var(--gui-font, ui-sans-serif, system-ui);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  .node-settings-header h2 {
+    margin: 0;
+    font: 760 1.3rem/1.2 var(--gui-font, ui-sans-serif, system-ui);
+  }
+
+  .node-settings-id {
+    display: block;
+    margin-top: .38rem;
+    color: var(--gui-text-muted, #666b78);
+    font: 550 .72rem/1.2 var(--gui-font-mono, ui-monospace, monospace);
+  }
+
+  .node-settings-close {
+    display: grid;
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 auto;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: .55rem;
+    background: transparent;
+    color: var(--gui-text-muted, #666b78);
+    cursor: pointer;
+  }
+
+  .node-settings-close:hover { background: var(--gui-accent-soft, #ededff); }
+  .node-settings-close:focus-visible {
+    outline: 2px solid var(--gui-focus, rgb(91 92 226 / .35));
+    outline-offset: 2px;
+  }
+
+  .node-settings-body {
+    display: grid;
+    gap: 1rem;
+    padding: 1.2rem 1.25rem;
+  }
+
+  .node-settings-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: .8rem;
+  }
+
+  .node-settings-field {
+    display: grid;
+    gap: .42rem;
+    min-width: 0;
+  }
+
+  .node-settings-field > span {
+    color: var(--gui-text-muted, #666b78);
+    font: 680 .72rem/1.2 var(--gui-font, ui-sans-serif, system-ui);
+  }
+
+  .node-settings-field input[type="text"],
+  .node-settings-field textarea {
+    width: 100%;
+    min-width: 0;
+    padding: .7rem .75rem;
+    border: 1px solid var(--gui-border, #dfe2ea);
+    border-radius: .65rem;
+    outline: none;
+    background: var(--gui-surface, white);
+    color: var(--gui-text, #17181c);
+    font: 500 .82rem/1.45 var(--gui-font, ui-sans-serif, system-ui);
+    transition: border-color 150ms, box-shadow 150ms;
+  }
+
+  .node-settings-field textarea { resize: vertical; }
+  .node-settings-field input:focus,
+  .node-settings-field textarea:focus {
+    border-color: var(--gui-accent, #5b5ce2);
+    box-shadow: 0 0 0 3px var(--gui-focus, rgb(91 92 226 / .22));
+  }
+
+  .node-settings-json {
+    font-family: var(--gui-font-mono, ui-monospace, monospace) !important;
+    font-size: .76rem !important;
+  }
+
+  .node-settings-color {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    min-height: 2.6rem;
+  }
+
+  .node-settings-color > input[type="color"] {
+    width: 3.2rem;
+    height: 2.35rem;
+    padding: .18rem;
+    border: 1px solid var(--gui-border, #dfe2ea);
+    border-radius: .58rem;
+    background: var(--gui-surface, white);
+    cursor: pointer;
+  }
+
+  .node-settings-check {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    color: var(--gui-text, #17181c);
+    font: 550 .78rem/1.3 var(--gui-font, ui-sans-serif, system-ui);
+  }
+
+  .node-settings-check input { accent-color: var(--gui-accent, #5b5ce2); }
+  .node-settings-field :disabled {
+    cursor: not-allowed;
+    opacity: .58;
+  }
+
+  .node-settings-error {
+    margin: 0;
+    padding: .65rem .75rem;
+    border-radius: .6rem;
+    background: color-mix(in srgb, var(--gui-danger, #dc3545) 12%, transparent);
+    color: var(--gui-danger, #b42332);
+    font: 600 .75rem/1.4 var(--gui-font, ui-sans-serif, system-ui);
+  }
+  .node-settings-error[hidden] { display: none; }
+
+  .node-settings-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: .65rem;
+    padding: 1rem 1.25rem 1.2rem;
+    border-top: 1px solid var(--gui-border, #dfe2ea);
+  }
+
+  .node-settings-button {
+    min-height: 2.35rem;
+    padding: .55rem .85rem;
+    border: 1px solid transparent;
+    border-radius: .65rem;
+    cursor: pointer;
+    font: 680 .78rem/1 var(--gui-font, ui-sans-serif, system-ui);
+  }
+
+  .node-settings-button--secondary {
+    border-color: var(--gui-border, #dfe2ea);
+    background: var(--gui-surface, white);
+    color: var(--gui-text, #17181c);
+  }
+
+  .node-settings-button--primary {
+    background: var(--gui-accent, #5b5ce2);
+    color: white;
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--gui-accent, #5b5ce2) 28%, transparent);
+  }
+
+  .node-settings-button:hover { filter: brightness(.98); }
+  .node-settings-button:focus-visible {
+    outline: 2px solid var(--gui-focus, rgb(91 92 226 / .35));
+    outline-offset: 2px;
+  }
+
   .toolbar {
     position: absolute;
     top: .75rem;
@@ -1247,8 +1794,23 @@ const NODE_EDITOR_STYLES = `
     to { stroke-dashoffset: -15; }
   }
 
+  @keyframes node-settings-arrive {
+    from { opacity: 0; transform: translateY(.7rem) scale(.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes node-settings-backdrop {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
   @media (max-width: 36rem) {
     .help { display: none; }
+    .node-settings-grid { grid-template-columns: 1fr; }
+    .node-settings-dialog {
+      width: calc(100vw - 1rem);
+      max-height: calc(100vh - 1rem);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

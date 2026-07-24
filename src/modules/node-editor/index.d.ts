@@ -84,6 +84,8 @@ export class GuiNodeEditor extends HTMLElement {
   selectNode(id: string, additive?: boolean): boolean;
   selectLink(id: string): boolean;
   clearSelection(): void;
+  openNodeSettings(id: string): boolean;
+  closeNodeSettings(): boolean;
   setView(view: { x?: number; y?: number; zoom?: number }): void;
   zoomToFit(padding?: number): void;
 }

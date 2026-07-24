@@ -8,6 +8,8 @@ All notable changes to GuiKit are documented here. The format follows
 
 ### Added
 
+- Per-node settings buttons with an accessible modal editor, JSON data
+  validation, read-only inspection, and cancelable extension events.
 - Comprehensive full-demo application covering every component, service,
   feature module, backend log transport, and documented extension pattern.
 - Tag-driven GitHub Release packaging with semantic-version validation,
