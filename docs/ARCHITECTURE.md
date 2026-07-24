@@ -36,6 +36,7 @@ src/
     runtime/                   persistence, routing, tasks, capabilities
     forms/                     schema form model and renderer
     data-views/                virtual list/grid/tree models and renderers
+    performance/               frame batching, performance budgets, lazy loading
     workspace/                 serializable docking layout
     devtools/                  playground, diagnostics, accessibility audit
     <feature>/

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { GuiDataBuffer, decimateMinMax } from "../src/gui.js";
+import { GuiDataBuffer, analyzeChartSignal, decimateMinMax, deriveChartSignal } from "../src/gui.js";
 
 test("ring buffer retains only the newest points at fixed capacity", () => {
   const buffer = new GuiDataBuffer(3);
@@ -57,4 +57,20 @@ test("min/max decimation keeps large peaks visible", () => {
   assert.ok(indices.includes(501));
   assert.equal(indices[0], 0);
   assert.equal(indices.at(-1), 999);
+});
+
+test("signal analysis reports stable statistics and rates", () => {
+  const stats = analyzeChartSignal([[10, 2], [20, 4], [30, 8]]);
+  assert.deepEqual(stats, {
+    count: 3, min: 2, max: 8, mean: 14 / 3,
+    standardDeviation: Math.sqrt(56 / 9), delta: 6, rate: .3,
+  });
+});
+
+test("derived signals support moving averages, derivatives, integrals, and differences", () => {
+  const points = [[0, 2], [10, 4], [20, 8]];
+  assert.deepEqual(deriveChartSignal(points, { operation: "moving-average", window: 2 }).map((point) => point.y), [2, 3, 6]);
+  assert.deepEqual(deriveChartSignal(points, { operation: "derivative" }).map((point) => point.y), [0, .2, .4]);
+  assert.deepEqual(deriveChartSignal(points, { operation: "integral" }).map((point) => point.y), [0, 30, 90]);
+  assert.deepEqual(deriveChartSignal(points, { operation: "difference", compare: [[0, 1], [10, 1], [20, 3]] }).map((point) => point.y), [1, 3, 5]);
 });

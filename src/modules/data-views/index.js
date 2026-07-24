@@ -180,6 +180,8 @@ export class GuiDataCollection extends GuiEventTarget {
 export class GuiPagedDataSource extends GuiEventTarget {
   #loader;
   #cache = new Map();
+  #inflight = new Map();
+  #controllers = new Map();
   #maxPages;
   constructor(loader, options = {}) {
     super();
@@ -191,30 +193,61 @@ export class GuiPagedDataSource extends GuiEventTarget {
   }
   async page(index, options = {}) {
     const page = Math.max(0, Math.floor(Number(index) || 0));
-    if (this.#cache.has(page) && !options.reload) return clone(this.#cache.get(page));
-    const result = await this.#loader({
+    const key = this.#key(page, options);
+    if (this.#cache.has(key) && !options.reload) return clone(this.#cache.get(key));
+    if (this.#inflight.has(key) && !options.reload) return this.#inflight.get(key).then(clone);
+    const controller = new AbortController();
+    const abort = () => controller.abort(options.signal?.reason);
+    options.signal?.addEventListener?.("abort", abort, { once: true });
+    this.#controllers.set(key, controller);
+    const request = this.#loader({
       page,
       pageSize: this.pageSize,
       offset: page * this.pageSize,
-      signal: options.signal,
+      signal: controller.signal,
       sort: clone(options.sort ?? []),
       filters: clone(options.filters ?? {}),
+    }).then((result) => {
+      const normalized = {
+        page,
+        rows: clone(result?.rows ?? result ?? []),
+        total: Math.max(0, Number(result?.total ?? this.total) || 0),
+      };
+      this.total = normalized.total;
+      this.#cache.set(key, normalized);
+      while (this.#cache.size > this.#maxPages) this.#cache.delete(this.#cache.keys().next().value);
+      emit(this, "gui:data-page", clone(normalized));
+      return normalized;
+    }).finally(() => {
+      options.signal?.removeEventListener?.("abort", abort);
+      this.#inflight.delete(key);
+      this.#controllers.delete(key);
     });
-    const normalized = {
-      page,
-      rows: clone(result?.rows ?? result ?? []),
-      total: Math.max(0, Number(result?.total ?? this.total) || 0),
-    };
-    this.total = normalized.total;
-    this.#cache.set(page, normalized);
-    while (this.#cache.size > this.#maxPages) this.#cache.delete(this.#cache.keys().next().value);
-    emit(this, "gui:data-page", clone(normalized));
-    return clone(normalized);
+    this.#inflight.set(key, request);
+    return request.then(clone);
+  }
+  prefetch(indices, options = {}) {
+    const pages = [...new Set((Array.isArray(indices) ? indices : [indices])
+      .map((index) => Math.max(0, Math.floor(Number(index) || 0))))];
+    return Promise.allSettled(pages.map((page) => this.page(page, options))).then((results) => (
+      results.filter((result) => result.status === "fulfilled").map((result) => result.value)
+    ));
+  }
+  cancel(page = undefined) {
+    const keys = page === undefined
+      ? [...this.#controllers.keys()]
+      : [...this.#controllers.keys()].filter((key) => key.startsWith(`${Math.max(0, Math.floor(Number(page) || 0))}:`));
+    keys.forEach((key) => this.#controllers.get(key)?.abort());
+    return keys.length;
   }
   invalidate(page = undefined) {
     if (page === undefined) this.#cache.clear();
-    else this.#cache.delete(Math.max(0, Math.floor(Number(page) || 0)));
+    else {
+      const prefix = `${Math.max(0, Math.floor(Number(page) || 0))}:`;
+      [...this.#cache.keys()].filter((key) => key.startsWith(prefix)).forEach((key) => this.#cache.delete(key));
+    }
   }
+  #key(page, options) { return `${page}:${JSON.stringify({ sort: options.sort ?? [], filters: options.filters ?? {} })}`; }
 }
 
 export class GuiTreeModel extends GuiEventTarget {
@@ -316,6 +349,8 @@ export class GuiVirtualList extends GuiElement {
   #renderItem = null;
   #resizeObserver;
   #scheduled = false;
+  #rendered = new Map();
+  #recycled = [];
 
   constructor() {
     super();
@@ -368,18 +403,22 @@ export class GuiVirtualList extends GuiElement {
     const count = Math.ceil(height / this.#itemHeight) + this.#overscan * 2;
     const end = Math.min(this.#items.length, start + count);
     this.#space.style.height = `${this.#items.length * this.#itemHeight}px`;
-    this.#layer.replaceChildren();
+    const next = new Map();
     for (let index = start; index < end; index += 1) {
-      const row = document.createElement("div");
+      const row = this.#rendered.get(index) ?? this.#recycled.pop() ?? document.createElement("div");
       row.className = "item";
       row.style.top = `${index * this.#itemHeight}px`;
       row.style.height = `${this.#itemHeight}px`;
       row.dataset.index = index;
       const content = this.#renderItem?.(clone(this.#items[index]), index);
+      row.replaceChildren();
       if (content instanceof Node) row.append(content);
       else row.textContent = content == null ? String(this.#items[index] ?? "") : String(content);
-      this.#layer.append(row);
+      next.set(index, row);
     }
+    this.#rendered.forEach((row, index) => { if (!next.has(index)) this.#recycled.push(row); });
+    this.#rendered = next;
+    this.#layer.replaceChildren(...next.values());
     emit(this, "gui:virtual-range", { start, end, total: this.#items.length });
   }
 }
@@ -420,6 +459,8 @@ export class GuiDataGrid extends GuiElement {
   #renderers = new Map();
   #dataSource = null;
   #page = 0;
+  #loadController = null;
+  #renderScheduled = false;
 
   constructor() {
     super();
@@ -432,7 +473,7 @@ export class GuiDataGrid extends GuiElement {
     this.#viewport = this.#root.querySelector(".viewport");
     this.#space = this.#root.querySelector(".space");
     this.#rowsLayer = this.#root.querySelector(".rows");
-    this.#viewport.addEventListener("scroll", () => this.render(), { passive: true });
+    this.#viewport.addEventListener("scroll", () => this.#scheduleRender(), { passive: true });
     this.#viewport.addEventListener("keydown", (event) => this.#keydown(event));
     this.#root.addEventListener("click", (event) => this.#click(event));
     this.#root.addEventListener("focusout", (event) => this.#edit(event));
@@ -479,12 +520,25 @@ export class GuiDataGrid extends GuiElement {
 
   async loadPage(index, options = {}) {
     if (!this.#dataSource?.page) throw new Error("No paged data source is configured.");
-    const result = await this.#dataSource.page(index, {
-      ...options,
-      sort: this.#model?.sort ?? [],
-    });
+    this.#loadController?.abort();
+    const controller = new AbortController();
+    this.#loadController = controller;
+    const abort = () => controller.abort(options.signal?.reason);
+    options.signal?.addEventListener?.("abort", abort, { once: true });
+    let result;
+    try {
+      result = await this.#dataSource.page(index, {
+        ...options,
+        signal: controller.signal,
+        sort: this.#model?.sort ?? [],
+      });
+    } finally {
+      options.signal?.removeEventListener?.("abort", abort);
+      if (this.#loadController === controller) this.#loadController = null;
+    }
     this.#page = result.page;
     this.rows = result.rows;
+    this.#dataSource.prefetch?.([result.page - 1, result.page + 1], { sort: this.#model?.sort ?? [] });
     emit(this, "gui:grid-page", {
       page: result.page,
       pageSize: this.#dataSource.pageSize,
@@ -504,6 +558,14 @@ export class GuiDataGrid extends GuiElement {
   }
   disconnectedCallback() {
     this.#model?.removeEventListener?.("gui:data-change", this.#modelListener);
+    this.#loadController?.abort();
+  }
+
+  #scheduleRender() {
+    if (this.#renderScheduled) return;
+    this.#renderScheduled = true;
+    const request = globalThis.requestAnimationFrame ?? ((callback) => setTimeout(callback, 16));
+    request(() => { this.#renderScheduled = false; this.render(); });
   }
 
   render() {

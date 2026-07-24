@@ -11,7 +11,8 @@ The current `0.1` foundation includes:
 - optional persistent desktop sidebar collapsing;
 - accessible, keyboard-navigable tab views;
 - interruption-safe animated tabs and sliding pages with back history;
-- responsive live charts for thousands of continuously updated data points;
+- analysis-grade live charts with multi-signal/dual-axis views, cursors,
+  thresholds, annotations, pan/zoom, derived signals, and bounded rendering;
 - accessible toast notifications with actions and four severity levels;
 - validated, resumable multi-step wizards with asynchronous hooks;
 - a visual node editor with typed ports, links, pan, zoom, and serialization;
@@ -30,6 +31,8 @@ The current `0.1` foundation includes:
 - guarded routing, background task progress, typed clipboard payloads,
   allowlisted capabilities, and bounded performance diagnostics;
 - a component playground with event inspection and accessibility auditing;
+- frame batching, bounded performance budgets, cancellable data prefetching,
+  virtual-row recycling, and lazy optional feature imports;
 - light, dark, and system themes powered by CSS variables;
 - runtime localization with fallback and interpolation;
 - a promise-based host bridge for pywebview, WebView2, WebKit, and browser mocks;

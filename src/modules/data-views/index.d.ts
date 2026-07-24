@@ -42,6 +42,10 @@ export class GuiPagedDataSource<Row extends Record<string, unknown> = Record<str
     reload?: boolean; signal?: AbortSignal;
     sort?: GuiSortRule[]; filters?: Record<string, unknown>;
   }): Promise<{ page: number; rows: Row[]; total: number }>;
+  prefetch(indices: number | number[], options?: {
+    reload?: boolean; signal?: AbortSignal; sort?: GuiSortRule[]; filters?: Record<string, unknown>;
+  }): Promise<Array<{ page: number; rows: Row[]; total: number }>>;
+  cancel(page?: number): number;
   invalidate(page?: number): void;
 }
 

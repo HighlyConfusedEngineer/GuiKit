@@ -16,6 +16,8 @@ export interface GuiModuleManifest {
 
 export class GuiModuleRegistry {
   register(manifest: GuiModuleManifest): Readonly<GuiModuleManifest>;
+  registerLazy(id: string, loader: () => Promise<GuiModuleManifest | { default: GuiModuleManifest }> | GuiModuleManifest | { default: GuiModuleManifest }): string;
+  load(id: string): Promise<GuiModuleManifest | undefined>;
   has(id: string): boolean;
   get(id: string): Readonly<GuiModuleManifest> | undefined;
   state(id: string): "missing" | "registered" | "initializing" | "initialized" | "failed";

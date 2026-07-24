@@ -10,6 +10,7 @@ export class GuiModuleRegistry {
   #states = new Map();
   #results = new Map();
   #promises = new Map();
+  #lazy = new Map();
 
   register(manifest) {
     validateManifest(manifest);
@@ -32,11 +33,37 @@ export class GuiModuleRegistry {
   }
 
   has(id) {
-    return this.#modules.has(id);
+    return this.#modules.has(id) || this.#lazy.has(id);
   }
 
   get(id) {
     return this.#modules.get(id);
+  }
+
+  /** Registers an optional feature import without adding it to the initial bundle. */
+  registerLazy(id, loader) {
+    const key = String(id);
+    if (!/^[a-z][a-z0-9-]*$/.test(key)) throw new TypeError("A lazy module id must use lowercase letters, numbers, and hyphens.");
+    if (typeof loader !== "function") throw new TypeError("A lazy module loader must be a function.");
+    if (this.#modules.has(key) || this.#lazy.has(key)) throw new Error(`GuiKit module "${key}" is already registered.`);
+    this.#lazy.set(key, { loader, promise: null });
+    this.#states.set(key, "lazy");
+    return key;
+  }
+
+  async load(id) {
+    const key = String(id);
+    const lazy = this.#lazy.get(key);
+    if (!lazy) return this.#modules.get(key);
+    if (!lazy.promise) {
+      lazy.promise = Promise.resolve(lazy.loader()).then((loaded) => {
+        const manifest = loaded?.default?.id ? loaded.default : (loaded?.module?.id ? loaded.module : loaded);
+        this.#lazy.delete(key);
+        this.register(manifest);
+        return manifest;
+      }).catch((error) => { this.#states.set(key, "failed"); throw error; });
+    }
+    return lazy.promise;
   }
 
   state(id) {
@@ -64,9 +91,11 @@ export class GuiModuleRegistry {
     this.#states.clear();
     this.#results.clear();
     this.#promises.clear();
+    this.#lazy.clear();
   }
 
   async #initialize(id, context, path) {
+    if (!this.#modules.has(id) && this.#lazy.has(id)) await this.load(id);
     const manifest = this.#modules.get(id);
     if (!manifest) {
       const owner = path.at(-1);

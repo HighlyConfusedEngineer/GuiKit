@@ -42,6 +42,19 @@ test("paged data source caches async server pages", async () => {
   assert.equal(source.total, 1_000_000);
 });
 
+test("paged data source deduplicates prefetches and keeps sort/filter caches isolated", async () => {
+  let calls = 0;
+  const source = new GuiPagedDataSource(async ({ page, sort }) => {
+    calls += 1;
+    return { total: 10, rows: [{ id: `${page}:${sort[0]?.direction ?? "none"}` }] };
+  }, { pageSize: 1 });
+  const results = await source.prefetch([1, 1, 2], { sort: [{ field: "id", direction: "asc" }] });
+  assert.deepEqual(results.map((result) => result.rows[0].id), ["1:asc", "2:asc"]);
+  await source.page(1, { sort: [{ field: "id", direction: "asc" }] });
+  await source.page(1, { sort: [{ field: "id", direction: "desc" }] });
+  assert.equal(calls, 3);
+});
+
 test("tree model flattens only expanded branches and rejects duplicate ids", () => {
   const tree = new GuiTreeModel([
     { id: "root", label: "Root", children: [{ id: "child", label: "Child" }] },

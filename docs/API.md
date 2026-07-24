@@ -46,7 +46,7 @@ Attributes:
 | `max` | automatic | Fixed vertical maximum |
 | `label` | `Live data chart` | Accessible canvas description |
 
-Configure and update series:
+Configure multi-axis, multi-signal series:
 
 ```js
 const chart = document.querySelector("#telemetry");
@@ -56,9 +56,11 @@ chart.setSeries([
     id: "cpu",
     label: "CPU",
     color: "#5b5ce2",
+    unit: "%",
+    type: "area",
     data: [{ x: Date.now(), y: 42 }],
   },
-  { id: "memory", label: "Memory", data: [] },
+  { id: "network", label: "Network", axis: "right", type: "step", data: [] },
 ]);
 
 chart.append("cpu", { x: Date.now(), y: 48 });
@@ -79,9 +81,23 @@ Methods:
 - `append(seriesId, point)` adds one point.
 - `appendBatch(seriesId, points)` adds many points with a single redraw.
 - `clear(seriesId?)` clears one series or all series.
+- `setSeriesVisible(id, visible)` and `toggleSeries(id)` control individual
+  signals; the interactive legend exposes the same action.
+- `setView({ xMin, xMax })` and `resetView()` control the time viewport.
+- `setCursor({ x, pinned, rangeStart, rangeEnd })` controls the shared
+  multi-signal cursor.
+- `setThresholds(...)` and `setAnnotations(...)` add analysis overlays.
+- `addDerivedSeries({ source, operation, window })` creates moving-average,
+  derivative, integral, or difference signals.
 - `requestRender()` schedules a redraw.
 
-The component emits `gui:chart-render` with total and visible point counts.
+Mouse wheel zooms around the pointer; drag pans; Shift-drag marks a range;
+click pins the cursor; double-click resets the view. `gui:chart-render`
+includes bounded per-signal statistics. `gui:chart-cursor`,
+`gui:chart-view-change`, and `gui:chart-series-visibility` report interaction.
+
+`analyzeChartSignal(points)` and `deriveChartSignal(points, options)` are
+DOM-independent helpers for analysis pipelines and worker-backed hosts.
 
 ## Toasts
 

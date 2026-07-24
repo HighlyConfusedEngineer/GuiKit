@@ -110,6 +110,18 @@ import {
   auditAccessibility,
   devtoolsModule,
 } from "./modules/devtools/index.js";
+import {
+  GuiFrameScheduler,
+  GuiLazyModuleLoader,
+  GuiPerformanceBudget,
+  GuiResourceGovernor,
+  GuiSignalStore,
+  frameScheduler,
+  lazyModules,
+  performanceBudget,
+  performanceModule,
+  resourceGovernor,
+} from "./modules/performance/index.js";
 
 export {
   GUI_LOG_LEVELS,
@@ -133,6 +145,7 @@ export {
   GuiForm,
   GuiFormEditorRegistry,
   GuiFormModel,
+  GuiFrameScheduler,
   GuiHistory,
   GuiHttpLogSink,
   GuiLogger,
@@ -149,6 +162,8 @@ export {
   GuiNodeGraph,
   GuiOverlayController,
   GuiPersistenceStore,
+  GuiPerformanceBudget,
+  GuiResourceGovernor,
   GuiPopover,
   GuiRouter,
   GuiStatusbar,
@@ -162,6 +177,8 @@ export {
   GuiWizardModel,
   GuiWorkspace,
   GuiWorkspaceModel,
+  GuiLazyModuleLoader,
+  GuiSignalStore,
   auditAccessibility,
   capabilities,
   clipboard,
@@ -173,6 +190,7 @@ export {
   diagnostics,
   dragDrop,
   formEditors,
+  frameScheduler,
   formsModule,
   guiModules,
   history,
@@ -186,11 +204,15 @@ export {
   overlayController,
   overlaysModule,
   persistence,
+  performanceBudget,
+  performanceModule,
+  resourceGovernor,
   routeNodeConnection,
   router,
   runtimeModule,
   statusbarModule,
   tasks,
+  lazyModules,
   wizardModule,
   workspaceModule,
 };
@@ -264,6 +286,7 @@ function writeStorage(key, value) {
 
 export class GuiI18n extends GuiEventTarget {
   #catalogs = new Map();
+  #loads = new Map();
   #locale = "en";
   #fallbackLocale = "en";
 
@@ -291,12 +314,16 @@ export class GuiI18n extends GuiEventTarget {
   }
 
   async load(locale, url) {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Could not load locale "${locale}" from ${url}.`);
+    const key = `${locale}:${url}`;
+    if (this.#catalogs.has(locale)) return this;
+    if (!this.#loads.has(key)) {
+      this.#loads.set(key, fetch(url).then(async (response) => {
+        if (!response.ok) throw new Error(`Could not load locale "${locale}" from ${url}.`);
+        this.register(locale, await response.json());
+        return this;
+      }).finally(() => this.#loads.delete(key)));
     }
-    this.register(locale, await response.json());
-    return this;
+    return this.#loads.get(key);
   }
 
   setLocale(locale, root = hasDOM ? document : null) {
@@ -600,15 +627,123 @@ export function decimateMinMax(buffer, start = 0, end = buffer.length, targetBuc
   return indices;
 }
 
+function clamp(value, minimum, maximum) {
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
+function chartRange(buffer, start = 0, end = buffer.length) {
+  let xMin = Infinity;
+  let xMax = -Infinity;
+  let yMin = Infinity;
+  let yMax = -Infinity;
+  for (let index = start; index < end; index += 1) {
+    const x = buffer.xAt(index);
+    const y = buffer.yAt(index);
+    xMin = Math.min(xMin, x);
+    xMax = Math.max(xMax, x);
+    yMin = Math.min(yMin, y);
+    yMax = Math.max(yMax, y);
+  }
+  return { xMin, xMax, yMin, yMax };
+}
+
+function nearestBufferIndex(buffer, value, start = 0, end = buffer.length) {
+  let low = start;
+  let high = end - 1;
+  while (low <= high) {
+    const middle = Math.floor((low + high) / 2);
+    if (buffer.xAt(middle) < value) low = middle + 1;
+    else high = middle - 1;
+  }
+  const before = clamp(high, start, end - 1);
+  const after = clamp(low, start, end - 1);
+  return Math.abs(buffer.xAt(before) - value) <= Math.abs(buffer.xAt(after) - value) ? before : after;
+}
+
+function normalizeChartRange(range) {
+  if (!range || typeof range !== "object") return null;
+  const xMin = Number(range.xMin);
+  const xMax = Number(range.xMax);
+  return Number.isFinite(xMin) && Number.isFinite(xMax) && xMax > xMin ? { xMin, xMax } : null;
+}
+
+/** Calculates analysis statistics without retaining or mutating application data. */
+export function analyzeChartSignal(points) {
+  const values = points instanceof GuiDataBuffer
+    ? Array.from({ length: points.length }, (_, index) => ({ x: points.xAt(index), y: points.yAt(index) }))
+    : [...(points ?? [])].map((point, index) => normalizePoint(point, index)).filter(Boolean);
+  if (!values.length) return { count: 0, min: null, max: null, mean: null, standardDeviation: null, delta: null, rate: null };
+  let min = Infinity;
+  let max = -Infinity;
+  let sum = 0;
+  for (const point of values) {
+    min = Math.min(min, point.y);
+    max = Math.max(max, point.y);
+    sum += point.y;
+  }
+  const mean = sum / values.length;
+  const variance = values.reduce((total, point) => total + ((point.y - mean) ** 2), 0) / values.length;
+  const first = values[0];
+  const last = values.at(-1);
+  const duration = last.x - first.x;
+  return {
+    count: values.length,
+    min,
+    max,
+    mean,
+    standardDeviation: Math.sqrt(variance),
+    delta: last.y - first.y,
+    rate: duration > 0 ? (last.y - first.y) / duration : null,
+  };
+}
+
+/** Builds common analysis signals from one or two chronologically ordered inputs. */
+export function deriveChartSignal(points, options = {}) {
+  const source = [...(points ?? [])].map((point, index) => normalizePoint(point, index)).filter(Boolean);
+  const operation = options.operation ?? "moving-average";
+  const windowSize = Math.max(1, Math.floor(Number(options.window) || 12));
+  const compare = [...(options.compare ?? [])].map((point, index) => normalizePoint(point, index)).filter(Boolean);
+  const result = [];
+  let sum = 0;
+  for (let index = 0; index < source.length; index += 1) {
+    const point = source[index];
+    if (operation === "moving-average") {
+      sum += point.y;
+      if (index >= windowSize) sum -= source[index - windowSize].y;
+      result.push({ x: point.x, y: sum / Math.min(index + 1, windowSize) });
+    } else if (operation === "derivative") {
+      const previous = source[index - 1] ?? point;
+      const duration = point.x - previous.x;
+      result.push({ x: point.x, y: duration ? (point.y - previous.y) / duration : 0 });
+    } else if (operation === "integral") {
+      const previous = source[index - 1];
+      const prior = result[index - 1]?.y ?? 0;
+      result.push({ x: point.x, y: previous ? prior + ((previous.y + point.y) / 2) * (point.x - previous.x) : 0 });
+    } else if (operation === "difference") {
+      result.push({ x: point.x, y: point.y - (compare[index]?.y ?? 0) });
+    } else {
+      result.push({ ...point });
+    }
+  }
+  return result;
+}
+
 export class GuiLiveChart extends GuiElement {
   static observedAttributes = ["max-points", "window-points", "min", "max"];
   #canvas;
   #context;
   #legend;
+  #tooltip;
   #series = new Map();
   #resizeObserver;
   #frame;
   #numberFormat = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 });
+  #timeFormat = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  #view = null;
+  #cursor = { x: null, pinned: false, rangeStart: null, rangeEnd: null };
+  #interaction = null;
+  #lastMetrics = null;
+  #resourceMode = "normal";
 
   connectedCallback() {
     if (!this.shadowRoot) this.#createView();
@@ -650,6 +785,21 @@ export class GuiLiveChart extends GuiElement {
     return count;
   }
 
+  get view() { return this.#view ? { ...this.#view } : null; }
+  get cursor() { return { ...this.#cursor }; }
+  get annotations() { return structuredClone(this.#annotations); }
+  get thresholds() { return structuredClone(this.#thresholds); }
+  get resourceMode() { return this.#resourceMode; }
+  #annotations = [];
+  #thresholds = [];
+
+  getSeries(id) {
+    const series = this.#series.get(String(id));
+    if (!series) return undefined;
+    const { buffer, ...metadata } = series;
+    return { ...metadata, statistics: analyzeChartSignal(buffer) };
+  }
+
   setSeries(seriesConfigurations) {
     this.#series.clear();
     seriesConfigurations.forEach((configuration, index) => {
@@ -668,6 +818,12 @@ export class GuiLiveChart extends GuiElement {
       color: configuration.color ?? null,
       paletteIndex,
       buffer,
+      axis: configuration.axis === "right" ? "right" : "left",
+      visible: configuration.visible !== false,
+      type: ["line", "area", "step"].includes(configuration.type) ? configuration.type : "line",
+      lineWidth: clamp(Number(configuration.lineWidth) || 1.75, 0.5, 8),
+      dash: Array.isArray(configuration.dash) ? configuration.dash.map(Number).filter(Number.isFinite) : [],
+      unit: configuration.unit ?? "",
     });
     this.requestRender();
     return id;
@@ -707,6 +863,111 @@ export class GuiLiveChart extends GuiElement {
     this.requestRender();
   }
 
+  removeSeries(id) {
+    const removed = this.#series.delete(String(id));
+    if (removed) this.requestRender();
+    return removed;
+  }
+
+  setResourceMode(mode) {
+    const next = ["normal", "balanced", "constrained"].includes(mode) ? mode : "normal";
+    this.#resourceMode = next;
+    const factor = { normal: 1, balanced: .6, constrained: .25 }[next];
+    const capacity = Math.max(500, Math.floor(this.maxPoints * factor));
+    this.#series.forEach((series) => series.buffer.resize(capacity));
+    this.requestRender();
+    emit(this, "gui:chart-resource-mode", { mode: next, capacity });
+  }
+
+  setSeriesVisible(id, visible) {
+    const series = this.#series.get(String(id));
+    if (!series) return false;
+    series.visible = Boolean(visible);
+    this.requestRender();
+    emit(this, "gui:chart-series-visibility", { id: series.id, visible: series.visible });
+    return true;
+  }
+
+  toggleSeries(id) {
+    const series = this.#series.get(String(id));
+    return series ? this.setSeriesVisible(id, !series.visible) : false;
+  }
+
+  setView(view) {
+    this.#view = normalizeChartRange(view);
+    this.requestRender();
+    emit(this, "gui:chart-view-change", { view: this.view });
+  }
+
+  resetView() {
+    if (!this.#view) return;
+    this.#view = null;
+    this.requestRender();
+    emit(this, "gui:chart-view-change", { view: null });
+  }
+
+  setCursor(cursor = {}) {
+    const x = Number(cursor.x);
+    const optionalNumber = (value) => value == null ? null : (Number.isFinite(Number(value)) ? Number(value) : null);
+    this.#cursor = {
+      x: Number.isFinite(x) ? x : null,
+      pinned: Boolean(cursor.pinned),
+      rangeStart: optionalNumber(cursor.rangeStart),
+      rangeEnd: optionalNumber(cursor.rangeEnd),
+    };
+    this.requestRender();
+  }
+
+  setAnnotations(annotations = []) {
+    this.#annotations = (annotations ?? []).map((annotation, index) => ({
+      id: String(annotation.id ?? `annotation-${index + 1}`), x: Number(annotation.x),
+      label: String(annotation.label ?? ""), color: annotation.color ?? null,
+    })).filter((annotation) => Number.isFinite(annotation.x));
+    this.requestRender();
+  }
+
+  addAnnotation(annotation) {
+    const id = String(annotation?.id ?? `annotation-${this.#annotations.length + 1}`);
+    const x = Number(annotation?.x);
+    if (!Number.isFinite(x)) throw new TypeError("A chart annotation requires a finite x value.");
+    this.#annotations = [...this.#annotations.filter((item) => item.id !== id), {
+      id, x, label: String(annotation?.label ?? ""), color: annotation?.color ?? null,
+    }];
+    this.requestRender();
+    return id;
+  }
+
+  removeAnnotation(id) {
+    const before = this.#annotations.length;
+    this.#annotations = this.#annotations.filter((annotation) => annotation.id !== String(id));
+    if (before !== this.#annotations.length) this.requestRender();
+    return before !== this.#annotations.length;
+  }
+
+  setThresholds(thresholds = []) {
+    this.#thresholds = (thresholds ?? []).map((threshold, index) => ({
+      id: String(threshold.id ?? `threshold-${index + 1}`), value: Number(threshold.value),
+      label: String(threshold.label ?? ""), color: threshold.color ?? null,
+      axis: threshold.axis === "right" ? "right" : "left", dash: threshold.dash ?? [5, 4],
+    })).filter((threshold) => Number.isFinite(threshold.value));
+    this.requestRender();
+  }
+
+  addDerivedSeries(configuration = {}) {
+    const source = this.#series.get(String(configuration.source ?? configuration.sources?.[0]));
+    if (!source) throw new Error("A derived chart series requires an existing source series.");
+    const compare = this.#series.get(String(configuration.compare ?? configuration.sources?.[1] ?? ""));
+    const data = deriveChartSignal(
+      Array.from({ length: source.buffer.length }, (_, index) => ({ x: source.buffer.xAt(index), y: source.buffer.yAt(index) })),
+      { operation: configuration.operation, window: configuration.window, compare: compare ? Array.from({ length: compare.buffer.length }, (_, index) => ({ x: compare.buffer.xAt(index), y: compare.buffer.yAt(index) })) : [] },
+    );
+    return this.addSeries({
+      id: configuration.id, label: configuration.label ?? `${source.label} ${configuration.operation ?? "average"}`,
+      color: configuration.color, axis: configuration.axis ?? source.axis, type: configuration.type ?? "line",
+      dash: configuration.dash ?? [5, 3], unit: configuration.unit ?? source.unit, data,
+    });
+  }
+
   requestRender() {
     if (!this.isConnected || this.#frame || this.getClientRects().length === 0) return;
     this.#frame = requestAnimationFrame(() => {
@@ -719,18 +980,21 @@ export class GuiLiveChart extends GuiElement {
     const root = this.attachShadow({ mode: "open" });
     const style = document.createElement("style");
     style.textContent = `
-      :host { display: block; min-width: 0; }
+      :host { display: block; min-width: 0; content-visibility: auto; contain: layout paint style; }
       .chart { position: relative; min-height: inherit; }
       canvas { display: block; width: 100%; height: 100%; min-height: 16rem; }
       .legend {
         position: absolute; inset: .65rem .8rem auto auto; display: flex;
         flex-wrap: wrap; justify-content: flex-end; gap: .45rem .8rem;
-        max-width: calc(100% - 4rem); pointer-events: none;
+        max-width: calc(100% - 4rem);
         color: var(--gui-text-muted); font: 600 .75rem/1.2 var(--gui-font);
       }
-      .legend span { display: inline-flex; align-items: center; gap: .35rem; }
+      .legend button { display: inline-flex; align-items: center; gap: .35rem; border: 0; padding: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+      .legend button[data-hidden=true] { opacity: .42; text-decoration: line-through; }
       .legend i { width: .55rem; height: .55rem; border-radius: 50%; background: var(--series-color); }
       .legend strong { color: var(--gui-text); font-variant-numeric: tabular-nums; }
+      .tooltip { position: absolute; z-index: 2; max-width: min(20rem, calc(100% - 1rem)); padding: .45rem .55rem; border: 1px solid var(--gui-border); border-radius: .4rem; background: color-mix(in srgb, var(--gui-surface-raised, white) 94%, transparent); box-shadow: var(--gui-shadow-sm, 0 2px 8px rgb(0 0 0 / .14)); color: var(--gui-text); font: 600 .72rem/1.35 var(--gui-font); pointer-events: none; }
+      .tooltip[hidden] { display: none; }
     `;
     const wrapper = document.createElement("div");
     wrapper.className = "chart";
@@ -739,10 +1003,19 @@ export class GuiLiveChart extends GuiElement {
     this.#canvas.setAttribute("aria-label", this.getAttribute("label") ?? "Live data chart");
     this.#legend = document.createElement("div");
     this.#legend.className = "legend";
-    this.#legend.setAttribute("aria-hidden", "true");
-    wrapper.append(this.#canvas, this.#legend);
+    this.#tooltip = document.createElement("div");
+    this.#tooltip.className = "tooltip";
+    this.#tooltip.hidden = true;
+    this.#tooltip.setAttribute("role", "status");
+    wrapper.append(this.#canvas, this.#legend, this.#tooltip);
     root.append(style, wrapper);
     this.#context = this.#canvas.getContext("2d");
+    this.#canvas.addEventListener("pointermove", (event) => this._onPointerMove(event));
+    this.#canvas.addEventListener("pointerdown", (event) => this._onPointerDown(event));
+    this.#canvas.addEventListener("pointerup", (event) => this._onPointerUp(event));
+    this.#canvas.addEventListener("pointerleave", () => this._onPointerLeave());
+    this.#canvas.addEventListener("wheel", (event) => this._onWheel(event), { passive: false });
+    this.#canvas.addEventListener("dblclick", () => this.resetView());
   }
 
   #onThemeChanged = () => this.requestRender();
@@ -772,9 +1045,10 @@ export class GuiLiveChart extends GuiElement {
     const padding = { top: 28, right: 14, bottom: 28, left: 50 };
     const plotWidth = Math.max(1, width - padding.left - padding.right);
     const plotHeight = Math.max(1, height - padding.top - padding.bottom);
-    const visibleSeries = [...this.#series.values()].filter((series) => series.buffer.length);
+    const seriesWithData = [...this.#series.values()].filter((series) => series.buffer.length);
+    const visibleSeries = seriesWithData.filter((series) => series.visible);
 
-    this.#renderLegend(visibleSeries, styles);
+    this.#renderLegend(seriesWithData, styles);
     if (!visibleSeries.length) {
       this.#context.fillStyle = muted;
       this.#context.font = `13px ${styles.getPropertyValue("--gui-font")}`;
@@ -785,8 +1059,7 @@ export class GuiLiveChart extends GuiElement {
 
     let xMin = Infinity;
     let xMax = -Infinity;
-    let yMin = Infinity;
-    let yMax = -Infinity;
+    const axes = new Map([["left", { yMin: Infinity, yMax: -Infinity }], ["right", { yMin: Infinity, yMax: -Infinity }]]);
     const windows = new Map();
     visibleSeries.forEach((series) => {
       const start = Math.max(0, series.buffer.length - this.windowPoints);
@@ -795,53 +1068,87 @@ export class GuiLiveChart extends GuiElement {
       for (let index = start; index < end; index += 1) {
         xMin = Math.min(xMin, series.buffer.xAt(index));
         xMax = Math.max(xMax, series.buffer.xAt(index));
-        yMin = Math.min(yMin, series.buffer.yAt(index));
-        yMax = Math.max(yMax, series.buffer.yAt(index));
+        const axis = axes.get(series.axis);
+        axis.yMin = Math.min(axis.yMin, series.buffer.yAt(index));
+        axis.yMax = Math.max(axis.yMax, series.buffer.yAt(index));
       }
     });
 
+    const naturalRange = { xMin, xMax };
+    if (this.#view) {
+      xMin = this.#view.xMin;
+      xMax = this.#view.xMax;
+    }
     const fixedMin = Number(this.getAttribute("min"));
     const fixedMax = Number(this.getAttribute("max"));
-    if (this.hasAttribute("min") && Number.isFinite(fixedMin)) yMin = fixedMin;
-    if (this.hasAttribute("max") && Number.isFinite(fixedMax)) yMax = fixedMax;
+    axes.forEach((axis, axisId) => {
+      if (axis.yMin === Infinity) { axis.yMin = 0; axis.yMax = 1; }
+      if (axisId === "left" && this.hasAttribute("min") && Number.isFinite(fixedMin)) axis.yMin = fixedMin;
+      if (axisId === "left" && this.hasAttribute("max") && Number.isFinite(fixedMax)) axis.yMax = fixedMax;
+      if (axis.yMin === axis.yMax) { axis.yMin -= 1; axis.yMax += 1; }
+      else if (!(axisId === "left" && (this.hasAttribute("min") || this.hasAttribute("max")))) {
+        const paddingY = (axis.yMax - axis.yMin) * 0.08;
+        axis.yMin -= paddingY;
+        axis.yMax += paddingY;
+      }
+    });
     if (xMin === xMax) xMax = xMin + 1;
-    if (yMin === yMax) {
-      yMin -= 1;
-      yMax += 1;
-    } else if (!this.hasAttribute("min") && !this.hasAttribute("max")) {
-      const paddingY = (yMax - yMin) * 0.08;
-      yMin -= paddingY;
-      yMax += paddingY;
-    }
-
-    this.#drawGrid({ width, height, padding, plotWidth, plotHeight, yMin, yMax, muted, border });
+    const leftAxis = axes.get("left");
+    const rightAxis = axes.get("right");
+    this.#drawGrid({ width, height, padding, plotWidth, plotHeight, yMin: leftAxis.yMin, yMax: leftAxis.yMax, rightAxis, xMin, xMax, muted, border });
     const mapX = (value) => padding.left + ((value - xMin) / (xMax - xMin)) * plotWidth;
-    const mapY = (value) => padding.top + (1 - ((value - yMin) / (yMax - yMin))) * plotHeight;
+    const mapY = (value, axisId = "left") => {
+      const axis = axes.get(axisId);
+      return padding.top + (1 - ((value - axis.yMin) / (axis.yMax - axis.yMin))) * plotHeight;
+    };
 
     visibleSeries.forEach((series) => {
       const { start, end } = windows.get(series.id);
-      const indices = decimateMinMax(series.buffer, start, end, Math.ceil(plotWidth));
+      const rangeStart = nearestBufferIndex(series.buffer, xMin, start, end);
+      const rangeEnd = nearestBufferIndex(series.buffer, xMax, start, end) + 1;
+      const indices = decimateMinMax(series.buffer, Math.min(rangeStart, rangeEnd - 1), Math.max(rangeStart + 1, rangeEnd), Math.ceil(plotWidth));
       this.#context.beginPath();
       indices.forEach((index, pointIndex) => {
         const x = mapX(series.buffer.xAt(index));
-        const y = mapY(series.buffer.yAt(index));
+        const y = mapY(series.buffer.yAt(index), series.axis);
         if (pointIndex === 0) this.#context.moveTo(x, y);
+        else if (series.type === "step") this.#context.lineTo(x, mapY(series.buffer.yAt(indices[pointIndex - 1]), series.axis)), this.#context.lineTo(x, y);
         else this.#context.lineTo(x, y);
       });
       this.#context.strokeStyle = this.#seriesColor(series, styles);
-      this.#context.lineWidth = 1.75;
+      this.#context.lineWidth = series.lineWidth;
       this.#context.lineJoin = "round";
       this.#context.lineCap = "round";
+      this.#context.setLineDash(series.dash);
       this.#context.stroke();
+      this.#context.setLineDash([]);
+      if (series.type === "area" && indices.length) {
+        const last = indices.at(-1);
+        const first = indices[0];
+        this.#context.lineTo(mapX(series.buffer.xAt(last)), padding.top + plotHeight);
+        this.#context.lineTo(mapX(series.buffer.xAt(first)), padding.top + plotHeight);
+        this.#context.closePath();
+        this.#context.globalAlpha = .13;
+        this.#context.fillStyle = this.#seriesColor(series, styles);
+        this.#context.fill();
+        this.#context.globalAlpha = 1;
+      }
     });
+
+    this._drawThresholds({ mapY, padding, plotWidth, styles });
+    this._drawAnnotations({ mapX, padding, plotHeight, styles, xMin, xMax });
+    this._drawCursor({ mapX, mapY, padding, plotWidth, plotHeight, xMin, xMax, windows, visibleSeries, styles });
+    this.#lastMetrics = { width, height, padding, plotWidth, plotHeight, xMin, xMax, naturalRange, windows, mapX, mapY, visibleSeries };
 
     emit(this, "gui:chart-render", {
       points: this.pointCount,
       visiblePoints: [...windows.values()].reduce((sum, range) => sum + range.end - range.start, 0),
+      view: this.view,
+      statistics: Object.fromEntries(visibleSeries.map((series) => [series.id, analyzeChartSignal(series.buffer)])),
     });
   }
 
-  #drawGrid({ height, padding, plotWidth, plotHeight, yMin, yMax, muted, border }) {
+  #drawGrid({ height, padding, plotWidth, plotHeight, yMin, yMax, rightAxis, xMin, xMax, muted, border }) {
     this.#context.font = "11px ui-sans-serif, system-ui, sans-serif";
     this.#context.textAlign = "right";
     this.#context.textBaseline = "middle";
@@ -862,12 +1169,30 @@ export class GuiLiveChart extends GuiElement {
     this.#context.textBaseline = "alphabetic";
     this.#context.fillStyle = muted;
     this.#context.fillText(`${this.windowPoints.toLocaleString()} point window`, padding.left, height - 7);
+    this.#context.textAlign = "center";
+    for (let line = 0; line <= 4; line += 1) {
+      const ratio = line / 4;
+      const value = xMin + ratio * (xMax - xMin);
+      this.#context.fillText(this.#timeFormat.format(new Date(value)), padding.left + ratio * plotWidth, height - 7);
+    }
+    if (rightAxis?.yMax !== rightAxis?.yMin && rightAxis?.yMax !== 1) {
+      this.#context.textAlign = "left";
+      this.#context.textBaseline = "middle";
+      for (let line = 0; line <= 4; line += 1) {
+        const ratio = line / 4;
+        this.#context.fillText(this.#numberFormat.format(rightAxis.yMax - ratio * (rightAxis.yMax - rightAxis.yMin)), padding.left + plotWidth + 8, padding.top + ratio * plotHeight);
+      }
+    }
   }
 
   #renderLegend(seriesList, styles) {
     this.#legend.replaceChildren();
     seriesList.forEach((series) => {
-      const item = document.createElement("span");
+      const item = document.createElement("button");
+      item.type = "button";
+      item.dataset.hidden = String(!series.visible);
+      item.title = `${series.visible ? "Hide" : "Show"} ${series.label}`;
+      item.addEventListener("click", () => this.toggleSeries(series.id));
       const marker = document.createElement("i");
       marker.style.setProperty("--series-color", this.#seriesColor(series, styles));
       const label = document.createTextNode(`${series.label} `);
@@ -876,6 +1201,112 @@ export class GuiLiveChart extends GuiElement {
       item.append(marker, label, value);
       this.#legend.append(item);
     });
+  }
+
+  _drawThresholds({ mapY, padding, plotWidth, styles }) {
+    for (const threshold of this.#thresholds) {
+      const y = mapY(threshold.value, threshold.axis);
+      if (!Number.isFinite(y)) continue;
+      this.#context.save();
+      this.#context.strokeStyle = threshold.color ?? (styles.getPropertyValue("--gui-warning").trim() || "#d97706");
+      this.#context.setLineDash(Array.isArray(threshold.dash) ? threshold.dash : [5, 4]);
+      this.#context.beginPath(); this.#context.moveTo(padding.left, y); this.#context.lineTo(padding.left + plotWidth, y); this.#context.stroke();
+      this.#context.setLineDash([]); this.#context.fillStyle = this.#context.strokeStyle; this.#context.textAlign = "right";
+      if (threshold.label) this.#context.fillText(threshold.label, padding.left + plotWidth - 4, y - 4);
+      this.#context.restore();
+    }
+  }
+
+  _drawAnnotations({ mapX, padding, plotHeight, styles, xMin, xMax }) {
+    for (const annotation of this.#annotations) {
+      if (annotation.x < xMin || annotation.x > xMax) continue;
+      const x = mapX(annotation.x);
+      this.#context.save();
+      this.#context.strokeStyle = annotation.color ?? (styles.getPropertyValue("--gui-accent").trim() || "#5b5ce2");
+      this.#context.setLineDash([3, 3]); this.#context.beginPath(); this.#context.moveTo(x, padding.top); this.#context.lineTo(x, padding.top + plotHeight); this.#context.stroke(); this.#context.setLineDash([]);
+      if (annotation.label) { this.#context.fillStyle = this.#context.strokeStyle; this.#context.textAlign = "left"; this.#context.fillText(annotation.label, x + 4, padding.top + 12); }
+      this.#context.restore();
+    }
+  }
+
+  _drawCursor({ mapX, mapY, padding, plotHeight, xMin, xMax, windows, visibleSeries, styles }) {
+    const cursorX = this.#cursor.x;
+    if (Number.isFinite(this.#cursor.rangeStart) && Number.isFinite(this.#cursor.rangeEnd)) {
+      const from = clamp(Math.min(this.#cursor.rangeStart, this.#cursor.rangeEnd), xMin, xMax);
+      const to = clamp(Math.max(this.#cursor.rangeStart, this.#cursor.rangeEnd), xMin, xMax);
+      this.#context.save();
+      this.#context.fillStyle = styles.getPropertyValue("--gui-accent").trim() || "#5b5ce2";
+      this.#context.globalAlpha = .12;
+      this.#context.fillRect(mapX(from), padding.top, Math.max(1, mapX(to) - mapX(from)), plotHeight);
+      this.#context.restore();
+    }
+    if (!Number.isFinite(cursorX) || cursorX < xMin || cursorX > xMax) { this.#tooltip.hidden = true; return; }
+    const x = mapX(cursorX);
+    this.#context.save(); this.#context.strokeStyle = styles.getPropertyValue("--gui-text-muted").trim() || "#667085"; this.#context.setLineDash([3, 3]);
+    this.#context.beginPath(); this.#context.moveTo(x, padding.top); this.#context.lineTo(x, padding.top + plotHeight); this.#context.stroke(); this.#context.setLineDash([]);
+    const lines = [this.#timeFormat.format(new Date(cursorX))];
+    const samples = [];
+    for (const series of visibleSeries) {
+      const range = windows.get(series.id);
+      const index = nearestBufferIndex(series.buffer, cursorX, range.start, range.end);
+      const sample = { id: series.id, label: series.label, x: series.buffer.xAt(index), y: series.buffer.yAt(index), unit: series.unit };
+      samples.push(sample);
+      const y = mapY(sample.y, series.axis);
+      this.#context.fillStyle = this.#seriesColor(series, styles); this.#context.beginPath(); this.#context.arc(x, y, 3.5, 0, Math.PI * 2); this.#context.fill();
+      lines.push(`${series.label}: ${this.#numberFormat.format(sample.y)}${series.unit ? ` ${series.unit}` : ""}`);
+    }
+    this.#context.restore();
+    this.#tooltip.replaceChildren(...lines.map((line) => { const row = document.createElement("div"); row.textContent = line; return row; }));
+    this.#tooltip.hidden = false;
+    this.#tooltip.style.left = `${clamp(x + 10, 4, Math.max(4, this.#canvas.clientWidth - this.#tooltip.offsetWidth - 4))}px`;
+    this.#tooltip.style.top = `${padding.top + 4}px`;
+    emit(this, "gui:chart-cursor", { cursor: { ...this.#cursor }, samples });
+  }
+
+  _eventX(event) {
+    const metrics = this.#lastMetrics;
+    if (!metrics) return null;
+    const rect = this.#canvas.getBoundingClientRect();
+    const x = clamp(event.clientX - rect.left, metrics.padding.left, metrics.padding.left + metrics.plotWidth);
+    return metrics.xMin + ((x - metrics.padding.left) / metrics.plotWidth) * (metrics.xMax - metrics.xMin);
+  }
+
+  _onPointerDown(event) {
+    const x = this._eventX(event);
+    if (!Number.isFinite(x)) return;
+    this.#canvas.setPointerCapture?.(event.pointerId);
+    this.#interaction = { x, view: this.view, range: event.shiftKey };
+    if (event.shiftKey) this.setCursor({ ...this.#cursor, rangeStart: x, rangeEnd: x, x });
+  }
+  _onPointerMove(event) {
+    const x = this._eventX(event);
+    if (!Number.isFinite(x)) return;
+    if (this.#interaction?.range) this.setCursor({ ...this.#cursor, x, rangeEnd: x });
+    else if (this.#interaction?.view) {
+      const shift = this.#interaction.x - x;
+      this.setView({ xMin: this.#interaction.view.xMin + shift, xMax: this.#interaction.view.xMax + shift });
+    } else if (!this.#cursor.pinned) this.setCursor({ ...this.#cursor, x });
+  }
+  _onPointerUp(event) {
+    const x = this._eventX(event);
+    if (Number.isFinite(x) && !this.#interaction?.range && Math.abs(x - this.#interaction?.x) < ((this.#lastMetrics?.xMax - this.#lastMetrics?.xMin) || 1) * .003) {
+      this.setCursor({ ...this.#cursor, x, pinned: !this.#cursor.pinned });
+    }
+    this.#interaction = null;
+  }
+  _onPointerLeave() { if (!this.#cursor.pinned && !this.#interaction) this.setCursor({ ...this.#cursor, x: null }); }
+  _onWheel(event) {
+    const metrics = this.#lastMetrics;
+    const x = this._eventX(event);
+    if (!metrics || !Number.isFinite(x)) return;
+    event.preventDefault();
+    const factor = event.deltaY > 0 ? 1.18 : 0.82;
+    const current = this.view ?? { xMin: metrics.xMin, xMax: metrics.xMax };
+    const span = current.xMax - current.xMin;
+    const minimum = Math.max(1, (metrics.naturalRange.xMax - metrics.naturalRange.xMin) / Math.max(2, this.maxPoints));
+    const nextSpan = Math.max(minimum, span * factor);
+    const ratio = (x - current.xMin) / span;
+    this.setView({ xMin: x - nextSpan * ratio, xMax: x + nextSpan * (1 - ratio) });
   }
 }
 
@@ -1457,9 +1888,14 @@ export function initializeGui(options = {}) {
       capabilities,
       diagnostics,
       dragDrop,
+      frameScheduler,
+      performanceBudget,
+      lazyModules,
+      resourceGovernor,
       ready: guiModules.initializeAll({
         i18n, bridge, toast, logs, logger, mediaAdapters, commands, history,
         persistence, router, tasks, clipboard, dragDrop, capabilities, diagnostics,
+        frameScheduler, performanceBudget, lazyModules, resourceGovernor,
       }),
     };
   }
@@ -1527,9 +1963,14 @@ export function initializeGui(options = {}) {
     capabilities,
     diagnostics,
     dragDrop,
+    frameScheduler,
+    performanceBudget,
+    lazyModules,
+    resourceGovernor,
     ready: guiModules.initializeAll({
       i18n, bridge, toast, logs, logger, mediaAdapters, commands, history,
       persistence, router, tasks, clipboard, dragDrop, capabilities, diagnostics,
+      frameScheduler, performanceBudget, lazyModules, resourceGovernor,
     }),
   };
 }
@@ -1579,6 +2020,7 @@ registerElement("gui-toast-stack", GuiToastStack);
   dataViewsModule,
   workspaceModule,
   devtoolsModule,
+  performanceModule,
 ].forEach((module) => {
   if (!guiModules.has(module.id)) defineGuiModule(module);
 });
@@ -1601,6 +2043,10 @@ if (hasDOM) {
     capabilities,
     diagnostics,
     dragDrop,
+    frameScheduler,
+    performanceBudget,
+    lazyModules,
+    resourceGovernor,
     overlayController,
     initialize: initializeGui,
     setTheme,

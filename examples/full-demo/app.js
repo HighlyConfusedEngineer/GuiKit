@@ -1072,10 +1072,19 @@ function seedChart(count = 10_000) {
   }
   chartSample = count;
   chart.setSeries([
-    { id: "cpu", label: "CPU", color: "#6c8cff", data: cpu },
-    { id: "memory", label: "Memory", color: "#17a88b", data: memory },
-    { id: "network", label: "Network", color: "#d97706", data: network },
+    { id: "cpu", label: "CPU", color: "#6c8cff", unit: "%", type: "area", data: cpu },
+    { id: "memory", label: "Memory", color: "#17a88b", unit: " GB", data: memory },
+    { id: "network", label: "Network", color: "#d97706", unit: " Mb/s", axis: "right", type: "step", data: network },
   ]);
+  chart.setThresholds([
+    { id: "cpu-warning", value: 78, label: "CPU warning", color: "#d97706" },
+    { id: "network-baseline", value: -8, label: "Network baseline", axis: "right", color: "#d14f7b" },
+  ]);
+  chart.setAnnotations([
+    { id: "deployment", x: cpu.at(-1).x - 45_000, label: "Deployment", color: "#6c8cff" },
+    { id: "incident", x: cpu.at(-1).x - 12_000, label: "Investigation", color: "#d14f7b" },
+  ]);
+  chart.resetView();
   updateChartCount();
 }
 
@@ -1121,6 +1130,30 @@ document.querySelector("#chart-burst").addEventListener("click", () => {
   updateChartCount();
   toast.success("30,000 new series samples appended.");
 });
+document.querySelector("#chart-derived").addEventListener("click", (event) => {
+  if (chart.getSeries("cpu-average")) {
+    chart.removeSeries("cpu-average");
+    event.currentTarget.textContent = "Add moving average";
+    return;
+  }
+  chart.addDerivedSeries({
+    id: "cpu-average",
+    label: "CPU 30-sample average",
+    source: "cpu",
+    operation: "moving-average",
+    window: 30,
+    color: "#a78bfa",
+    dash: [6, 3],
+    unit: "%",
+  });
+  event.currentTarget.textContent = "Remove moving average";
+});
+document.querySelector("#chart-cursor").addEventListener("click", (event) => {
+  const next = !chart.cursor.pinned;
+  chart.setCursor({ x: chart.cursor.x ?? Date.now(), pinned: next });
+  event.currentTarget.textContent = next ? "Release cursor" : "Pin cursor";
+});
+document.querySelector("#chart-reset-view").addEventListener("click", () => chart.resetView());
 document.querySelector("#chart-reset").addEventListener("click", () => seedChart());
 document.querySelector("#chart-clear").addEventListener("click", () => {
   chart.clear();

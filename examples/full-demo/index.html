@@ -364,8 +364,8 @@
               <header class="demo-section-heading">
                 <div>
                   <p class="gui-eyebrow">High-volume visualization</p>
-                  <h2>Responsive live charts with bounded memory</h2>
-                  <p class="gui-muted">Thirty thousand initial samples, peak-preserving canvas rendering, and continuous updates.</p>
+                  <h2>Responsive live charts with bounded memory and analysis tools</h2>
+                  <p class="gui-muted">Multi-signal telemetry with dual axes, interactive cursors, pan/zoom, signal visibility, thresholds, annotations, and derived analysis.</p>
                 </div>
                 <button class="gui-button" type="button" data-gui-page-back>Back</button>
               </header>
@@ -380,6 +380,9 @@
                   <div class="gui-cluster">
                     <button class="gui-button" id="chart-toggle" type="button">Pause</button>
                     <button class="gui-button" id="chart-burst" type="button">Add 10,000</button>
+                    <button class="gui-button" id="chart-derived" type="button">Add moving average</button>
+                    <button class="gui-button" id="chart-cursor" type="button">Pin cursor</button>
+                    <button class="gui-button" id="chart-reset-view" type="button">Reset view</button>
                     <button class="gui-button" id="chart-reset" type="button">Reset</button>
                     <button class="gui-button" id="chart-clear" type="button">Clear</button>
                   </div>
@@ -390,6 +393,7 @@
                   window-points="8000"
                   label="Live CPU, memory, and network telemetry">
                 </gui-live-chart>
+                <p class="gui-muted">Scroll to zoom around the pointer, drag to pan, Shift-drag to mark a range, click to pin the multi-signal cursor, and use the legend to hide or show individual signals.</p>
               </article>
             </div>
           </section>

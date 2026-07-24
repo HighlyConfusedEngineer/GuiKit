@@ -48,19 +48,57 @@ export interface GuiChartSeries {
   label?: string;
   color?: string;
   data?: Iterable<GuiChartPoint>;
+  axis?: "left" | "right";
+  visible?: boolean;
+  type?: "line" | "area" | "step";
+  lineWidth?: number;
+  dash?: number[];
+  unit?: string;
 }
+
+export interface GuiChartAnnotation { id?: string; x: number; label?: string; color?: string; }
+export interface GuiChartThreshold { id?: string; value: number; label?: string; color?: string; axis?: "left" | "right"; dash?: number[]; }
+export interface GuiChartView { xMin: number; xMax: number; }
+export interface GuiChartStatistics { count: number; min: number | null; max: number | null; mean: number | null; standardDeviation: number | null; delta: number | null; rate: number | null; }
+
+export function analyzeChartSignal(points: GuiDataBuffer | Iterable<GuiChartPoint>): GuiChartStatistics;
+export function deriveChartSignal(points: Iterable<GuiChartPoint>, options?: {
+  operation?: "moving-average" | "derivative" | "integral" | "difference" | string;
+  window?: number; compare?: Iterable<GuiChartPoint>;
+}): Array<{ x: number; y: number }>;
 
 export class GuiLiveChart extends HTMLElement {
   readonly maxPoints: number;
   readonly windowPoints: number;
   readonly pointCount: number;
+  readonly view: GuiChartView | null;
+  readonly cursor: { x: number | null; pinned: boolean; rangeStart: number | null; rangeEnd: number | null };
+  readonly annotations: GuiChartAnnotation[];
+  readonly thresholds: GuiChartThreshold[];
+  readonly resourceMode: "normal" | "balanced" | "constrained";
   setSeries(series: GuiChartSeries[]): void;
   addSeries(series?: GuiChartSeries, paletteIndex?: number): string;
+  getSeries(id: string): (GuiChartSeries & { statistics: GuiChartStatistics }) | undefined;
   append(seriesId: string, value: GuiChartPoint, x?: number): boolean;
   append(value: GuiChartPoint): boolean;
   appendBatch(seriesId: string, points: Iterable<GuiChartPoint>): number;
   appendBatch(points: Iterable<GuiChartPoint>): number;
   clear(seriesId?: string): void;
+  removeSeries(id: string): boolean;
+  setResourceMode(mode: "normal" | "balanced" | "constrained"): void;
+  setSeriesVisible(id: string, visible: boolean): boolean;
+  toggleSeries(id: string): boolean;
+  setView(view: GuiChartView | null): void;
+  resetView(): void;
+  setCursor(cursor?: Partial<{ x: number; pinned: boolean; rangeStart: number; rangeEnd: number }>): void;
+  setAnnotations(annotations: GuiChartAnnotation[]): void;
+  addAnnotation(annotation: GuiChartAnnotation): string;
+  removeAnnotation(id: string): boolean;
+  setThresholds(thresholds: GuiChartThreshold[]): void;
+  addDerivedSeries(configuration: GuiChartSeries & {
+    source?: string; compare?: string; sources?: string[];
+    operation?: "moving-average" | "derivative" | "integral" | "difference" | string; window?: number;
+  }): string;
   requestRender(): void;
 }
 
@@ -153,6 +191,10 @@ export function initializeGui(options?: {
   capabilities: import("./modules/runtime/index.js").GuiCapabilityRegistry;
   diagnostics: import("./modules/runtime/index.js").GuiDiagnostics;
   dragDrop: import("./modules/runtime/index.js").GuiDragDrop;
+  frameScheduler: import("./modules/performance/index.js").GuiFrameScheduler;
+  performanceBudget: import("./modules/performance/index.js").GuiPerformanceBudget;
+  lazyModules: import("./modules/performance/index.js").GuiLazyModuleLoader;
+  resourceGovernor: import("./modules/performance/index.js").GuiResourceGovernor;
   ready: Promise<Map<string, unknown>>;
 };
 
@@ -250,6 +292,7 @@ export * from "./modules/forms/index.js";
 export * from "./modules/data-views/index.js";
 export * from "./modules/workspace/index.js";
 export * from "./modules/devtools/index.js";
+export * from "./modules/performance/index.js";
 
 declare global {
   interface Window {
@@ -270,6 +313,10 @@ declare global {
       capabilities: import("./modules/runtime/index.js").GuiCapabilityRegistry;
       diagnostics: import("./modules/runtime/index.js").GuiDiagnostics;
       dragDrop: import("./modules/runtime/index.js").GuiDragDrop;
+      frameScheduler: import("./modules/performance/index.js").GuiFrameScheduler;
+      performanceBudget: import("./modules/performance/index.js").GuiPerformanceBudget;
+      lazyModules: import("./modules/performance/index.js").GuiLazyModuleLoader;
+      resourceGovernor: import("./modules/performance/index.js").GuiResourceGovernor;
       overlayController: import("./modules/overlays/index.js").GuiOverlayController;
       initialize: typeof initializeGui;
       setTheme: typeof setTheme;

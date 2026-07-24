@@ -8,6 +8,13 @@ All notable changes to GuiKit are documented here. The format follows
 
 ### Added
 
+- Analysis-grade live charts: multi-signal and dual-axis rendering, clickable
+  legends, shared cursor/tooltip, pan/zoom, range selection, thresholds,
+  annotations, area/step lines, derived signals, and DOM-independent analysis
+  helpers.
+- Performance module with frame batching, timing budgets, lazy feature module
+  loading, deduplicated locale loads, virtual-row recycling, and cancellable
+  adjacent-page prefetching.
 - Central command registry with search, configurable shortcuts, asynchronous
   cancellation, command palette, and transaction-based undo/redo history.
 - Shared overlay layer with accessible modal dialogs, anchored popovers,

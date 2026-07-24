@@ -97,3 +97,15 @@ test("module manifests are validated and cannot be replaced", () => {
   registry.register({ id: "valid", version: "1.0.0" });
   assert.throws(() => registry.register({ id: "valid", version: "1.1.0" }));
 });
+
+test("lazy modules stay out of initialization until explicitly requested", async () => {
+  const registry = new GuiModuleRegistry();
+  let imports = 0;
+  registry.registerLazy("analysis", async () => ({
+    id: "analysis", version: "1.0.0", setup: () => ({ imported: ++imports }),
+  }));
+  assert.equal(registry.state("analysis"), "lazy");
+  assert.deepEqual(await registry.initializeAll(), new Map());
+  assert.deepEqual(await registry.initialize("analysis"), { imported: 1 });
+  assert.equal(imports, 1);
+});

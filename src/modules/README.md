@@ -31,3 +31,5 @@ Current reference module:
   models and renderers.
 - [`workspace`](workspace/) implements serializable docking layouts.
 - [`devtools`](devtools/) provides the component laboratory and audit surfaces.
+- [`performance`](performance/) supplies frame batching, lazy feature loading,
+  and bounded performance-budget telemetry.
