@@ -31,6 +31,7 @@ and keeps every frontend feature operational.
 | Statusbar | Top/bottom and sticky/fixed placement, keyed live items, status, progress, actions, priorities, alignment, and custom slots |
 | Live charts | Three responsive series, 30,000 initial points, bounded buffers, append, batch append, clear and render events |
 | Node editor | Typed ports, links, drag, pan, zoom, selection, snapping, inline typed parameters, per-node settings, read-only mode, JSON import/export |
+| Wizard | Linear onboarding, native and asynchronous validation, optional steps, keyboard navigation, save/restore, reset, and completion |
 | Media | Direct `MediaStream`, custom media adapter, native URL loading, live controls, PiP and fullscreen capability detection |
 | Logging | Levels, child context, errors, redaction, nested spans, memory, console, viewer, batch, bridge and HTTP sinks |
 | Platform | English/German/Spanish localization, light/dark/system themes, native bridge calls/events, module registry |

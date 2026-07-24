@@ -187,6 +187,24 @@ import {
 See [NODE_EDITOR.md](NODE_EDITOR.md) for schemas, interaction, methods, events,
 and performance guidance.
 
+## Wizard
+
+The default bundle exports `GuiWizard`, `GuiWizardModel`, and `wizardModule`.
+A direct subpath import is available:
+
+```js
+import {
+  GuiWizard,
+  GuiWizardModel,
+} from "@gui-template/core/wizard";
+```
+
+Use native form constraints or `setValidator()` before calling `next()`,
+`goTo()`, or `finish()`. Progress from `getState()` is serializable and can be
+restored with `restoreState()`. See [WIZARD.md](WIZARD.md) for declarative step
+markup, linear navigation, asynchronous validation, optional steps, events,
+focus behavior, and persistence.
+
 ## Statusbar
 
 The default bundle exports `GuiStatusbar` and `statusbarModule`. A smaller

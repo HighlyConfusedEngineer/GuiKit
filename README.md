@@ -13,6 +13,7 @@ The current `0.1` foundation includes:
 - interruption-safe animated tabs and sliding pages with back history;
 - responsive live charts for thousands of continuously updated data points;
 - accessible toast notifications with actions and four severity levels;
+- validated, resumable multi-step wizards with asynchronous hooks;
 - a visual node editor with typed ports, links, pan, zoom, and serialization;
 - responsive native video and live MediaStream playback with adapter support;
 - structured cross-runtime logging with redaction, spans, batching, transports,
@@ -226,6 +227,34 @@ description, accent, and JSON data. Cancel `gui:node-settings-request` to
 provide a custom domain-specific inspector instead.
 See [the node-editor guide](docs/NODE_EDITOR.md).
 
+### Wizard
+
+```html
+<gui-wizard id="setup" linear label="Project setup">
+  <section data-wizard-step="project" data-title="Project">
+    <input name="project" required>
+  </section>
+  <section data-wizard-step="extras" data-title="Extras" data-optional>
+    Optional integrations
+  </section>
+</gui-wizard>
+```
+
+```js
+setup.setValidator("project", async () => {
+  return await projectNameAvailable()
+    ? true
+    : "That project name is already in use.";
+});
+
+localStorage.setItem("setup-progress", JSON.stringify(setup.getState()));
+```
+
+The module supports linear or free navigation, native and asynchronous
+validation, optional steps, cancelable policy events, progress persistence,
+focus management, and a DOM-independent state model. See
+[the wizard guide](docs/WIZARD.md).
+
 ### Live media
 
 ```html
@@ -415,6 +444,7 @@ is the reference implementation for larger features.
 - [Native bridge protocol](docs/BRIDGE.md)
 - [Chart performance](docs/PERFORMANCE.md)
 - [Node editor](docs/NODE_EDITOR.md)
+- [Wizard](docs/WIZARD.md)
 - [Statusbar](docs/STATUSBAR.md)
 - [Media player](docs/MEDIA_PLAYER.md)
 - [Structured logging](docs/LOGGING.md)

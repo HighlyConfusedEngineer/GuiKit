@@ -25,6 +25,7 @@ const fullDemoTranslations = {
       components: "Components",
       charts: "Live charts",
       nodes: "Node editor",
+      wizard: "Wizard",
       media: "Media",
       logging: "Logging",
       platform: "Platform",
@@ -49,6 +50,7 @@ const fullDemoTranslations = {
       components: "Komponenten",
       charts: "Live-Diagramme",
       nodes: "Knoten-Editor",
+      wizard: "Assistent",
       media: "Medien",
       logging: "Protokolle",
       platform: "Plattform",
@@ -73,6 +75,7 @@ const fullDemoTranslations = {
       components: "Componentes",
       charts: "Gráficos en vivo",
       nodes: "Editor de nodos",
+      wizard: "Asistente",
       media: "Multimedia",
       logging: "Registros",
       platform: "Plataforma",
@@ -147,6 +150,11 @@ const observedNames = [
   "gui:node-settings-close",
   "gui:node-parameter-change",
   "gui:node-error",
+  "gui:wizard-step-change",
+  "gui:wizard-validation-error",
+  "gui:wizard-skip",
+  "gui:wizard-finish",
+  "gui:wizard-reset",
   "gui:statusbar-action",
   "gui:statusbar-position-change",
   "gui:media-source-change",
@@ -296,6 +304,7 @@ const featureStations = [
   ["✓", "Configurable statusbar", "components"],
   ["✓", "Live charts", "charts"],
   ["✓", "Node graph", "nodes"],
+  ["✓", "Guided wizard", "wizard"],
   ["✓", "Live media", "media"],
   ["✓", "Structured logging", "logging"],
   ["✓", "i18n and bridge", "platform"],
@@ -1022,6 +1031,144 @@ nodeEditor.addEventListener("gui:node-create-request", (event) => {
     }],
   });
 });
+
+const WIZARD_STORAGE_KEY = "guikit-full-demo-wizard-v1";
+const fullWizard = document.querySelector("#full-wizard");
+const wizardState = document.querySelector("#wizard-demo-state");
+const wizardDetail = document.querySelector("#wizard-demo-detail");
+const wizardDefaults = {
+  workspaceName: "",
+  region: "",
+  purpose: "",
+  template: "",
+  loggingIntegration: true,
+  mediaIntegration: false,
+  bridgeIntegration: true,
+};
+
+function readWizardValues() {
+  const values = {};
+  fullWizard.querySelectorAll("[name]").forEach((control) => {
+    if (control.type === "radio") {
+      if (control.checked) values[control.name] = control.value;
+    } else if (control.type === "checkbox") {
+      values[control.name] = control.checked;
+    } else {
+      values[control.name] = control.value;
+    }
+  });
+  return { ...wizardDefaults, ...values };
+}
+
+function populateWizardValues(values = {}) {
+  const settings = { ...wizardDefaults, ...values };
+  fullWizard.querySelectorAll("[name]").forEach((control) => {
+    if (control.type === "radio") {
+      control.checked = control.value === settings[control.name];
+    } else if (control.type === "checkbox") {
+      control.checked = Boolean(settings[control.name]);
+    } else {
+      control.value = settings[control.name] ?? "";
+    }
+  });
+  updateWizardReview();
+}
+
+function updateWizardReview() {
+  const values = readWizardValues();
+  document.querySelector("#wizard-review-title").textContent =
+    values.workspaceName.trim() || "New workspace";
+  document.querySelector("#wizard-review-json").textContent =
+    JSON.stringify(values, null, 2);
+  return values;
+}
+
+function setWizardDemoState(label, detail, variant = "") {
+  wizardState.textContent = label;
+  wizardState.dataset.variant = variant;
+  wizardDetail.textContent = detail;
+}
+
+fullWizard.setValidator("workspace", async () => {
+  setWizardDemoState("Checking", "Validating workspace availability…", "working");
+  await new Promise((resolve) => setTimeout(resolve, 320));
+  const name = document.querySelector("#wizard-workspace-name").value.trim();
+  setWizardDemoState("In progress", "The workflow has unsaved progress.");
+  if (name.toLowerCase() === "taken") {
+    return "That workspace name is already in use. Choose another name.";
+  }
+  return true;
+});
+
+fullWizard.addEventListener("input", () => {
+  updateWizardReview();
+  setWizardDemoState("In progress", "The workflow has unsaved progress.");
+});
+
+fullWizard.addEventListener("gui:wizard-step-change", (event) => {
+  if (event.detail.active === "review") updateWizardReview();
+  setWizardDemoState(
+    "In progress",
+    `Active step: ${event.detail.active}. Progress is not saved.`,
+  );
+});
+
+fullWizard.addEventListener("gui:wizard-validation-error", (event) => {
+  setWizardDemoState("Needs input", event.detail.message);
+});
+
+fullWizard.addEventListener("gui:wizard-skip", () => {
+  setWizardDemoState("Step skipped", "Optional integrations can be configured later.");
+});
+
+fullWizard.addEventListener("gui:wizard-finish", () => {
+  const values = updateWizardReview();
+  setWizardDemoState(
+    "Complete",
+    `${values.workspaceName || "Workspace"} is ready to be created.`,
+    "success",
+  );
+  toast.success("Workspace onboarding completed.", { title: "Wizard" });
+});
+
+document.querySelector("#wizard-save").addEventListener("click", () => {
+  const payload = {
+    state: fullWizard.getState(),
+    values: readWizardValues(),
+    savedAt: new Date().toISOString(),
+  };
+  storage.set(WIZARD_STORAGE_KEY, JSON.stringify(payload));
+  setWizardDemoState("Saved", "Wizard progress and form values were saved locally.", "success");
+  toast.success("Wizard progress saved.", { title: "Wizard" });
+});
+
+document.querySelector("#wizard-restore").addEventListener("click", () => {
+  try {
+    const saved = JSON.parse(storage.get(WIZARD_STORAGE_KEY) ?? "null");
+    if (!saved?.state || !saved?.values) {
+      toast.warning("No saved wizard progress is available.", { title: "Wizard" });
+      return;
+    }
+    populateWizardValues(saved.values);
+    fullWizard.restoreState(saved.state);
+    setWizardDemoState(
+      "Restored",
+      `Progress restored from ${new Date(saved.savedAt).toLocaleTimeString()}.`,
+      "success",
+    );
+    toast.success("Wizard progress restored.", { title: "Wizard" });
+  } catch (error) {
+    toast.error(error.message, { title: "Could not restore wizard" });
+  }
+});
+
+document.querySelector("#wizard-reset").addEventListener("click", () => {
+  fullWizard.reset({ focus: true });
+  populateWizardValues(wizardDefaults);
+  setWizardDemoState("Ready", "Wizard progress was reset.");
+});
+
+populateWizardValues(wizardDefaults);
 
 function createGeneratedMedia() {
   const canvas = document.createElement("canvas");

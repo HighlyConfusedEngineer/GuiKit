@@ -24,6 +24,11 @@ import {
   statusbarModule,
 } from "./modules/statusbar/index.js";
 import {
+  GuiWizard,
+  GuiWizardModel,
+  wizardModule,
+} from "./modules/wizard/index.js";
+import {
   GUI_LOG_LEVELS,
   GUI_LOG_SCHEMA,
   GuiBatchSink,
@@ -58,6 +63,8 @@ export {
   GuiNodeEditor,
   GuiNodeGraph,
   GuiStatusbar,
+  GuiWizard,
+  GuiWizardModel,
   defineGuiModule,
   guiModules,
   logger,
@@ -67,6 +74,7 @@ export {
   mediaPlayerModule,
   nodeEditorModule,
   statusbarModule,
+  wizardModule,
 };
 
 const hasDOM = typeof window !== "undefined" && typeof document !== "undefined";
@@ -1394,6 +1402,7 @@ registerElement("gui-toast-stack", GuiToastStack);
   nodeEditorModule,
   mediaPlayerModule,
   statusbarModule,
+  wizardModule,
   loggingModule,
 ].forEach((module) => {
   if (!guiModules.has(module.id)) defineGuiModule(module);

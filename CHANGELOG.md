@@ -8,6 +8,10 @@ All notable changes to GuiKit are documented here. The format follows
 
 ### Added
 
+- Reusable `<gui-wizard>` and DOM-independent `GuiWizardModel` with linear or
+  free navigation, native and asynchronous validation, optional steps,
+  resumable state, cancelable lifecycle events, focus management, and
+  responsive progress UI.
 - Comprehensive persistent settings-page example with account, appearance,
   locale, notifications, performance, storage, and advanced integration
   controls plus live preview and application events.

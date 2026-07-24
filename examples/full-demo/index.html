@@ -55,6 +55,10 @@
             <span aria-hidden="true">⌘</span>
             <span class="gui-sidebar-label" data-i18n="fullDemo.nav.nodes">Node editor</span>
           </button>
+          <button type="button" data-gui-page-open="wizard">
+            <span aria-hidden="true">➜</span>
+            <span class="gui-sidebar-label" data-i18n="fullDemo.nav.wizard">Wizard</span>
+          </button>
           <button type="button" data-gui-page-open="media">
             <span aria-hidden="true">▶</span>
             <span class="gui-sidebar-label" data-i18n="fullDemo.nav.media">Media</span>
@@ -416,6 +420,160 @@
                 <span>Serialized graph</span>
                 <textarea class="gui-input demo-code-area" id="graph-json" spellcheck="false"></textarea>
               </label>
+            </div>
+          </section>
+
+          <section data-page="wizard">
+            <div class="gui-stack demo-page">
+              <header class="demo-section-heading">
+                <div>
+                  <p class="gui-eyebrow">Guided workflows</p>
+                  <h2>Validated, resumable application wizard</h2>
+                  <p class="gui-muted">
+                    Native and asynchronous validation, optional steps, progress,
+                    persistence, focus management, and completion events in one flow.
+                  </p>
+                </div>
+                <button class="gui-button" type="button" data-gui-page-back>Back</button>
+              </header>
+
+              <div class="gui-cluster demo-space-between">
+                <div class="gui-cluster">
+                  <span class="gui-badge" id="wizard-demo-state" role="status">Ready</span>
+                  <span class="gui-muted" id="wizard-demo-detail">Progress is not saved yet.</span>
+                </div>
+                <div class="gui-cluster">
+                  <button class="gui-button" id="wizard-save" type="button">Save progress</button>
+                  <button class="gui-button" id="wizard-restore" type="button">Restore</button>
+                  <button class="gui-button" id="wizard-reset" type="button">Start over</button>
+                </div>
+              </div>
+
+              <gui-wizard
+                id="full-wizard"
+                active="workspace"
+                linear
+                label="Workspace onboarding"
+                next-label="Continue"
+                finish-label="Create workspace">
+                <section
+                  data-wizard-step="workspace"
+                  data-title="Workspace"
+                  data-description="Choose the identity and operating region for the new workspace.">
+                  <div class="demo-wizard-panel">
+                    <div class="demo-settings-fields demo-settings-fields--two">
+                      <label class="gui-field">
+                        <span>Workspace name</span>
+                        <input
+                          class="gui-input"
+                          id="wizard-workspace-name"
+                          name="workspaceName"
+                          type="text"
+                          placeholder="Telemetry operations"
+                          minlength="3"
+                          required>
+                      </label>
+                      <label class="gui-field">
+                        <span>Region</span>
+                        <select class="gui-select" name="region" required>
+                          <option value="">Choose a region</option>
+                          <option value="eu-central">Europe Central</option>
+                          <option value="us-east">US East</option>
+                          <option value="asia-pacific">Asia Pacific</option>
+                        </select>
+                      </label>
+                    </div>
+                    <label class="gui-field">
+                      <span>Purpose</span>
+                      <textarea
+                        class="gui-input demo-wizard-textarea"
+                        name="purpose"
+                        placeholder="What will this workspace be used for?"></textarea>
+                    </label>
+                    <p class="gui-muted">
+                      This step also runs a simulated asynchronous availability check.
+                      Enter <code>taken</code> to see a domain validation error.
+                    </p>
+                  </div>
+                </section>
+
+                <section
+                  data-wizard-step="template"
+                  data-title="Template"
+                  data-description="Start from a focused workspace configuration.">
+                  <div class="demo-wizard-panel">
+                    <div class="demo-wizard-choices" role="radiogroup" aria-label="Workspace template">
+                      <label class="demo-wizard-choice">
+                        <input name="template" type="radio" value="operations" required>
+                        <span>
+                          <strong>Operations center</strong>
+                          <small>Live telemetry, incidents, logs, and team status.</small>
+                        </span>
+                      </label>
+                      <label class="demo-wizard-choice">
+                        <input name="template" type="radio" value="media" required>
+                        <span>
+                          <strong>Media control</strong>
+                          <small>Video sources, playback, encoding, and delivery health.</small>
+                        </span>
+                      </label>
+                      <label class="demo-wizard-choice">
+                        <input name="template" type="radio" value="automation" required>
+                        <span>
+                          <strong>Automation lab</strong>
+                          <small>Node workflows, jobs, schedules, and backend activity.</small>
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                </section>
+
+                <section
+                  data-wizard-step="integrations"
+                  data-title="Integrations"
+                  data-description="Connect optional services now or configure them later."
+                  data-optional>
+                  <div class="demo-wizard-panel">
+                    <div class="demo-settings-list">
+                      <label class="demo-switch-row">
+                        <span>
+                          <strong>Structured logging backend</strong>
+                          <small class="gui-muted">Send correlated batches to the host collector.</small>
+                        </span>
+                        <input name="loggingIntegration" type="checkbox" checked>
+                      </label>
+                      <label class="demo-switch-row">
+                        <span>
+                          <strong>Live media adapter</strong>
+                          <small class="gui-muted">Enable protocol adapters and MediaStream inputs.</small>
+                        </span>
+                        <input name="mediaIntegration" type="checkbox">
+                      </label>
+                      <label class="demo-switch-row">
+                        <span>
+                          <strong>Native host bridge</strong>
+                          <small class="gui-muted">Expose Python or C# application capabilities.</small>
+                        </span>
+                        <input name="bridgeIntegration" type="checkbox" checked>
+                      </label>
+                    </div>
+                  </div>
+                </section>
+
+                <section
+                  data-wizard-step="review"
+                  data-title="Review"
+                  data-description="Confirm the configuration before creating the workspace.">
+                  <div class="demo-wizard-panel demo-wizard-review">
+                    <div>
+                      <p class="gui-eyebrow">Configuration summary</p>
+                      <h3 id="wizard-review-title">New workspace</h3>
+                      <p class="gui-muted">The finish request remains cancelable for backend policy checks.</p>
+                    </div>
+                    <pre class="demo-result" id="wizard-review-json"></pre>
+                  </div>
+                </section>
+              </gui-wizard>
             </div>
           </section>
 

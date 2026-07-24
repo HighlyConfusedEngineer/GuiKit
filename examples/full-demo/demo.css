@@ -379,6 +379,86 @@ body {
   color: var(--gui-text-muted);
 }
 
+.demo-wizard-panel {
+  display: grid;
+  gap: 1rem;
+  padding-block: .35rem;
+}
+
+.demo-wizard-textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.demo-wizard-choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .75rem;
+}
+
+.demo-wizard-choice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: .65rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--gui-border);
+  border-radius: var(--gui-radius-md);
+  background: var(--gui-surface-raised);
+  cursor: pointer;
+  transition:
+    border-color var(--gui-motion-fast, 160ms),
+    box-shadow var(--gui-motion-fast, 160ms),
+    transform var(--gui-motion-fast, 160ms);
+}
+
+.demo-wizard-choice:hover {
+  transform: translateY(-2px);
+}
+
+.demo-wizard-choice:has(input:checked) {
+  border-color: var(--gui-accent);
+  box-shadow: 0 0 0 2px var(--gui-accent-soft);
+}
+
+.demo-wizard-choice input {
+  margin-top: .18rem;
+  accent-color: var(--gui-accent);
+}
+
+.demo-wizard-choice span {
+  display: grid;
+  min-width: 0;
+  gap: .35rem;
+}
+
+.demo-wizard-choice small {
+  color: var(--gui-text-muted);
+  line-height: 1.45;
+}
+
+.demo-wizard-review {
+  grid-template-columns: minmax(12rem, .65fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+.demo-wizard-review h3 {
+  margin: .2rem 0 .6rem;
+  font-size: clamp(1.5rem, 3vw, 2.4rem);
+  letter-spacing: -.04em;
+}
+
+#wizard-demo-state[data-variant="working"] {
+  background: var(--gui-accent-soft);
+  color: var(--gui-accent);
+}
+
+#wizard-demo-state[data-variant="success"] {
+  background: color-mix(in srgb, var(--gui-success, #17a88b) 16%, transparent);
+  color: var(--gui-success, #12806c);
+}
+
 .demo-settings-form,
 .demo-settings-main,
 .demo-settings-aside {
@@ -683,6 +763,7 @@ body {
   .demo-hero,
   .demo-two-column,
   .demo-tab-content,
+  .demo-wizard-review,
   .demo-settings-layout {
     grid-template-columns: 1fr;
   }
@@ -724,6 +805,7 @@ body {
   .demo-feature-grid,
   .demo-button-grid,
   .demo-module-table,
+  .demo-wizard-choices,
   .demo-settings-fields--two,
   .demo-settings-aside,
   .demo-choice-grid {

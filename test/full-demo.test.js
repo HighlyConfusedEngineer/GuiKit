@@ -13,6 +13,7 @@ test("full demo contains every GuiKit custom element", () => {
     "gui-tabs",
     "gui-live-chart",
     "gui-node-editor",
+    "gui-wizard",
     "gui-statusbar",
     "gui-media-player",
     "gui-log-viewer",
@@ -56,6 +57,17 @@ test("full demo includes a comprehensive persistent settings station", () => {
   assert.match(app, /gui:settings-change/);
   assert.match(app, /gui:settings-save/);
   assert.match(app, /gui:settings-reset/);
+});
+
+test("full demo exercises wizard validation, persistence, and completion", () => {
+  assert.match(html, /<gui-wizard/);
+  assert.match(html, /data-wizard-step="workspace"/);
+  assert.match(html, /data-wizard-step="integrations"[\s\S]*data-optional/);
+  assert.match(app, /fullWizard\.setValidator/);
+  assert.match(app, /fullWizard\.getState/);
+  assert.match(app, /fullWizard\.restoreState/);
+  assert.match(app, /gui:wizard-finish/);
+  assert.match(app, /guikit-full-demo-wizard-v1/);
 });
 
 test("full demo exercises services, transports, and module extension", () => {

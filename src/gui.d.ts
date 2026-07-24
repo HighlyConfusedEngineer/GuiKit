@@ -193,6 +193,20 @@ export {
 } from "./modules/statusbar/index.js";
 
 export {
+  GuiWizard,
+  GuiWizardModel,
+  GuiWizardNavigationOptions,
+  GuiWizardState,
+  GuiWizardStep,
+  GuiWizardStepDefinition,
+  GuiWizardStepStatePatch,
+  GuiWizardValidationContext,
+  GuiWizardValidationResult,
+  GuiWizardValidator,
+  wizardModule,
+} from "./modules/wizard/index.js";
+
+export {
   GUI_LOG_LEVELS,
   GUI_LOG_SCHEMA,
   GuiBatchSink,
