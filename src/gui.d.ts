@@ -177,6 +177,19 @@ export {
 } from "./modules/media-player/index.js";
 
 export {
+  GuiStatusbar,
+  GuiStatusbarItem,
+  GuiStatusbarItemAlignment,
+  GuiStatusbarItemPriority,
+  GuiStatusbarItemType,
+  GuiStatusbarItemVariant,
+  GuiStatusbarLive,
+  GuiStatusbarPosition,
+  GuiStatusbarUpdateOptions,
+  statusbarModule,
+} from "./modules/statusbar/index.js";
+
+export {
   GUI_LOG_LEVELS,
   GUI_LOG_SCHEMA,
   GuiBatchSink,

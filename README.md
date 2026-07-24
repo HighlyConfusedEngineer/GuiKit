@@ -226,6 +226,43 @@ The module supports native video, live `MediaStream`, captions, fullscreen,
 Picture-in-Picture, live-edge seeking, and pluggable HLS/DASH adapters. See
 [the media-player guide](docs/MEDIA_PLAYER.md).
 
+### Statusbar
+
+```html
+<gui-statusbar id="app-status" position="bottom"></gui-statusbar>
+```
+
+```js
+const statusbar = document.querySelector("#app-status");
+statusbar.setItems([
+  {
+    id: "backend",
+    type: "status",
+    variant: "success",
+    label: "Backend",
+    value: "Online",
+  },
+  {
+    id: "jobs",
+    type: "progress",
+    align: "center",
+    label: "Jobs",
+    progress: 72,
+    value: "72%",
+  },
+  {
+    id: "details",
+    type: "action",
+    align: "end",
+    label: "Details",
+  },
+]);
+```
+
+Items support keyed live updates, actions, progress, variants, responsive
+priority, and start/center/end alignment. The bar can be sticky or fixed at
+the top or bottom. See [the statusbar guide](docs/STATUSBAR.md).
+
 ## Localization
 
 Catalogs are plain nested JSON objects:
@@ -364,6 +401,7 @@ is the reference implementation for larger features.
 - [Native bridge protocol](docs/BRIDGE.md)
 - [Chart performance](docs/PERFORMANCE.md)
 - [Node editor](docs/NODE_EDITOR.md)
+- [Statusbar](docs/STATUSBAR.md)
 - [Media player](docs/MEDIA_PLAYER.md)
 - [Structured logging](docs/LOGGING.md)
 - [Module authoring](docs/MODULES.md)

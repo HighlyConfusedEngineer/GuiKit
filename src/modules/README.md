@@ -18,3 +18,5 @@ Current reference module:
 - [`media-player`](media-player/) demonstrates browser capability detection,
   live object properties, async resource cleanup, adapter registration,
   responsive controls, and media accessibility.
+- [`statusbar`](statusbar/) demonstrates keyed live updates, responsive item
+  priority, named slots, action events, and configurable viewport placement.

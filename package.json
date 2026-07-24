@@ -34,6 +34,11 @@
       "import": "./src/modules/media-player/index.js",
       "default": "./src/modules/media-player/index.js"
     },
+    "./statusbar": {
+      "types": "./src/modules/statusbar/index.d.ts",
+      "import": "./src/modules/statusbar/index.js",
+      "default": "./src/modules/statusbar/index.js"
+    },
     "./logging": {
       "types": "./src/modules/logging/index.d.ts",
       "import": "./src/modules/logging/index.js",
@@ -62,7 +67,7 @@
   "scripts": {
     "dev": "node tools/dev-server.mjs",
     "demo:full": "node examples/full-demo/server.mjs",
-    "check": "node --check src/gui.js && node --check src/core/module-registry.js && node --check src/modules/node-editor/index.js && node --check src/modules/media-player/index.js && node --check src/modules/logging/index.js && node --check src/modules/logging/node.js && node --check examples/full-demo/app.js && node --check examples/full-demo/server.mjs && node --check tools/create-module.mjs && node --test",
+    "check": "node --check src/gui.js && node --check src/core/module-registry.js && node --check src/modules/node-editor/index.js && node --check src/modules/media-player/index.js && node --check src/modules/statusbar/index.js && node --check src/modules/logging/index.js && node --check src/modules/logging/node.js && node --check examples/full-demo/app.js && node --check examples/full-demo/server.mjs && node --check tools/create-module.mjs && node --test",
     "test": "node --test",
     "prepack": "npm run check",
     "release:check": "npm pack --dry-run --ignore-scripts",
@@ -82,7 +87,9 @@
     "live-stream",
     "media-stream",
     "structured-logging",
-    "observability"
+    "observability",
+    "statusbar",
+    "application-status"
   ],
   "license": "MIT"
 }

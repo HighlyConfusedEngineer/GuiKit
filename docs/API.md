@@ -187,6 +187,22 @@ import {
 See [NODE_EDITOR.md](NODE_EDITOR.md) for schemas, interaction, methods, events,
 and performance guidance.
 
+## Statusbar
+
+The default bundle exports `GuiStatusbar` and `statusbarModule`. A smaller
+subpath import is available:
+
+```js
+import {
+  GuiStatusbar,
+  statusbarModule,
+} from "@gui-template/core/statusbar";
+```
+
+Use `setItems()`, `updateItem()`, and `setItemValue()` for serializable keyed
+updates. See [STATUSBAR.md](STATUSBAR.md) for item schemas, top/bottom
+placement, responsive priority, named slots, and events.
+
 ## Module registry
 
 `GuiModuleRegistry` provides dependency-aware feature initialization.

@@ -301,6 +301,36 @@
               <article class="gui-card gui-stack">
                 <div class="gui-cluster demo-space-between">
                   <div>
+                    <p class="gui-eyebrow">Application status</p>
+                    <h3>Configurable top or bottom statusbar</h3>
+                    <p class="gui-muted">Live status, progress, actions, alignment, priority, and custom slots share one compact surface.</p>
+                  </div>
+                  <span class="gui-badge" id="statusbar-mode">Bottom · Sticky</span>
+                </div>
+                <div class="gui-cluster">
+                  <label class="gui-field demo-inline-field">
+                    <span>Position</span>
+                    <select class="gui-select" id="statusbar-position">
+                      <option value="bottom">Bottom</option>
+                      <option value="top">Top</option>
+                    </select>
+                  </label>
+                  <label class="demo-switch-row demo-compact-switch">
+                    <span>Compact</span>
+                    <input id="statusbar-compact" type="checkbox">
+                  </label>
+                  <label class="demo-switch-row demo-compact-switch">
+                    <span>Fixed</span>
+                    <input id="statusbar-fixed" type="checkbox">
+                  </label>
+                  <button class="gui-button" id="statusbar-progress" type="button">Advance progress</button>
+                  <button class="gui-button" id="statusbar-health" type="button">Toggle health</button>
+                </div>
+              </article>
+
+              <article class="gui-card gui-stack">
+                <div class="gui-cluster demo-space-between">
+                  <div>
                     <p class="gui-eyebrow">Design tokens</p>
                     <h3>Live accent customization</h3>
                   </div>
@@ -508,6 +538,12 @@
             </div>
           </section>
         </gui-pages>
+        <gui-statusbar
+          id="demo-statusbar"
+          position="bottom"
+          label="Full demo application status">
+          <span slot="center" class="demo-statusbar-slot">Custom slot</span>
+        </gui-statusbar>
       </main>
     </div>
 

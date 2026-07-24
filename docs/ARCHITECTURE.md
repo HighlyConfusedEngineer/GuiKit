@@ -90,6 +90,12 @@ uses native playback and `MediaStream`; protocol engines register against
 `mediaAdapters` and own their cleanup. Optional integrations therefore do not
 inflate the base runtime.
 
+`<gui-statusbar>` demonstrates serializable keyed configuration. Applications
+send plain item records and receive detached snapshots and bubbling action
+events, so Python, C#, JavaScript, and other hosts share the same contract
+without callbacks crossing the bridge. Named slots remain available for
+framework-owned custom content.
+
 ## Native hosts
 
 Host languages are transport adapters, not UI implementations. The front end

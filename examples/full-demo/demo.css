@@ -51,6 +51,12 @@ body {
   background: var(--gui-success, #17a88b);
 }
 
+.demo-statusbar-slot {
+  padding: .2rem .45rem;
+  border: 1px dashed var(--gui-border);
+  border-radius: .4rem;
+}
+
 .demo-hero {
   position: relative;
   display: grid;

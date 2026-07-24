@@ -13,6 +13,7 @@ test("full demo contains every GuiKit custom element", () => {
     "gui-tabs",
     "gui-live-chart",
     "gui-node-editor",
+    "gui-statusbar",
     "gui-media-player",
     "gui-log-viewer",
   ].forEach((tag) => assert.match(html, new RegExp(`<${tag}(?:\\s|>)`)));
@@ -45,6 +46,8 @@ test("full demo exercises services, transports, and module extension", () => {
     "bridge.invoke",
     "i18n.setLocale",
     "setTheme",
+    "demoStatusbar.setItems",
+    "demoStatusbar.updateItem",
   ].forEach((surface) => assert.match(app, new RegExp(surface.replace(".", "\\."))));
 });
 

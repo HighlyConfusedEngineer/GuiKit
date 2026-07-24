@@ -101,10 +101,12 @@ const storage = {
 const eventList = document.querySelector("#event-list");
 const eventCount = document.querySelector("#event-count");
 let observedEvents = 0;
+let demoStatusbar;
 
 function recordEvent(name, detail = {}) {
   observedEvents += 1;
   eventCount.textContent = `${observedEvents} events`;
+  demoStatusbar?.setItemValue("events", observedEvents, { announce: false });
   const row = document.createElement("li");
   const time = document.createElement("time");
   time.textContent = new Date().toLocaleTimeString();
@@ -121,6 +123,7 @@ document.querySelector("#events-clear").addEventListener("click", () => {
   eventList.replaceChildren();
   observedEvents = 0;
   eventCount.textContent = "0 events";
+  demoStatusbar?.setItemValue("events", 0, { announce: false });
 });
 
 const observedNames = [
@@ -140,6 +143,8 @@ const observedNames = [
   "gui:node-settings-save",
   "gui:node-settings-close",
   "gui:node-error",
+  "gui:statusbar-action",
+  "gui:statusbar-position-change",
   "gui:media-source-change",
   "gui:media-play",
   "gui:media-pause",
@@ -217,10 +222,71 @@ const demoLog = logger.child("full-demo", {
   runtime: bridge.hostKind,
 });
 
+demoStatusbar = document.querySelector("#demo-statusbar");
+demoStatusbar.setItems([
+  {
+    id: "runtime",
+    type: "status",
+    variant: "warning",
+    label: "Runtime",
+    value: "Detecting",
+    priority: "high",
+  },
+  { id: "runtime-separator", type: "separator", align: "start" },
+  {
+    id: "page",
+    icon: "◇",
+    label: "View",
+    value: "Overview",
+    priority: "normal",
+  },
+  {
+    id: "sync",
+    type: "progress",
+    align: "center",
+    label: "Background sync",
+    progress: 42,
+    value: "42%",
+  },
+  {
+    id: "points",
+    align: "end",
+    label: "Chart points",
+    value: "0",
+    priority: "low",
+  },
+  {
+    id: "events",
+    align: "end",
+    label: "Events",
+    value: "0",
+    priority: "low",
+  },
+  {
+    id: "placement",
+    type: "action",
+    align: "end",
+    icon: "↕",
+    label: "Placement",
+    value: "Bottom",
+    compact: true,
+    tooltip: "Move the statusbar between the top and bottom",
+  },
+  {
+    id: "clock",
+    align: "end",
+    icon: "◷",
+    value: new Date().toLocaleTimeString(),
+    compact: true,
+    priority: "high",
+  },
+]);
+
 const featureStations = [
   ["✓", "Responsive layout", "navigation"],
   ["✓", "Tabs and pages", "navigation"],
   ["✓", "Forms and toasts", "components"],
+  ["✓", "Configurable statusbar", "components"],
   ["✓", "Live charts", "charts"],
   ["✓", "Node graph", "nodes"],
   ["✓", "Live media", "media"],
@@ -248,9 +314,82 @@ const syncNavigation = (page) => {
     else button.removeAttribute("aria-current");
   });
   const titleKey = `fullDemo.nav.${page === "nodes" ? "nodes" : page}`;
-  document.querySelector("#page-title").textContent = i18n.t(titleKey);
+  const title = i18n.t(titleKey);
+  document.querySelector("#page-title").textContent = title;
+  demoStatusbar.setItemValue("page", title, { announce: false });
 };
 demoPages.addEventListener("gui:page-change", (event) => syncNavigation(event.detail.active));
+
+const statusbarPosition = document.querySelector("#statusbar-position");
+const statusbarCompact = document.querySelector("#statusbar-compact");
+const statusbarFixed = document.querySelector("#statusbar-fixed");
+const statusbarMode = document.querySelector("#statusbar-mode");
+const demoTopbar = document.querySelector(".demo-topbar");
+let statusbarProgress = 42;
+let statusbarHealthy = true;
+
+function syncStatusbarOffset() {
+  demoStatusbar.style.setProperty(
+    "--statusbar-offset",
+    demoStatusbar.position === "top"
+      ? `${demoTopbar.getBoundingClientRect().height}px`
+      : "0px",
+  );
+}
+
+function applyStatusbarPosition(position) {
+  demoStatusbar.position = position;
+  if (position === "top") demoPages.before(demoStatusbar);
+  else demoPages.after(demoStatusbar);
+  statusbarPosition.value = position;
+  demoStatusbar.updateItem("placement", {
+    value: position === "top" ? "Top" : "Bottom",
+  }, { announce: false });
+  statusbarMode.textContent =
+    `${position === "top" ? "Top" : "Bottom"} · ${demoStatusbar.fixed ? "Fixed" : "Sticky"}`;
+  syncStatusbarOffset();
+}
+
+statusbarPosition.addEventListener("change", () => {
+  applyStatusbarPosition(statusbarPosition.value);
+});
+statusbarCompact.addEventListener("change", () => {
+  demoStatusbar.compact = statusbarCompact.checked;
+});
+statusbarFixed.addEventListener("change", () => {
+  demoStatusbar.fixed = statusbarFixed.checked;
+  applyStatusbarPosition(demoStatusbar.position);
+});
+document.querySelector("#statusbar-progress").addEventListener("click", () => {
+  statusbarProgress = (statusbarProgress + 13) % 101;
+  demoStatusbar.updateItem("sync", {
+    progress: statusbarProgress,
+    value: `${statusbarProgress}%`,
+  });
+});
+document.querySelector("#statusbar-health").addEventListener("click", () => {
+  statusbarHealthy = !statusbarHealthy;
+  demoStatusbar.updateItem("runtime", {
+    variant: statusbarHealthy ? "success" : "danger",
+    value: statusbarHealthy ? "Online" : "Offline",
+  });
+});
+demoStatusbar.addEventListener("gui:statusbar-action", (event) => {
+  if (event.detail.id === "placement") {
+    applyStatusbarPosition(demoStatusbar.position === "top" ? "bottom" : "top");
+  }
+});
+applyStatusbarPosition("bottom");
+if (typeof ResizeObserver !== "undefined") {
+  new ResizeObserver(syncStatusbarOffset).observe(demoTopbar);
+}
+
+const statusbarTimer = setInterval(() => {
+  demoStatusbar.setItemValue("clock", new Date().toLocaleTimeString(), {
+    announce: false,
+  });
+}, 1_000);
+window.addEventListener("pagehide", () => clearInterval(statusbarTimer), { once: true });
 
 const localeControls = [
   document.querySelector("#locale-select"),
@@ -377,6 +516,9 @@ function seedChart(count = 10_000) {
 function updateChartCount() {
   chartCount.textContent = chart.pointCount.toLocaleString();
   document.querySelector("#metric-points").textContent = chart.pointCount.toLocaleString();
+  demoStatusbar.setItemValue("points", chart.pointCount.toLocaleString(), {
+    announce: false,
+  });
 }
 
 seedChart();
@@ -697,10 +839,18 @@ async function configureBackendLogging() {
     status.dataset.online = "true";
     document.querySelector("#server-dot").dataset.online = "true";
     document.querySelector("#server-status").textContent = `${info.host} · ${info.runtime}`;
+    demoStatusbar.updateItem("runtime", {
+      variant: "success",
+      value: "Node backend",
+    });
     demoLog.info("Backend logging connected", info);
   } catch {
     status.textContent = "HTTP backend unavailable";
     document.querySelector("#server-status").textContent = "Static browser mode";
+    demoStatusbar.updateItem("runtime", {
+      variant: "warning",
+      value: "Static browser",
+    });
   }
 }
 await configureBackendLogging();

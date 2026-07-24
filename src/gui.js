@@ -20,6 +20,10 @@ import {
   mediaPlayerModule,
 } from "./modules/media-player/index.js";
 import {
+  GuiStatusbar,
+  statusbarModule,
+} from "./modules/statusbar/index.js";
+import {
   GUI_LOG_LEVELS,
   GUI_LOG_SCHEMA,
   GuiBatchSink,
@@ -53,6 +57,7 @@ export {
   GuiMemorySink,
   GuiNodeEditor,
   GuiNodeGraph,
+  GuiStatusbar,
   defineGuiModule,
   guiModules,
   logger,
@@ -61,6 +66,7 @@ export {
   mediaAdapters,
   mediaPlayerModule,
   nodeEditorModule,
+  statusbarModule,
 };
 
 const hasDOM = typeof window !== "undefined" && typeof document !== "undefined";
@@ -1387,6 +1393,7 @@ registerElement("gui-toast-stack", GuiToastStack);
   },
   nodeEditorModule,
   mediaPlayerModule,
+  statusbarModule,
   loggingModule,
 ].forEach((module) => {
   if (!guiModules.has(module.id)) defineGuiModule(module);

@@ -8,6 +8,9 @@ All notable changes to GuiKit are documented here. The format follows
 
 ### Added
 
+- Configurable `<gui-statusbar>` with top/bottom and sticky/fixed placement,
+  keyed live items, status variants, progress, actions, responsive priority,
+  start/center/end alignment, live announcements, and custom slots.
 - Per-node settings buttons with an accessible modal editor, JSON data
   validation, read-only inspection, and cancelable extension events.
 - Comprehensive full-demo application covering every component, service,
