@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
@@ -11,6 +12,20 @@ test("media player module exposes its component and manifest", () => {
   assert.equal(typeof GuiMediaPlayer, "function");
   assert.equal(mediaPlayerModule.id, "media-player");
   assert.deepEqual(mediaPlayerModule.components, ["gui-media-player"]);
+});
+
+test("media player registers only after its browser resources initialize", async () => {
+  const source = await readFile(
+    new URL("../src/modules/media-player/index.js", import.meta.url),
+    "utf8",
+  );
+  const styles = source.indexOf("const MEDIA_PLAYER_STYLES");
+  const automaticRegistration = source.lastIndexOf(
+    'customElements.define("gui-media-player", GuiMediaPlayer)',
+  );
+
+  assert.ok(styles >= 0);
+  assert.ok(automaticRegistration > styles);
 });
 
 test("media adapters are selected by priority", () => {

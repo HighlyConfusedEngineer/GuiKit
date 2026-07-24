@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
@@ -34,6 +35,32 @@ test("node editor module exposes its model, component, and manifest", () => {
   assert.equal(typeof GuiNodeEditor, "function");
   assert.equal(nodeEditorModule.id, "node-editor");
   assert.deepEqual(nodeEditorModule.components, ["gui-node-editor"]);
+});
+
+test("node editor uses documented view defaults when attributes are absent", () => {
+  const editor = new GuiNodeEditor();
+  editor.getAttribute = () => null;
+  editor.hasAttribute = () => false;
+
+  assert.equal(editor.minZoom, 0.25);
+  assert.equal(editor.maxZoom, 2.5);
+  assert.equal(editor.gridSize, 24);
+  assert.equal(editor.snapSize, 0);
+});
+
+test("node editor registers only after its browser resources initialize", async () => {
+  const source = await readFile(
+    new URL("../src/modules/node-editor/index.js", import.meta.url),
+    "utf8",
+  );
+  const styles = source.indexOf("const NODE_EDITOR_STYLES");
+  const automaticRegistration = source.lastIndexOf(
+    'customElements.define("gui-node-editor", GuiNodeEditor)',
+  );
+
+  assert.ok(styles >= 0);
+  assert.ok(automaticRegistration > styles);
+  assert.match(source, /if \(!this\.#viewport\) return;/);
 });
 
 test("graph connects compatible output and input ports", () => {

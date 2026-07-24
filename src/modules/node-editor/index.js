@@ -313,7 +313,10 @@ export class GuiNodeEditor extends GuiElement {
   }
 
   attributeChangedCallback(name) {
-    if (!this.isConnected) return;
+    // Existing elements are upgraded synchronously by customElements.define().
+    // Attribute callbacks can therefore run before connectedCallback creates
+    // the shadow view, even though the element is already connected.
+    if (!this.#viewport) return;
     if (name === "label") this.#viewport.setAttribute("aria-label", this.label);
   }
 
@@ -500,15 +503,18 @@ export class GuiNodeEditor extends GuiElement {
   }
 
   get minZoom() {
-    return Math.max(0.05, finite(this.getAttribute("min-zoom"), 0.25));
+    return Math.max(0.05, finite(this.getAttribute("min-zoom") ?? 0.25, 0.25));
   }
 
   get maxZoom() {
-    return Math.max(this.minZoom, finite(this.getAttribute("max-zoom"), 2.5));
+    return Math.max(
+      this.minZoom,
+      finite(this.getAttribute("max-zoom") ?? 2.5, 2.5),
+    );
   }
 
   get gridSize() {
-    return Math.max(8, finite(this.getAttribute("grid-size"), 24));
+    return Math.max(8, finite(this.getAttribute("grid-size") ?? 24, 24));
   }
 
   get snapSize() {
@@ -964,10 +970,6 @@ export const nodeEditorModule = Object.freeze({
   },
 });
 
-if (hasDOM && !customElements.get("gui-node-editor")) {
-  customElements.define("gui-node-editor", GuiNodeEditor);
-}
-
 const NODE_EDITOR_STYLES = `
   :host {
     --node-grid: color-mix(in srgb, var(--gui-border, #dfe2ea) 68%, transparent);
@@ -1256,3 +1258,7 @@ const NODE_EDITOR_STYLES = `
     }
   }
 `;
+
+if (hasDOM && !customElements.get("gui-node-editor")) {
+  customElements.define("gui-node-editor", GuiNodeEditor);
+}

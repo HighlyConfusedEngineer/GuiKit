@@ -14,7 +14,9 @@
     "title": "Build once. Run anywhere."
   },
   "dashboard": {
-    "intro": "One dependency-free interface shared by the browser and native hosts."
+    "intro": "One dependency-free interface shared by the browser and native hosts.",
+    "fullDemo": "Explore every GuiKit feature",
+    "fullDemoBody": "Open the dedicated full demo with navigation, charts, nodes, media, logging, localization, themes, bridge, and backend integration."
   },
   "metrics": {
     "runtime": "Runtime dependencies",

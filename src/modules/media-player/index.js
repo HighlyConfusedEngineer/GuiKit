@@ -672,10 +672,6 @@ export const mediaPlayerModule = Object.freeze({
   },
 });
 
-if (hasDOM && !customElements.get("gui-media-player")) {
-  customElements.define("gui-media-player", GuiMediaPlayer);
-}
-
 const MEDIA_PLAYER_STYLES = `
   :host {
     display: block;
@@ -882,3 +878,7 @@ const MEDIA_PLAYER_STYLES = `
     }
   }
 `;
+
+if (hasDOM && !customElements.get("gui-media-player")) {
+  customElements.define("gui-media-player", GuiMediaPlayer);
+}

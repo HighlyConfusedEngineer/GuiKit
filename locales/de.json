@@ -14,7 +14,9 @@
     "title": "Einmal bauen. Überall ausführen."
   },
   "dashboard": {
-    "intro": "Eine Oberfläche ohne Laufzeit-Abhängigkeiten für Browser und native Hosts."
+    "intro": "Eine Oberfläche ohne Laufzeit-Abhängigkeiten für Browser und native Hosts.",
+    "fullDemo": "Alle GuiKit-Funktionen entdecken",
+    "fullDemoBody": "Öffne die vollständige Demo mit Navigation, Diagrammen, Knoten, Medien, Protokollen, Übersetzungen, Themes, Bridge und Backend-Integration."
   },
   "metrics": {
     "runtime": "Laufzeit-Abhängigkeiten",

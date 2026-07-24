@@ -8,6 +8,8 @@ All notable changes to GuiKit are documented here. The format follows
 
 ### Added
 
+- Comprehensive full-demo application covering every component, service,
+  feature module, backend log transport, and documented extension pattern.
 - Tag-driven GitHub Release packaging with semantic-version validation,
   checksums, retained workflow artifacts, and build-provenance attestations.
 - Canvas-based `<gui-live-chart>` with multiple series, responsive rendering,
@@ -34,6 +36,11 @@ All notable changes to GuiKit are documented here. The format follows
 
 ### Fixed
 
+- Node-editor and media-player custom elements now upgrade safely when their
+  markup exists before the module finishes loading.
+- Node-editor view defaults no longer collapse graphs to 5% zoom when optional
+  zoom and grid attributes are omitted.
+- The full demo refits node graphs after their sliding page becomes visible.
 - Rapid page changes no longer leave stale or hidden transition states.
 - Nested tab views no longer send child tab clicks or key events to a parent.
 - Tab activation always leaves one accessible, interactive panel.

@@ -61,7 +61,8 @@
   ],
   "scripts": {
     "dev": "node tools/dev-server.mjs",
-    "check": "node --check src/gui.js && node --check src/core/module-registry.js && node --check src/modules/node-editor/index.js && node --check src/modules/media-player/index.js && node --check src/modules/logging/index.js && node --check src/modules/logging/node.js && node --check tools/create-module.mjs && node --test",
+    "demo:full": "node examples/full-demo/server.mjs",
+    "check": "node --check src/gui.js && node --check src/core/module-registry.js && node --check src/modules/node-editor/index.js && node --check src/modules/media-player/index.js && node --check src/modules/logging/index.js && node --check src/modules/logging/node.js && node --check examples/full-demo/app.js && node --check examples/full-demo/server.mjs && node --check tools/create-module.mjs && node --test",
     "test": "node --test",
     "prepack": "npm run check",
     "release:check": "npm pack --dry-run --ignore-scripts",

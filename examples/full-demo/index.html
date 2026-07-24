@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en" data-theme="system">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Complete interactive demonstration of every GuiKit feature.">
+    <title>GuiKit Full Demo</title>
+    <link rel="stylesheet" href="../../src/gui.css">
+    <link rel="stylesheet" href="./demo.css">
+  </head>
+  <body>
+    <div class="gui-app">
+      <gui-sidebar
+        id="demo-sidebar"
+        aria-label="Demo navigation"
+        collapsible
+        persist-key="full-demo">
+        <div class="gui-brand">
+          <span class="gui-brand__mark" aria-hidden="true">G</span>
+          <span class="gui-sidebar-label">GuiKit</span>
+          <span class="gui-badge gui-sidebar-label">Full demo</span>
+        </div>
+
+        <button
+          class="gui-sidebar-collapse"
+          type="button"
+          data-gui-sidebar-collapse="demo-sidebar"
+          data-expanded-label="Collapse sidebar"
+          data-collapsed-label="Expand sidebar"
+          data-i18n-expanded-label="actions.collapseSidebar"
+          data-i18n-collapsed-label="actions.expandSidebar"
+          aria-label="Collapse sidebar"
+          aria-expanded="true">
+          <span aria-hidden="true">‹</span>
+        </button>
+
+        <nav class="gui-nav" aria-label="Feature areas">
+          <button type="button" aria-current="page" data-gui-page-open="overview">
+            <span aria-hidden="true">⌂</span>
+            <span class="gui-sidebar-label" data-i18n="fullDemo.nav.overview">Overview</span>
+          </button>
+          <button type="button" data-gui-page-open="navigation">
+            <span aria-hidden="true">⇥</span>
+            <span class="gui-sidebar-label" data-i18n="fullDemo.nav.navigation">Navigation</span>
+          </button>
+          <button type="button" data-gui-page-open="components">
+            <span aria-hidden="true">◇</span>
+            <span class="gui-sidebar-label" data-i18n="fullDemo.nav.components">Components</span>
+          </button>
+          <button type="button" data-gui-page-open="charts">
+            <span aria-hidden="true">⌁</span>
+            <span class="gui-sidebar-label" data-i18n="fullDemo.nav.charts">Live charts</span>
+          </button>
+          <button type="button" data-gui-page-open="nodes">
+            <span aria-hidden="true">⌘</span>
+            <span class="gui-sidebar-label" data-i18n="fullDemo.nav.nodes">Node editor</span>
+          </button>
+          <button type="button" data-gui-page-open="media">
+            <span aria-hidden="true">▶</span>
+            <span class="gui-sidebar-label" data-i18n="fullDemo.nav.media">Media</span>
+          </button>
+          <button type="button" data-gui-page-open="logging">
+            <span aria-hidden="true">≡</span>
+            <span class="gui-sidebar-label" data-i18n="fullDemo.nav.logging">Logging</span>
+          </button>
+          <button type="button" data-gui-page-open="platform">
+            <span aria-hidden="true">⚙</span>
+            <span class="gui-sidebar-label" data-i18n="fullDemo.nav.platform">Platform</span>
+          </button>
+        </nav>
+
+        <div class="demo-sidebar-footer gui-sidebar-label">
+          <span class="demo-status-dot" id="server-dot" aria-hidden="true"></span>
+          <span id="server-status">Detecting runtime…</span>
+        </div>
+      </gui-sidebar>
+
+      <button
+        class="gui-sidebar-backdrop"
+        type="button"
+        data-gui-sidebar-toggle="demo-sidebar"
+        aria-label="Close navigation">
+      </button>
+
+      <main class="gui-main">
+        <header class="gui-topbar demo-topbar">
+          <div class="gui-cluster">
+            <button
+              class="gui-button gui-icon-button"
+              type="button"
+              data-gui-sidebar-toggle="demo-sidebar"
+              data-i18n-aria-label="actions.menu"
+              aria-label="Open menu">☰</button>
+            <div>
+              <p class="gui-eyebrow" data-i18n="fullDemo.eyebrow">Universal interface laboratory</p>
+              <h1 class="gui-title" id="page-title" data-i18n="fullDemo.nav.overview">Overview</h1>
+            </div>
+          </div>
+          <div class="gui-cluster demo-topbar-actions">
+            <span class="gui-badge" id="event-count">0 events</span>
+            <label class="gui-field demo-inline-field">
+              <span class="gui-sr-only" data-i18n="settings.language">Language</span>
+              <select class="gui-select" id="locale-select" aria-label="Language">
+                <option value="en">English</option>
+                <option value="de">Deutsch</option>
+                <option value="es">Español</option>
+              </select>
+            </label>
+            <button class="gui-button gui-icon-button" id="theme-toggle" type="button" aria-label="Cycle theme">◐</button>
+          </div>
+        </header>
+
+        <gui-pages id="demo-pages" active="overview">
+          <section data-page="overview">
+            <div class="gui-stack demo-page">
+              <section class="demo-hero">
+                <div>
+                  <p class="gui-eyebrow" data-i18n="fullDemo.overview.eyebrow">Everything, working together</p>
+                  <h2 data-i18n="fullDemo.overview.title">A complete cross-platform GuiKit application.</h2>
+                  <p data-i18n="fullDemo.overview.body">
+                    Explore every component, service, module, transport, interaction, and performance primitive.
+                  </p>
+                  <div class="gui-cluster">
+                    <button class="gui-button gui-button--primary" type="button" data-gui-page-open="components" data-i18n="fullDemo.overview.explore">Explore components</button>
+                    <button class="gui-button" type="button" data-gui-page-open="platform" data-i18n="fullDemo.overview.runtime">Inspect runtime</button>
+                  </div>
+                </div>
+                <div class="demo-orbit" aria-hidden="true">
+                  <span>UI</span><span>i18n</span><span>Logs</span><span>Data</span>
+                  <strong>G</strong>
+                </div>
+              </section>
+
+              <div class="gui-grid demo-metrics">
+                <article class="gui-card">
+                  <span class="gui-muted">Built-in modules</span>
+                  <strong id="metric-modules">—</strong>
+                  <small>Dependency-aware initialization</small>
+                </article>
+                <article class="gui-card">
+                  <span class="gui-muted">Buffered chart points</span>
+                  <strong id="metric-points">0</strong>
+                  <small>Bounded real-time storage</small>
+                </article>
+                <article class="gui-card">
+                  <span class="gui-muted">Runtime dependencies</span>
+                  <strong>0</strong>
+                  <small>Web standards throughout</small>
+                </article>
+                <article class="gui-card">
+                  <span class="gui-muted">Active theme</span>
+                  <strong id="metric-theme">System</strong>
+                  <small>Light, dark, and OS preference</small>
+                </article>
+              </div>
+
+              <div class="demo-two-column">
+                <article class="gui-card gui-stack">
+                  <div>
+                    <p class="gui-eyebrow">Feature coverage</p>
+                    <h3>Every public surface has a live station.</h3>
+                  </div>
+                  <div class="demo-feature-grid" id="feature-grid"></div>
+                </article>
+                <article class="gui-card gui-stack">
+                  <div class="gui-cluster demo-space-between">
+                    <div>
+                      <p class="gui-eyebrow">Event stream</p>
+                      <h3>Components communicate openly.</h3>
+                    </div>
+                    <button class="gui-button" id="events-clear" type="button">Clear</button>
+                  </div>
+                  <ol class="demo-event-list" id="event-list" aria-live="polite"></ol>
+                </article>
+              </div>
+
+              <article class="gui-card gui-stack">
+                <div>
+                  <p class="gui-eyebrow">Data primitives</p>
+                  <h3>Ring buffer and peak-preserving decimation</h3>
+                  <p class="gui-muted">The same low-level primitives used by live charts are directly available to applications.</p>
+                </div>
+                <div class="demo-buffer-track" id="buffer-track" aria-label="Decimated sample values"></div>
+                <p class="gui-muted" id="buffer-summary"></p>
+              </article>
+            </div>
+          </section>
+
+          <section data-page="navigation">
+            <div class="gui-stack demo-page">
+              <header class="demo-section-heading">
+                <div>
+                  <p class="gui-eyebrow">Navigation primitives</p>
+                  <h2>Tabs, nested tabs, sliding pages, history, and responsive sidebars</h2>
+                  <p class="gui-muted">Keyboard-safe selection and interruption-safe motion share one declarative API.</p>
+                </div>
+                <button class="gui-button" type="button" data-gui-page-back>Back</button>
+              </header>
+
+              <gui-tabs id="navigation-tabs" active="workspace">
+                <div role="tablist" aria-label="Navigation examples">
+                  <button data-tab="workspace">Workspace</button>
+                  <button data-tab="activity">Nested tabs</button>
+                  <button data-tab="details">Page history</button>
+                </div>
+                <section data-tab-panel="workspace">
+                  <div class="demo-tab-content">
+                    <article class="gui-card">
+                      <p class="gui-eyebrow">Active workspace</p>
+                      <h3>Declarative tab panels</h3>
+                      <p class="gui-muted">Use Arrow keys, Home, and End while focus is on the tab list.</p>
+                    </article>
+                    <article class="gui-card">
+                      <p class="gui-eyebrow">Sidebar</p>
+                      <h3>Optional persistent collapse</h3>
+                      <button class="gui-button" id="sidebar-collapse-demo" type="button">Toggle collapse</button>
+                    </article>
+                  </div>
+                </section>
+                <section data-tab-panel="activity">
+                  <gui-tabs active="recent">
+                    <div role="tablist" aria-label="Nested activity">
+                      <button data-tab="recent">Recent</button>
+                      <button data-tab="saved">Saved</button>
+                    </div>
+                    <section data-tab-panel="recent">
+                      <article class="gui-card">Nested tab events remain isolated from the parent.</article>
+                    </section>
+                    <section data-tab-panel="saved">
+                      <article class="gui-card">Each tab view owns one accessible active panel.</article>
+                    </section>
+                  </gui-tabs>
+                </section>
+                <section data-tab-panel="details">
+                  <article class="gui-card gui-stack">
+                    <h3>Animated page stack</h3>
+                    <p class="gui-muted">Open another station, then use Back to return through component-owned history.</p>
+                    <div class="gui-cluster">
+                      <button class="gui-button gui-button--primary" type="button" data-gui-page-open="charts">Open charts</button>
+                      <button class="gui-button" type="button" data-gui-page-open="logging">Open logging</button>
+                    </div>
+                  </article>
+                </section>
+              </gui-tabs>
+            </div>
+          </section>
+
+          <section data-page="components">
+            <div class="gui-stack demo-page">
+              <header class="demo-section-heading">
+                <div>
+                  <p class="gui-eyebrow">Component gallery</p>
+                  <h2>Forms, surfaces, feedback, and composition</h2>
+                  <p class="gui-muted">Shared tokens keep native HTML and GuiKit components visually coherent.</p>
+                </div>
+                <button class="gui-button" type="button" data-gui-page-back>Back</button>
+              </header>
+
+              <div class="demo-two-column">
+                <article class="gui-card gui-stack">
+                  <h3>Controls</h3>
+                  <label class="gui-field">
+                    <span>Project name</span>
+                    <input class="gui-input" id="project-name" value="Telemetry Studio">
+                  </label>
+                  <label class="gui-field">
+                    <span>Environment</span>
+                    <select class="gui-select" id="environment">
+                      <option>Development</option>
+                      <option>Staging</option>
+                      <option>Production</option>
+                    </select>
+                  </label>
+                  <label class="demo-switch-row">
+                    <span>
+                      <strong>Live synchronization</strong>
+                      <small class="gui-muted">Stream changes to the host.</small>
+                    </span>
+                    <input type="checkbox" checked>
+                  </label>
+                  <div class="gui-cluster">
+                    <button class="gui-button gui-button--primary" id="form-save" type="button">Save changes</button>
+                    <button class="gui-button" id="form-reset" type="button">Reset</button>
+                  </div>
+                </article>
+
+                <article class="gui-card gui-stack">
+                  <h3>Toast notifications</h3>
+                  <p class="gui-muted">Queued, actionable, accessible, timed, or persistent.</p>
+                  <div class="demo-button-grid">
+                    <button class="gui-button" type="button" data-toast="info">Information</button>
+                    <button class="gui-button" type="button" data-toast="success">Success</button>
+                    <button class="gui-button" type="button" data-toast="warning">Warning</button>
+                    <button class="gui-button" type="button" data-toast="error">Error</button>
+                  </div>
+                  <button class="gui-button gui-button--primary" id="toast-action" type="button">Actionable toast</button>
+                  <button class="gui-button" id="toast-persistent" type="button">Persistent toast</button>
+                </article>
+              </div>
+
+              <article class="gui-card gui-stack">
+                <div class="gui-cluster demo-space-between">
+                  <div>
+                    <p class="gui-eyebrow">Design tokens</p>
+                    <h3>Live accent customization</h3>
+                  </div>
+                  <code id="accent-value">--gui-accent</code>
+                </div>
+                <div class="demo-swatches" role="group" aria-label="Accent color">
+                  <button type="button" data-accent="#6c8cff" style="--swatch:#6c8cff" aria-label="Indigo"></button>
+                  <button type="button" data-accent="#17a88b" style="--swatch:#17a88b" aria-label="Teal"></button>
+                  <button type="button" data-accent="#d97706" style="--swatch:#d97706" aria-label="Amber"></button>
+                  <button type="button" data-accent="#d14f7b" style="--swatch:#d14f7b" aria-label="Rose"></button>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section data-page="charts">
+            <div class="gui-stack demo-page">
+              <header class="demo-section-heading">
+                <div>
+                  <p class="gui-eyebrow">High-volume visualization</p>
+                  <h2>Responsive live charts with bounded memory</h2>
+                  <p class="gui-muted">Thirty thousand initial samples, peak-preserving canvas rendering, and continuous updates.</p>
+                </div>
+                <button class="gui-button" type="button" data-gui-page-back>Back</button>
+              </header>
+
+              <article class="gui-card gui-stack">
+                <div class="gui-cluster demo-space-between">
+                  <div class="gui-cluster">
+                    <strong>System telemetry</strong>
+                    <span class="gui-badge"><span id="chart-count">0</span>&nbsp;points</span>
+                    <span class="gui-badge" id="chart-render-state">Waiting</span>
+                  </div>
+                  <div class="gui-cluster">
+                    <button class="gui-button" id="chart-toggle" type="button">Pause</button>
+                    <button class="gui-button" id="chart-burst" type="button">Add 10,000</button>
+                    <button class="gui-button" id="chart-reset" type="button">Reset</button>
+                    <button class="gui-button" id="chart-clear" type="button">Clear</button>
+                  </div>
+                </div>
+                <gui-live-chart
+                  id="full-chart"
+                  max-points="30000"
+                  window-points="8000"
+                  label="Live CPU, memory, and network telemetry">
+                </gui-live-chart>
+              </article>
+            </div>
+          </section>
+
+          <section data-page="nodes">
+            <div class="gui-stack demo-page">
+              <header class="demo-section-heading">
+                <div>
+                  <p class="gui-eyebrow">Visual programming</p>
+                  <h2>Typed node graph editor</h2>
+                  <p class="gui-muted">Drag, connect, select, delete, pan, zoom, snap, serialize, and restore.</p>
+                </div>
+                <button class="gui-button" type="button" data-gui-page-back>Back</button>
+              </header>
+              <div class="gui-cluster">
+                <button class="gui-button gui-button--primary" id="node-add" type="button">Add processor</button>
+                <button class="gui-button" id="node-fit" type="button">Fit graph</button>
+                <button class="gui-button" id="node-reset" type="button">Reset</button>
+                <button class="gui-button" id="node-export" type="button">Export JSON</button>
+                <button class="gui-button" id="node-import" type="button">Import JSON</button>
+                <label class="demo-switch-row demo-compact-switch">
+                  <span>Read only</span>
+                  <input id="node-readonly" type="checkbox">
+                </label>
+              </div>
+              <gui-node-editor
+                id="full-node-editor"
+                snap="16"
+                grid-size="24"
+                label="Full demo data processing graph">
+              </gui-node-editor>
+              <label class="gui-field">
+                <span>Serialized graph</span>
+                <textarea class="gui-input demo-code-area" id="graph-json" spellcheck="false"></textarea>
+              </label>
+            </div>
+          </section>
+
+          <section data-page="media">
+            <div class="gui-stack demo-page">
+              <header class="demo-section-heading">
+                <div>
+                  <p class="gui-eyebrow">Adaptive playback</p>
+                  <h2>Native video, live MediaStream, and protocol adapters</h2>
+                  <p class="gui-muted">Responsive controls include captions, playback rate, live edge, PiP, and fullscreen.</p>
+                </div>
+                <button class="gui-button" type="button" data-gui-page-back>Back</button>
+              </header>
+              <gui-media-player
+                id="full-media-player"
+                autoplay
+                muted
+                live
+                label="GuiKit generated live media demonstration">
+              </gui-media-player>
+              <article class="gui-card gui-stack">
+                <div class="gui-cluster">
+                  <button class="gui-button gui-button--primary" id="media-stream" type="button">Attach MediaStream</button>
+                  <button class="gui-button" id="media-adapter" type="button">Load through adapter</button>
+                  <button class="gui-button" id="media-stop" type="button">Detach and stop</button>
+                </div>
+                <label class="gui-field">
+                  <span>Native video or HLS URL</span>
+                  <span class="gui-cluster demo-stretch">
+                    <input class="gui-input" id="media-url" type="url" placeholder="https://example.com/video.mp4">
+                    <button class="gui-button" id="media-url-load" type="button">Load URL</button>
+                  </span>
+                </label>
+                <p class="gui-muted">Registered adapters: <strong id="adapter-list">—</strong></p>
+              </article>
+            </div>
+          </section>
+
+          <section data-page="logging">
+            <div class="gui-stack demo-page">
+              <header class="demo-section-heading">
+                <div>
+                  <p class="gui-eyebrow">Frontend and backend observability</p>
+                  <h2>Structured, correlated, privacy-aware logging</h2>
+                  <p class="gui-muted">Child context, errors, spans, timers, redaction, filtering, batching, bridge, HTTP, and rotating files.</p>
+                </div>
+                <button class="gui-button" type="button" data-gui-page-back>Back</button>
+              </header>
+              <div class="gui-cluster">
+                <button class="gui-button" type="button" data-log-level="trace">Trace</button>
+                <button class="gui-button" type="button" data-log-level="debug">Debug</button>
+                <button class="gui-button gui-button--primary" type="button" data-log-level="info">Info</button>
+                <button class="gui-button" type="button" data-log-level="warn">Warning</button>
+                <button class="gui-button" type="button" data-log-level="error">Error + redaction</button>
+                <button class="gui-button" id="log-span" type="button">Run nested spans</button>
+                <button class="gui-button" id="log-flush" type="button">Flush transports</button>
+              </div>
+              <div class="demo-transport-strip">
+                <span class="gui-badge">Console</span>
+                <span class="gui-badge">Memory <strong id="memory-log-count">0</strong></span>
+                <span class="gui-badge">Bridge batch</span>
+                <span class="gui-badge" id="http-sink-status">HTTP backend detecting…</span>
+                <span class="gui-badge">Node rotating JSONL</span>
+              </div>
+              <gui-log-viewer id="full-log-viewer" limit="1500"></gui-log-viewer>
+            </div>
+          </section>
+
+          <section data-page="platform">
+            <div class="gui-stack demo-page">
+              <header class="demo-section-heading">
+                <div>
+                  <p class="gui-eyebrow">Cross-platform services</p>
+                  <h2>Localization, themes, bridge, and module lifecycle</h2>
+                  <p class="gui-muted">The same interface runs in a browser, pywebview, WebView2, WebKit, or another host.</p>
+                </div>
+                <button class="gui-button" type="button" data-gui-page-back>Back</button>
+              </header>
+
+              <div class="demo-two-column">
+                <article class="gui-card gui-stack">
+                  <h3>Host bridge</h3>
+                  <p class="gui-muted">Promise-based requests, responses, timeouts, errors, and host events.</p>
+                  <div class="gui-cluster">
+                    <button class="gui-button gui-button--primary" id="bridge-info" type="button">Call app.info</button>
+                    <button class="gui-button" id="bridge-echo" type="button">Echo payload</button>
+                    <button class="gui-button" id="bridge-event" type="button">Emit host event</button>
+                  </div>
+                  <pre class="demo-result" id="bridge-result">Waiting for a bridge call…</pre>
+                </article>
+
+                <article class="gui-card gui-stack">
+                  <h3>Runtime settings</h3>
+                  <label class="gui-field">
+                    <span>Language</span>
+                    <select class="gui-select" id="platform-locale">
+                      <option value="en">English</option>
+                      <option value="de">Deutsch</option>
+                      <option value="es">Español</option>
+                    </select>
+                  </label>
+                  <label class="gui-field">
+                    <span>Theme</span>
+                    <select class="gui-select" id="theme-select">
+                      <option value="system">System</option>
+                      <option value="light">Light</option>
+                      <option value="dark">Dark</option>
+                    </select>
+                  </label>
+                  <p class="gui-muted" data-i18n="fullDemo.platform.translationSample">This sentence changes with the selected locale.</p>
+                </article>
+              </div>
+
+              <article class="gui-card gui-stack">
+                <div class="gui-cluster demo-space-between">
+                  <div>
+                    <p class="gui-eyebrow">Module registry</p>
+                    <h3>Dependency-aware initialization</h3>
+                  </div>
+                  <span class="gui-badge" id="modules-ready">Initializing…</span>
+                </div>
+                <div class="demo-module-table" id="module-table"></div>
+              </article>
+            </div>
+          </section>
+        </gui-pages>
+      </main>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

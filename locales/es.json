@@ -14,7 +14,9 @@
     "title": "Crea una vez. Ejecuta donde quieras."
   },
   "dashboard": {
-    "intro": "Una interfaz sin dependencias compartida por el navegador y los hosts nativos."
+    "intro": "Una interfaz sin dependencias compartida por el navegador y los hosts nativos.",
+    "fullDemo": "Explora todas las funciones de GuiKit",
+    "fullDemoBody": "Abre la demostración completa con navegación, gráficos, nodos, multimedia, registros, traducciones, temas, puente e integración de backend."
   },
   "metrics": {
     "runtime": "Dependencias de ejecución",

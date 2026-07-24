@@ -47,6 +47,19 @@ npm run check
 The HTML can also be served by any static server or packaged directly with a
 native application.
 
+### Full feature demo
+
+Run the complete browser-and-backend example:
+
+```powershell
+npm run demo:full
+```
+
+Then open `http://127.0.0.1:4174/examples/full-demo/`. It demonstrates every
+public component and service, plus HTTP log batching and rotating Node JSONL
+files. See the [full-demo guide](examples/full-demo/README.md) for its coverage
+matrix and static-host fallback.
+
 ### Logging
 
 ```js
