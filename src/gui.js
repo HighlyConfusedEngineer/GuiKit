@@ -116,6 +116,7 @@ import {
   GuiPerformanceBudget,
   GuiResourceGovernor,
   GuiSignalStore,
+  GuiWorkerTaskRunner,
   frameScheduler,
   lazyModules,
   performanceBudget,
@@ -179,6 +180,7 @@ export {
   GuiWorkspaceModel,
   GuiLazyModuleLoader,
   GuiSignalStore,
+  GuiWorkerTaskRunner,
   auditAccessibility,
   capabilities,
   clipboard,
@@ -732,6 +734,8 @@ export class GuiLiveChart extends GuiElement {
   static observedAttributes = ["max-points", "window-points", "min", "max"];
   #canvas;
   #context;
+  #gridSurface = null;
+  #gridContext = null;
   #legend;
   #tooltip;
   #series = new Map();
@@ -744,6 +748,7 @@ export class GuiLiveChart extends GuiElement {
   #interaction = null;
   #lastMetrics = null;
   #resourceMode = "normal";
+  #analysisWorker = null;
 
   connectedCallback() {
     if (!this.shadowRoot) this.#createView();
@@ -762,6 +767,8 @@ export class GuiLiveChart extends GuiElement {
     window.removeEventListener("resize", this.#onResize);
     window.removeEventListener("gui:theme-changed", this.#onThemeChanged);
     cancelAnimationFrame(this.#frame);
+    this.#analysisWorker?.terminate();
+    this.#analysisWorker = null;
   }
 
   attributeChangedCallback(name) {
@@ -968,6 +975,19 @@ export class GuiLiveChart extends GuiElement {
     });
   }
 
+  async analyzeAsync(seriesId, options = {}) {
+    const series = this.#series.get(String(seriesId));
+    if (!series) throw new Error(`Unknown chart series "${seriesId}".`);
+    const points = Array.from({ length: series.buffer.length }, (_, index) => ({ x: series.buffer.xAt(index), y: series.buffer.yAt(index) }));
+    if (!this.#analysisWorker) {
+      this.#analysisWorker = new GuiWorkerTaskRunner(
+        new URL("./modules/performance/analysis-worker.js", import.meta.url),
+        { name: "GuiKit chart analysis", fallback: (type, payload) => type === "analyze" ? analyzeChartSignal(payload.points) : undefined },
+      );
+    }
+    return this.#analysisWorker.run("analyze", { points }, options);
+  }
+
   requestRender() {
     if (!this.isConnected || this.#frame || this.getClientRects().length === 0) return;
     this.#frame = requestAnimationFrame(() => {
@@ -1009,7 +1029,12 @@ export class GuiLiveChart extends GuiElement {
     this.#tooltip.setAttribute("role", "status");
     wrapper.append(this.#canvas, this.#legend, this.#tooltip);
     root.append(style, wrapper);
-    this.#context = this.#canvas.getContext("2d");
+    this.#context = this.#canvas.getContext("2d", { alpha: false, desynchronized: true })
+      ?? this.#canvas.getContext("2d");
+    if (typeof OffscreenCanvas !== "undefined") {
+      this.#gridSurface = new OffscreenCanvas(1, 1);
+      this.#gridContext = this.#gridSurface.getContext("2d");
+    }
     this.#canvas.addEventListener("pointermove", (event) => this._onPointerMove(event));
     this.#canvas.addEventListener("pointerdown", (event) => this._onPointerDown(event));
     this.#canvas.addEventListener("pointerup", (event) => this._onPointerUp(event));
@@ -1095,7 +1120,15 @@ export class GuiLiveChart extends GuiElement {
     if (xMin === xMax) xMax = xMin + 1;
     const leftAxis = axes.get("left");
     const rightAxis = axes.get("right");
-    this.#drawGrid({ width, height, padding, plotWidth, plotHeight, yMin: leftAxis.yMin, yMax: leftAxis.yMax, rightAxis, xMin, xMax, muted, border });
+    const gridContext = this.#gridContext ?? this.#context;
+    if (this.#gridSurface && this.#gridContext) {
+      this.#gridSurface.width = this.#canvas.width;
+      this.#gridSurface.height = this.#canvas.height;
+      gridContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      gridContext.clearRect(0, 0, width, height);
+    }
+    this.#drawGrid({ context: gridContext, width, height, padding, plotWidth, plotHeight, yMin: leftAxis.yMin, yMax: leftAxis.yMax, rightAxis, xMin, xMax, muted, border });
+    if (this.#gridSurface) this.#context.drawImage(this.#gridSurface, 0, 0, width, height);
     const mapX = (value) => padding.left + ((value - xMin) / (xMax - xMin)) * plotWidth;
     const mapY = (value, axisId = "left") => {
       const axis = axes.get(axisId);
@@ -1148,39 +1181,39 @@ export class GuiLiveChart extends GuiElement {
     });
   }
 
-  #drawGrid({ height, padding, plotWidth, plotHeight, yMin, yMax, rightAxis, xMin, xMax, muted, border }) {
-    this.#context.font = "11px ui-sans-serif, system-ui, sans-serif";
-    this.#context.textAlign = "right";
-    this.#context.textBaseline = "middle";
+  #drawGrid({ context, height, padding, plotWidth, plotHeight, yMin, yMax, rightAxis, xMin, xMax, muted, border }) {
+    context.font = "11px ui-sans-serif, system-ui, sans-serif";
+    context.textAlign = "right";
+    context.textBaseline = "middle";
     for (let line = 0; line <= 4; line += 1) {
       const ratio = line / 4;
       const y = padding.top + ratio * plotHeight;
       const value = yMax - ratio * (yMax - yMin);
-      this.#context.beginPath();
-      this.#context.moveTo(padding.left, y);
-      this.#context.lineTo(padding.left + plotWidth, y);
-      this.#context.strokeStyle = border;
-      this.#context.lineWidth = 1;
-      this.#context.stroke();
-      this.#context.fillStyle = muted;
-      this.#context.fillText(this.#numberFormat.format(value), padding.left - 8, y);
+      context.beginPath();
+      context.moveTo(padding.left, y);
+      context.lineTo(padding.left + plotWidth, y);
+      context.strokeStyle = border;
+      context.lineWidth = 1;
+      context.stroke();
+      context.fillStyle = muted;
+      context.fillText(this.#numberFormat.format(value), padding.left - 8, y);
     }
-    this.#context.textAlign = "left";
-    this.#context.textBaseline = "alphabetic";
-    this.#context.fillStyle = muted;
-    this.#context.fillText(`${this.windowPoints.toLocaleString()} point window`, padding.left, height - 7);
-    this.#context.textAlign = "center";
+    context.textAlign = "left";
+    context.textBaseline = "alphabetic";
+    context.fillStyle = muted;
+    context.fillText(`${this.windowPoints.toLocaleString()} point window`, padding.left, height - 7);
+    context.textAlign = "center";
     for (let line = 0; line <= 4; line += 1) {
       const ratio = line / 4;
       const value = xMin + ratio * (xMax - xMin);
-      this.#context.fillText(this.#timeFormat.format(new Date(value)), padding.left + ratio * plotWidth, height - 7);
+      context.fillText(this.#timeFormat.format(new Date(value)), padding.left + ratio * plotWidth, height - 7);
     }
     if (rightAxis?.yMax !== rightAxis?.yMin && rightAxis?.yMax !== 1) {
-      this.#context.textAlign = "left";
-      this.#context.textBaseline = "middle";
+      context.textAlign = "left";
+      context.textBaseline = "middle";
       for (let line = 0; line <= 4; line += 1) {
         const ratio = line / 4;
-        this.#context.fillText(this.#numberFormat.format(rightAxis.yMax - ratio * (rightAxis.yMax - rightAxis.yMin)), padding.left + plotWidth + 8, padding.top + ratio * plotHeight);
+        context.fillText(this.#numberFormat.format(rightAxis.yMax - ratio * (rightAxis.yMax - rightAxis.yMin)), padding.left + plotWidth + 8, padding.top + ratio * plotHeight);
       }
     }
   }

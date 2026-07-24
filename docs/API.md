@@ -98,6 +98,8 @@ includes bounded per-signal statistics. `gui:chart-cursor`,
 
 `analyzeChartSignal(points)` and `deriveChartSignal(points, options)` are
 DOM-independent helpers for analysis pipelines and worker-backed hosts.
+`chart.analyzeAsync(seriesId)` runs the same statistics calculation through
+the packaged worker where the host permits workers, with a local fallback.
 
 ## Toasts
 

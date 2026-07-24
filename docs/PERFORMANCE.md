@@ -17,6 +17,10 @@ Rendering is batched with `requestAnimationFrame`. Ten appends in one frame
 still cause one draw. Charts also use CSS containment so an off-screen chart
 does not invalidate unrelated layout or paint work.
 
+When available, the static grid is drawn on an `OffscreenCanvas` before it is
+composited into the interactive canvas. Pointer cursor, focus, and tooltip
+remain on the main surface for consistent WebView behavior.
+
 ## Downsampling
 
 Drawing every point is wasteful when a 1,000-pixel canvas contains 20,000
@@ -84,6 +88,11 @@ resourceGovernor.register("telemetry", (mode) => chart.setResourceMode(mode));
 
 The constrained profile bounds retained samples more aggressively; applications
 can register log viewers, previews, and workspace panes in the same way.
+
+For expensive, non-interactive work, `GuiWorkerTaskRunner` implements a
+cancellable request/response worker protocol with a deterministic local
+fallback. `chart.analyzeAsync("cpu")` uses the packaged analysis worker when
+workers are available, while behaving identically in restricted WebViews.
 
 ## Logging
 

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { GuiFrameScheduler, GuiLazyModuleLoader, GuiPerformanceBudget, GuiResourceGovernor, GuiSignalStore } from "../src/modules/performance/index.js";
+import { GuiFrameScheduler, GuiLazyModuleLoader, GuiPerformanceBudget, GuiResourceGovernor, GuiSignalStore, GuiWorkerTaskRunner } from "../src/modules/performance/index.js";
 
 test("frame scheduler coalesces repeated keyed work", () => {
   const scheduler = new GuiFrameScheduler();
@@ -48,4 +48,10 @@ test("resource governor coordinates explicit constrained modes", () => {
   assert.equal(governor.setMode("constrained"), false);
   unregister();
   assert.deepEqual(modes, ["normal", "constrained"]);
+});
+
+test("worker task runner uses its deterministic fallback outside browser workers", async () => {
+  const runner = new GuiWorkerTaskRunner(undefined, { fallback: (type, payload) => `${type}:${payload.value}` });
+  assert.equal(runner.workerBacked, false);
+  assert.equal(await runner.run("layout", { value: 7 }), "layout:7");
 });

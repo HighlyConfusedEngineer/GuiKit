@@ -30,6 +30,12 @@ export class GuiResourceGovernor extends EventTarget {
   register(id: string, apply: (mode: "normal" | "balanced" | "constrained", previous?: string, id?: string) => void): () => boolean;
   setMode(mode: "normal" | "balanced" | "constrained"): boolean;
 }
+export class GuiWorkerTaskRunner {
+  constructor(url?: string | URL, options?: { name?: string; fallback?: (type: string, payload: unknown, options?: { signal?: AbortSignal }) => unknown | Promise<unknown> });
+  readonly workerBacked: boolean;
+  run<T = unknown>(type: string, payload: unknown, options?: { signal?: AbortSignal }): Promise<T>;
+  terminate(): void;
+}
 export const frameScheduler: GuiFrameScheduler;
 export const performanceBudget: GuiPerformanceBudget;
 export const lazyModules: GuiLazyModuleLoader;

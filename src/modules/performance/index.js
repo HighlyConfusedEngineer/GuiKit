@@ -166,6 +166,54 @@ export class GuiResourceGovernor extends GuiEventTarget {
   }
 }
 
+/** Promise-based protocol client for worker-hosted, CPU-heavy feature tasks. */
+export class GuiWorkerTaskRunner {
+  #worker = null;
+  #pending = new Map();
+  #nextId = 0;
+  constructor(url, options = {}) {
+    this.url = url;
+    this.fallback = options.fallback ?? null;
+    if (typeof Worker !== "undefined" && url) {
+      this.#worker = new Worker(url, { type: "module", name: options.name ?? "GuiKit worker" });
+      this.#worker.addEventListener("message", (event) => {
+        const request = this.#pending.get(event.data?.id);
+        if (!request) return;
+        this.#pending.delete(event.data.id);
+        if (event.data.error) request.reject(new Error(event.data.error));
+        else request.resolve(event.data.result);
+      });
+      this.#worker.addEventListener("error", (event) => {
+        this.#pending.forEach(({ reject }) => reject(event.error ?? new Error(event.message)));
+        this.#pending.clear();
+      });
+    }
+  }
+  get workerBacked() { return Boolean(this.#worker); }
+  run(type, payload, options = {}) {
+    if (!this.#worker) {
+      if (!this.fallback) return Promise.reject(new Error("Workers are unavailable and no fallback was configured."));
+      return Promise.resolve(this.fallback(type, payload, options));
+    }
+    const id = ++this.#nextId;
+    return new Promise((resolve, reject) => {
+      const abort = () => { this.#pending.delete(id); reject(options.signal?.reason ?? new DOMException("Canceled", "AbortError")); };
+      options.signal?.addEventListener?.("abort", abort, { once: true });
+      this.#pending.set(id, {
+        resolve: (result) => { options.signal?.removeEventListener?.("abort", abort); resolve(result); },
+        reject: (error) => { options.signal?.removeEventListener?.("abort", abort); reject(error); },
+      });
+      this.#worker.postMessage({ id, type, payload });
+    });
+  }
+  terminate() {
+    this.#worker?.terminate();
+    this.#worker = null;
+    this.#pending.forEach(({ reject }) => reject(new Error("Worker terminated.")));
+    this.#pending.clear();
+  }
+}
+
 export const frameScheduler = new GuiFrameScheduler();
 export const performanceBudget = new GuiPerformanceBudget({
   budgets: { "chart-render": 16, "data-render": 16, "node-layout": 32 },

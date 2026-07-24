@@ -99,6 +99,7 @@ export class GuiLiveChart extends HTMLElement {
     source?: string; compare?: string; sources?: string[];
     operation?: "moving-average" | "derivative" | "integral" | "difference" | string; window?: number;
   }): string;
+  analyzeAsync(seriesId: string, options?: { signal?: AbortSignal }): Promise<GuiChartStatistics>;
   requestRender(): void;
 }
 
