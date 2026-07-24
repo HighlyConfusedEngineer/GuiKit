@@ -33,6 +33,31 @@ test("full demo element ids are unique", () => {
   assert.equal(new Set(ids).size, ids.length);
 });
 
+test("full demo includes a comprehensive persistent settings station", () => {
+  assert.match(html, /data-page="settings"/);
+  assert.match(html, /id="settings-form"/);
+  [
+    "text",
+    "email",
+    "number",
+    "radio",
+    "color",
+    "range",
+    "checkbox",
+    "time",
+    "url",
+  ].forEach((type) => {
+    assert.match(html, new RegExp(`type="${type}"`), type);
+  });
+  assert.match(html, /<progress id="settings-storage-progress"/);
+  assert.match(html, /readonly>/);
+  assert.match(app, /guikit-full-demo-settings-v1/);
+  assert.match(app, /new FormData\(settingsForm\)/);
+  assert.match(app, /gui:settings-change/);
+  assert.match(app, /gui:settings-save/);
+  assert.match(app, /gui:settings-reset/);
+});
+
 test("full demo exercises services, transports, and module extension", () => {
   [
     "GuiDataBuffer",

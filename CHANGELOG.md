@@ -8,6 +8,9 @@ All notable changes to GuiKit are documented here. The format follows
 
 ### Added
 
+- Comprehensive persistent settings-page example with account, appearance,
+  locale, notifications, performance, storage, and advanced integration
+  controls plus live preview and application events.
 - Typed inline node parameters with selective per-node visibility, live editing,
   validation, units, read-only values, and cancelable change events.
 - Configurable `<gui-statusbar>` with top/bottom and sticky/fixed placement,

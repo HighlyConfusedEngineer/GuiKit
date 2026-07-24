@@ -67,6 +67,10 @@
             <span aria-hidden="true">⚙</span>
             <span class="gui-sidebar-label" data-i18n="fullDemo.nav.platform">Platform</span>
           </button>
+          <button type="button" data-gui-page-open="settings">
+            <span aria-hidden="true">☷</span>
+            <span class="gui-sidebar-label" data-i18n="fullDemo.nav.settings">Settings</span>
+          </button>
         </nav>
 
         <div class="demo-sidebar-footer gui-sidebar-label">
@@ -535,6 +539,353 @@
                 </div>
                 <div class="demo-module-table" id="module-table"></div>
               </article>
+            </div>
+          </section>
+
+          <section data-page="settings">
+            <div class="gui-stack demo-page">
+              <header class="demo-section-heading">
+                <div>
+                  <p class="gui-eyebrow">Application configuration</p>
+                  <h2>A complete, responsive settings experience</h2>
+                  <p class="gui-muted">
+                    Text, numeric, choice, range, color, time, toggle, URL, progress,
+                    and read-only settings share validation and persistent state.
+                  </p>
+                </div>
+                <button class="gui-button" type="button" data-gui-page-back>Back</button>
+              </header>
+
+              <form id="settings-form" class="demo-settings-form">
+                <div class="gui-card demo-settings-toolbar">
+                  <div>
+                    <span class="gui-badge" id="settings-state" role="status">Saved</span>
+                    <p class="gui-muted">Changes preview immediately and are stored locally when saved.</p>
+                  </div>
+                  <div class="gui-cluster">
+                    <button class="gui-button" id="settings-reset" type="button">Restore defaults</button>
+                    <button class="gui-button gui-button--primary" type="submit">Save settings</button>
+                  </div>
+                </div>
+
+                <div class="demo-settings-layout">
+                  <div class="demo-settings-main">
+                    <fieldset class="gui-card demo-settings-section">
+                      <legend>
+                        <span class="demo-settings-icon" aria-hidden="true">A</span>
+                        <span>
+                          <strong>Account and workspace</strong>
+                          <small>Identity and default project context</small>
+                        </span>
+                      </legend>
+                      <div class="demo-settings-fields demo-settings-fields--two">
+                        <label class="gui-field">
+                          <span>Display name</span>
+                          <input
+                            class="gui-input"
+                            id="settings-display-name"
+                            name="displayName"
+                            type="text"
+                            value="Alex Morgan"
+                            autocomplete="name"
+                            required>
+                        </label>
+                        <label class="gui-field">
+                          <span>Email address</span>
+                          <input
+                            class="gui-input"
+                            name="email"
+                            type="email"
+                            value="alex@example.com"
+                            autocomplete="email"
+                            required>
+                        </label>
+                        <label class="gui-field">
+                          <span>Default workspace</span>
+                          <select class="gui-select" name="workspace">
+                            <option value="engineering">Engineering</option>
+                            <option value="operations">Operations</option>
+                            <option value="research">Research</option>
+                          </select>
+                        </label>
+                        <label class="gui-field">
+                          <span>Items per page</span>
+                          <input class="gui-input" name="pageSize" type="number" value="50" min="10" max="500" step="10">
+                        </label>
+                      </div>
+                    </fieldset>
+
+                    <fieldset class="gui-card demo-settings-section">
+                      <legend>
+                        <span class="demo-settings-icon" aria-hidden="true">◐</span>
+                        <span>
+                          <strong>Appearance</strong>
+                          <small>Theme, color, scale, and motion preferences</small>
+                        </span>
+                      </legend>
+                      <div class="demo-choice-grid" role="radiogroup" aria-label="Color theme">
+                        <label class="demo-choice">
+                          <input name="theme" type="radio" value="system" checked>
+                          <span><strong>System</strong><small>Follow the operating system</small></span>
+                        </label>
+                        <label class="demo-choice">
+                          <input name="theme" type="radio" value="light">
+                          <span><strong>Light</strong><small>Bright surfaces and dark text</small></span>
+                        </label>
+                        <label class="demo-choice">
+                          <input name="theme" type="radio" value="dark">
+                          <span><strong>Dark</strong><small>Dim surfaces for low light</small></span>
+                        </label>
+                      </div>
+                      <div class="demo-settings-fields demo-settings-fields--two">
+                        <label class="gui-field">
+                          <span>Accent color</span>
+                          <span class="demo-color-field">
+                            <input id="settings-accent" name="accent" type="color" value="#6c8cff" aria-label="Accent color">
+                            <output id="settings-accent-value">#6c8cff</output>
+                          </span>
+                        </label>
+                        <label class="gui-field">
+                          <span>Interface density</span>
+                          <select class="gui-select" name="density">
+                            <option value="comfortable">Comfortable</option>
+                            <option value="compact">Compact</option>
+                            <option value="spacious">Spacious</option>
+                          </select>
+                        </label>
+                      </div>
+                      <label class="gui-field">
+                        <span class="demo-range-heading">
+                          <span>Interface scale</span>
+                          <output id="settings-scale-value" for="settings-scale">100%</output>
+                        </span>
+                        <input id="settings-scale" name="scale" type="range" min="80" max="130" step="5" value="100">
+                      </label>
+                      <label class="demo-switch-row">
+                        <span>
+                          <strong>Reduce decorative motion</strong>
+                          <small class="gui-muted">Keep essential state transitions while minimizing animation.</small>
+                        </span>
+                        <input name="reducedMotion" type="checkbox">
+                      </label>
+                    </fieldset>
+
+                    <fieldset class="gui-card demo-settings-section">
+                      <legend>
+                        <span class="demo-settings-icon" aria-hidden="true">文</span>
+                        <span>
+                          <strong>Language and region</strong>
+                          <small>Locale, formatting, and time preferences</small>
+                        </span>
+                      </legend>
+                      <div class="demo-settings-fields demo-settings-fields--two">
+                        <label class="gui-field">
+                          <span>Language</span>
+                          <select class="gui-select" id="settings-language" name="language">
+                            <option value="en">English</option>
+                            <option value="de">Deutsch</option>
+                            <option value="es">Español</option>
+                          </select>
+                        </label>
+                        <label class="gui-field">
+                          <span>Time zone</span>
+                          <select class="gui-select" name="timeZone">
+                            <option value="Europe/Berlin">Europe/Berlin</option>
+                            <option value="America/New_York">America/New York</option>
+                            <option value="Asia/Tokyo">Asia/Tokyo</option>
+                            <option value="UTC">UTC</option>
+                          </select>
+                        </label>
+                        <label class="gui-field">
+                          <span>Date format</span>
+                          <select class="gui-select" name="dateFormat">
+                            <option value="locale">Automatic (locale)</option>
+                            <option value="iso">2026-07-24</option>
+                            <option value="long">24 July 2026</option>
+                          </select>
+                        </label>
+                        <div class="gui-field">
+                          <span>Clock</span>
+                          <div class="demo-inline-options">
+                            <label><input name="clock" type="radio" value="24" checked> 24-hour</label>
+                            <label><input name="clock" type="radio" value="12"> 12-hour</label>
+                          </div>
+                        </div>
+                      </div>
+                    </fieldset>
+
+                    <fieldset class="gui-card demo-settings-section">
+                      <legend>
+                        <span class="demo-settings-icon" aria-hidden="true">◎</span>
+                        <span>
+                          <strong>Notifications</strong>
+                          <small>Channels, summaries, and quiet hours</small>
+                        </span>
+                      </legend>
+                      <div class="demo-settings-list">
+                        <label class="demo-switch-row">
+                          <span><strong>Desktop notifications</strong><small class="gui-muted">Important activity while GuiKit is open.</small></span>
+                          <input name="desktopNotifications" type="checkbox" checked>
+                        </label>
+                        <label class="demo-switch-row">
+                          <span><strong>Incident alerts</strong><small class="gui-muted">High-priority service and security events.</small></span>
+                          <input name="incidentAlerts" type="checkbox" checked>
+                        </label>
+                        <label class="demo-switch-row">
+                          <span><strong>Product updates</strong><small class="gui-muted">Occasional release and feature summaries.</small></span>
+                          <input name="productUpdates" type="checkbox">
+                        </label>
+                      </div>
+                      <div class="demo-settings-fields demo-settings-fields--two">
+                        <label class="gui-field">
+                          <span>Email digest</span>
+                          <select class="gui-select" name="digest">
+                            <option value="off">Off</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly" selected>Weekly</option>
+                          </select>
+                        </label>
+                        <div class="gui-field">
+                          <span>Quiet hours</span>
+                          <div class="demo-time-fields">
+                            <label><span class="gui-sr-only">Quiet hours start</span><input class="gui-input" name="quietStart" type="time" value="22:00"></label>
+                            <span aria-hidden="true">to</span>
+                            <label><span class="gui-sr-only">Quiet hours end</span><input class="gui-input" name="quietEnd" type="time" value="07:00"></label>
+                          </div>
+                        </div>
+                      </div>
+                    </fieldset>
+
+                    <fieldset class="gui-card demo-settings-section">
+                      <legend>
+                        <span class="demo-settings-icon" aria-hidden="true">⚡</span>
+                        <span>
+                          <strong>Performance and data</strong>
+                          <small>Rendering budgets, updates, and local storage</small>
+                        </span>
+                      </legend>
+                      <label class="gui-field">
+                        <span class="demo-range-heading">
+                          <span>Live-chart retention</span>
+                          <output id="settings-retention-value" for="settings-retention">30,000 points</output>
+                        </span>
+                        <input id="settings-retention" name="chartRetention" type="range" min="5000" max="100000" step="5000" value="30000">
+                      </label>
+                      <label class="gui-field">
+                        <span class="demo-range-heading">
+                          <span>Background workers</span>
+                          <output id="settings-workers-value" for="settings-workers">4 workers</output>
+                        </span>
+                        <input id="settings-workers" name="workers" type="range" min="1" max="16" step="1" value="4">
+                      </label>
+                      <div class="demo-settings-fields demo-settings-fields--two">
+                        <label class="gui-field">
+                          <span>Update channel</span>
+                          <select class="gui-select" name="updateChannel">
+                            <option value="stable">Stable</option>
+                            <option value="preview">Preview</option>
+                            <option value="nightly">Nightly</option>
+                          </select>
+                        </label>
+                        <label class="gui-field">
+                          <span>Auto-lock after</span>
+                          <select class="gui-select" name="autoLock">
+                            <option value="5">5 minutes</option>
+                            <option value="15" selected>15 minutes</option>
+                            <option value="30">30 minutes</option>
+                            <option value="never">Never</option>
+                          </select>
+                        </label>
+                      </div>
+                      <label class="demo-switch-row">
+                        <span><strong>Hardware acceleration</strong><small class="gui-muted">Use the GPU for charts, video, and transitions.</small></span>
+                        <input name="hardwareAcceleration" type="checkbox" checked>
+                      </label>
+                      <label class="demo-switch-row">
+                        <span><strong>Anonymous diagnostics</strong><small class="gui-muted">Share performance and crash metrics without personal data.</small></span>
+                        <input name="diagnostics" type="checkbox">
+                      </label>
+                    </fieldset>
+
+                    <fieldset class="gui-card demo-settings-section">
+                      <legend>
+                        <span class="demo-settings-icon" aria-hidden="true">{ }</span>
+                        <span>
+                          <strong>Advanced integration</strong>
+                          <small>Backend connectivity and developer diagnostics</small>
+                        </span>
+                      </legend>
+                      <div class="demo-settings-fields demo-settings-fields--two">
+                        <label class="gui-field">
+                          <span>Backend endpoint</span>
+                          <input class="gui-input" name="endpoint" type="url" value="https://api.example.com/v1" required>
+                        </label>
+                        <label class="gui-field">
+                          <span>Request timeout</span>
+                          <span class="demo-unit-field">
+                            <input class="gui-input" name="timeout" type="number" value="15" min="1" max="120">
+                            <span>seconds</span>
+                          </span>
+                        </label>
+                        <label class="gui-field">
+                          <span>Log level</span>
+                          <select class="gui-select" name="logLevel">
+                            <option value="error">Error</option>
+                            <option value="warn">Warning</option>
+                            <option value="info" selected>Information</option>
+                            <option value="debug">Debug</option>
+                            <option value="trace">Trace</option>
+                          </select>
+                        </label>
+                        <label class="gui-field">
+                          <span>Configuration source</span>
+                          <input class="gui-input" value="Local profile + host policy" readonly>
+                        </label>
+                      </div>
+                      <label class="demo-switch-row">
+                        <span><strong>Developer mode</strong><small class="gui-muted">Expose experimental modules and detailed diagnostics.</small></span>
+                        <input name="developerMode" type="checkbox">
+                      </label>
+                    </fieldset>
+                  </div>
+
+                  <aside class="demo-settings-aside">
+                    <article class="gui-card gui-stack">
+                      <div class="demo-profile-preview" aria-hidden="true">
+                        <span id="settings-avatar">AM</span>
+                        <div>
+                          <strong id="settings-preview-name">Alex Morgan</strong>
+                          <small>Settings preview</small>
+                        </div>
+                      </div>
+                      <dl class="demo-settings-summary">
+                        <div><dt>Theme</dt><dd id="settings-summary-theme">System</dd></div>
+                        <div><dt>Language</dt><dd id="settings-summary-language">English</dd></div>
+                        <div><dt>Density</dt><dd id="settings-summary-density">Comfortable</dd></div>
+                        <div><dt>Data points</dt><dd id="settings-summary-retention">30,000</dd></div>
+                      </dl>
+                    </article>
+                    <article class="gui-card gui-stack">
+                      <div>
+                        <strong>Local storage</strong>
+                        <p class="gui-muted">Cached previews and offline application data.</p>
+                      </div>
+                      <progress id="settings-storage-progress" value="62" max="100">62%</progress>
+                      <div class="gui-cluster demo-space-between">
+                        <span id="settings-storage-value">1.24 GB of 2 GB</span>
+                        <button class="gui-button" id="settings-clear-cache" type="button">Clear cache</button>
+                      </div>
+                    </article>
+                    <article class="gui-card gui-stack">
+                      <div>
+                        <strong>Serializable state</strong>
+                        <p class="gui-muted">Ready for local storage, a backend, Python, or C#.</p>
+                      </div>
+                      <pre class="demo-result demo-settings-preview" id="settings-preview"></pre>
+                    </article>
+                  </aside>
+                </div>
+              </form>
             </div>
           </section>
         </gui-pages>

@@ -28,6 +28,7 @@ const fullDemoTranslations = {
       media: "Media",
       logging: "Logging",
       platform: "Platform",
+      settings: "Settings",
     },
     eyebrow: "Universal interface laboratory",
     overview: {
@@ -51,6 +52,7 @@ const fullDemoTranslations = {
       media: "Medien",
       logging: "Protokolle",
       platform: "Plattform",
+      settings: "Einstellungen",
     },
     eyebrow: "Universelles Interface-Labor",
     overview: {
@@ -74,6 +76,7 @@ const fullDemoTranslations = {
       media: "Multimedia",
       logging: "Registros",
       platform: "Plataforma",
+      settings: "Ajustes",
     },
     eyebrow: "Laboratorio de interfaces universal",
     overview: {
@@ -150,6 +153,9 @@ const observedNames = [
   "gui:media-play",
   "gui:media-pause",
   "gui:media-error",
+  "gui:settings-change",
+  "gui:settings-save",
+  "gui:settings-reset",
 ];
 observedNames.forEach((name) => {
   document.addEventListener(name, (event) => recordEvent(name, event.detail));
@@ -293,6 +299,7 @@ const featureStations = [
   ["✓", "Live media", "media"],
   ["✓", "Structured logging", "logging"],
   ["✓", "i18n and bridge", "platform"],
+  ["✓", "Persistent settings", "settings"],
 ];
 const featureGrid = document.querySelector("#feature-grid");
 featureStations.forEach(([icon, label, page]) => {
@@ -395,27 +402,54 @@ window.addEventListener("pagehide", () => clearInterval(statusbarTimer), { once:
 const localeControls = [
   document.querySelector("#locale-select"),
   document.querySelector("#platform-locale"),
+  document.querySelector("#settings-language"),
 ];
+const applyLocale = (locale, { fromSettings = false } = {}) => {
+  localeControls.forEach((control) => { control.value = locale; });
+  storage.set("guikit-full-demo-locale", locale);
+  i18n.setLocale(locale);
+  syncNavigation(demoPages.active);
+  demoLog.info("Locale changed", { locale });
+  const settingsExample = document.querySelector("#settings-form");
+  if (!fromSettings && settingsExample?.dataset.ready === "true") {
+    const settings = updateSettingsPreview();
+    setSettingsDirty(true);
+    dispatchSettingsEvent("gui:settings-change", {
+      name: "language",
+      value: locale,
+      settings,
+    });
+  }
+};
 localeControls.forEach((control) => {
   control.value = initialLocale;
-  control.addEventListener("change", () => {
-    localeControls.forEach((other) => { other.value = control.value; });
-    storage.set("guikit-full-demo-locale", control.value);
-    i18n.setLocale(control.value);
-    syncNavigation(demoPages.active);
-    demoLog.info("Locale changed", { locale: control.value });
-  });
+  control.addEventListener("change", () => applyLocale(control.value, {
+    fromSettings: control.id === "settings-language",
+  }));
 });
 
 const themes = ["system", "light", "dark"];
 const themeSelect = document.querySelector("#theme-select");
 themeSelect.value = storage.get("gui-theme") ?? "system";
-const applyTheme = (theme) => {
+const applyTheme = (theme, { fromSettings = false } = {}) => {
   setTheme(theme);
   themeSelect.value = theme;
+  document.querySelectorAll('[name="theme"]').forEach((control) => {
+    control.checked = control.value === theme;
+  });
   document.querySelector("#metric-theme").textContent =
     theme.charAt(0).toUpperCase() + theme.slice(1);
   demoLog.info("Theme changed", { theme });
+  const settingsExample = document.querySelector("#settings-form");
+  if (!fromSettings && settingsExample?.dataset.ready === "true") {
+    const settings = updateSettingsPreview();
+    setSettingsDirty(true);
+    dispatchSettingsEvent("gui:settings-change", {
+      name: "theme",
+      value: theme,
+      settings,
+    });
+  }
 };
 themeSelect.addEventListener("change", () => applyTheme(themeSelect.value));
 document.querySelector("#theme-toggle").addEventListener("click", () => {
@@ -474,14 +508,225 @@ document.querySelector("#form-reset").addEventListener("click", () => {
   toast.info("Form reset.");
 });
 
+function applyAccent(accent, { fromSettings = false } = {}) {
+  document.documentElement.style.setProperty("--gui-accent", accent);
+  document.documentElement.style.setProperty(
+    "--gui-accent-soft",
+    `color-mix(in srgb, ${accent} 16%, transparent)`,
+  );
+  document.querySelector("#accent-value").textContent = `--gui-accent: ${accent}`;
+  const settingsAccent = document.querySelector("#settings-accent");
+  if (settingsAccent) settingsAccent.value = accent;
+  const settingsAccentValue = document.querySelector("#settings-accent-value");
+  if (settingsAccentValue) settingsAccentValue.textContent = accent;
+  window.dispatchEvent(new CustomEvent("gui:theme-changed", {
+    detail: { theme: "custom", accent },
+  }));
+  const settingsExample = document.querySelector("#settings-form");
+  if (!fromSettings && settingsExample?.dataset.ready === "true") {
+    const settings = updateSettingsPreview();
+    setSettingsDirty(true);
+    dispatchSettingsEvent("gui:settings-change", {
+      name: "accent",
+      value: accent,
+      settings,
+    });
+  }
+}
+
 document.querySelectorAll("[data-accent]").forEach((button) => {
-  button.addEventListener("click", () => {
-    const accent = button.dataset.accent;
-    document.documentElement.style.setProperty("--gui-accent", accent);
-    document.documentElement.style.setProperty("--gui-accent-soft", `color-mix(in srgb, ${accent} 16%, transparent)`);
-    document.querySelector("#accent-value").textContent = `--gui-accent: ${accent}`;
-    window.dispatchEvent(new CustomEvent("gui:theme-changed", { detail: { theme: "custom", accent } }));
+  button.addEventListener("click", () => applyAccent(button.dataset.accent));
+});
+
+const SETTINGS_STORAGE_KEY = "guikit-full-demo-settings-v1";
+const settingsForm = document.querySelector("#settings-form");
+const settingsState = document.querySelector("#settings-state");
+const settingsDefaults = {
+  displayName: "Alex Morgan",
+  email: "alex@example.com",
+  workspace: "engineering",
+  pageSize: 50,
+  theme: "system",
+  accent: "#6c8cff",
+  density: "comfortable",
+  scale: 100,
+  reducedMotion: false,
+  language: initialLocale,
+  timeZone: "Europe/Berlin",
+  dateFormat: "locale",
+  clock: "24",
+  desktopNotifications: true,
+  incidentAlerts: true,
+  productUpdates: false,
+  digest: "weekly",
+  quietStart: "22:00",
+  quietEnd: "07:00",
+  chartRetention: 30_000,
+  workers: 4,
+  updateChannel: "stable",
+  autoLock: "15",
+  hardwareAcceleration: true,
+  diagnostics: false,
+  endpoint: "https://api.example.com/v1",
+  timeout: 15,
+  logLevel: "info",
+  developerMode: false,
+};
+
+function loadSavedSettings() {
+  try {
+    const parsed = JSON.parse(storage.get(SETTINGS_STORAGE_KEY) ?? "null");
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function populateSettingsForm(settings) {
+  settingsForm.reset();
+  settingsForm.querySelectorAll("[name]").forEach((control) => {
+    if (!(control.name in settings)) return;
+    if (control.type === "checkbox") {
+      control.checked = Boolean(settings[control.name]);
+    } else if (control.type === "radio") {
+      control.checked = String(settings[control.name]) === control.value;
+    } else {
+      control.value = String(settings[control.name]);
+    }
   });
+}
+
+function readSettingsForm() {
+  const values = {};
+  const numericNames = new Set(
+    [...settingsForm.querySelectorAll('input[type="number"], input[type="range"]')]
+      .map((control) => control.name)
+      .filter(Boolean),
+  );
+  new FormData(settingsForm).forEach((value, name) => {
+    values[name] = numericNames.has(name) ? Number(value) : String(value);
+  });
+  settingsForm.querySelectorAll('input[type="checkbox"][name]').forEach((control) => {
+    values[control.name] = control.checked;
+  });
+  return values;
+}
+
+function initials(name) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return (parts.length ? parts.slice(0, 2).map((part) => part[0]).join("") : "?")
+    .toUpperCase();
+}
+
+function selectedText(name) {
+  const control = settingsForm.elements.namedItem(name);
+  return control?.selectedOptions?.[0]?.textContent ?? String(control?.value ?? "");
+}
+
+function updateSettingsPreview() {
+  const settings = readSettingsForm();
+  document.querySelector("#settings-scale-value").textContent = `${settings.scale}%`;
+  document.querySelector("#settings-retention-value").textContent =
+    `${settings.chartRetention.toLocaleString()} points`;
+  document.querySelector("#settings-workers-value").textContent =
+    `${settings.workers} ${settings.workers === 1 ? "worker" : "workers"}`;
+  document.querySelector("#settings-accent-value").textContent = settings.accent;
+  document.querySelector("#settings-preview-name").textContent =
+    settings.displayName || "Unnamed user";
+  document.querySelector("#settings-avatar").textContent = initials(settings.displayName);
+  document.querySelector("#settings-summary-theme").textContent =
+    settings.theme.charAt(0).toUpperCase() + settings.theme.slice(1);
+  document.querySelector("#settings-summary-language").textContent = selectedText("language");
+  document.querySelector("#settings-summary-density").textContent = selectedText("density");
+  document.querySelector("#settings-summary-retention").textContent =
+    settings.chartRetention.toLocaleString();
+  document.querySelector("#settings-preview").textContent =
+    JSON.stringify(settings, null, 2);
+  return settings;
+}
+
+function setSettingsDirty(dirty) {
+  settingsState.dataset.dirty = String(dirty);
+  settingsState.textContent = dirty ? "Unsaved changes" : "Saved";
+}
+
+function dispatchSettingsEvent(name, detail) {
+  settingsForm.dispatchEvent(new CustomEvent(name, {
+    bubbles: true,
+    composed: true,
+    detail,
+  }));
+}
+
+const savedSettings = loadSavedSettings();
+const initialSettings = { ...settingsDefaults, ...savedSettings };
+if (!themes.includes(initialSettings.theme)) initialSettings.theme = "system";
+if (!fullDemoTranslations[initialSettings.language]) initialSettings.language = initialLocale;
+if (!/^#[0-9a-f]{6}$/i.test(initialSettings.accent)) {
+  initialSettings.accent = settingsDefaults.accent;
+}
+populateSettingsForm(initialSettings);
+applyTheme(initialSettings.theme, { fromSettings: true });
+applyLocale(initialSettings.language, { fromSettings: true });
+applyAccent(initialSettings.accent, { fromSettings: true });
+updateSettingsPreview();
+setSettingsDirty(false);
+settingsForm.dataset.ready = "true";
+
+settingsForm.addEventListener("input", (event) => {
+  if (event.target.name === "theme" && event.target.checked) {
+    applyTheme(event.target.value, { fromSettings: true });
+  }
+  if (event.target.name === "accent") {
+    applyAccent(event.target.value, { fromSettings: true });
+  }
+  const settings = updateSettingsPreview();
+  setSettingsDirty(true);
+  dispatchSettingsEvent("gui:settings-change", {
+    name: event.target.name,
+    value: settings[event.target.name],
+    settings,
+  });
+});
+
+settingsForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const settings = updateSettingsPreview();
+  storage.set(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  setSettingsDirty(false);
+  dispatchSettingsEvent("gui:settings-save", { settings });
+  demoLog.info("Settings saved", {
+    workspace: settings.workspace,
+    theme: settings.theme,
+    language: settings.language,
+  });
+  toast.success("Application settings saved.", { title: "Settings" });
+});
+
+document.querySelector("#settings-reset").addEventListener("click", () => {
+  populateSettingsForm(settingsDefaults);
+  applyTheme(settingsDefaults.theme, { fromSettings: true });
+  applyLocale(settingsDefaults.language, { fromSettings: true });
+  applyAccent(settingsDefaults.accent, { fromSettings: true });
+  const settings = updateSettingsPreview();
+  storage.set(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  setSettingsDirty(false);
+  dispatchSettingsEvent("gui:settings-reset", { settings });
+  toast.info("Recommended defaults restored.", { title: "Settings" });
+});
+
+document.querySelector("#settings-clear-cache").addEventListener("click", () => {
+  const progress = document.querySelector("#settings-storage-progress");
+  progress.value = 0;
+  document.querySelector("#settings-storage-value").textContent = "0 MB of 2 GB";
+  dispatchSettingsEvent("gui:settings-change", {
+    name: "cacheUsage",
+    value: 0,
+    settings: readSettingsForm(),
+  });
+  toast.success("Local preview cache cleared.", { title: "Storage" });
 });
 
 const chart = document.querySelector("#full-chart");
