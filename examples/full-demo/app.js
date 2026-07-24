@@ -2,18 +2,33 @@ import {
   GuiBatchSink,
   GuiBridgeLogSink,
   GuiDataBuffer,
+  GuiDataCollection,
+  GuiFormModel,
   GuiHttpLogSink,
   GuiMemorySink,
+  GuiPagedDataSource,
+  GuiTreeModel,
+  GuiWorkspaceModel,
+  auditAccessibility,
   bridge,
+  capabilities,
+  clipboard,
+  commands,
   decimateMinMax,
   defineGuiModule,
+  diagnostics,
+  dragDrop,
   guiModules,
+  history,
   i18n,
   initializeGui,
   logger,
   logs,
   mediaAdapters,
+  persistence,
+  router,
   setTheme,
+  tasks,
   toast,
 } from "../../src/gui.js";
 
@@ -29,6 +44,7 @@ const fullDemoTranslations = {
       media: "Media",
       logging: "Logging",
       platform: "Platform",
+      framework: "Framework",
       settings: "Settings",
     },
     eyebrow: "Universal interface laboratory",
@@ -54,6 +70,7 @@ const fullDemoTranslations = {
       media: "Medien",
       logging: "Protokolle",
       platform: "Plattform",
+      framework: "Framework",
       settings: "Einstellungen",
     },
     eyebrow: "Universelles Interface-Labor",
@@ -79,6 +96,7 @@ const fullDemoTranslations = {
       media: "Multimedia",
       logging: "Registros",
       platform: "Plataforma",
+      framework: "Framework",
       settings: "Ajustes",
     },
     eyebrow: "Laboratorio de interfaces universal",
@@ -150,6 +168,9 @@ const observedNames = [
   "gui:node-settings-close",
   "gui:node-parameter-change",
   "gui:node-error",
+  "gui:node-execution",
+  "gui:node-breakpoint",
+  "gui:graph-validation",
   "gui:wizard-step-change",
   "gui:wizard-validation-error",
   "gui:wizard-skip",
@@ -164,6 +185,19 @@ const observedNames = [
   "gui:settings-change",
   "gui:settings-save",
   "gui:settings-reset",
+  "gui:command-complete",
+  "gui:history-change",
+  "gui:dialog-open",
+  "gui:dialog-close",
+  "gui:popover-open",
+  "gui:popover-close",
+  "gui:tasks-change",
+  "gui:form-change",
+  "gui:form-submit",
+  "gui:data-selection-request",
+  "gui:tree-selection",
+  "gui:workspace-change",
+  "gui:accessibility-audit",
 ];
 observedNames.forEach((name) => {
   document.addEventListener(name, (event) => recordEvent(name, event.detail));
@@ -224,6 +258,55 @@ const initialLocale = savedLocale ?? (fullDemoTranslations[browserLocale] ? brow
 const runtime = initializeGui({
   locale: initialLocale,
   theme: storage.get("gui-theme") ?? "system",
+});
+
+commands.register({
+  id: "demo.refresh",
+  label: "Refresh demo data",
+  description: "Simulate a refresh across framework services",
+  category: "Demo",
+  shortcut: "Ctrl+R",
+  run: () => {
+    toast.success("Demo data refreshed");
+    diagnostics.record("demo.refresh", 1);
+  },
+});
+let compactDemo = false;
+commands.register({
+  id: "demo.compact",
+  label: "Toggle compact mode",
+  description: "Toggle the demo's compact density",
+  category: "Demo",
+  checked: () => compactDemo,
+  run: () => {
+    compactDemo = !compactDemo;
+    document.documentElement.toggleAttribute("data-compact", compactDemo);
+  },
+});
+commands.register({
+  id: "demo.copy-state",
+  label: "Copy runtime state",
+  description: "Copy a typed GuiKit state envelope",
+  category: "Demo",
+  run: async () => {
+    if (!clipboard.__demoStateRegistered) {
+      clipboard.registerType("application/x-guikit-demo-state");
+      Object.defineProperty(clipboard, "__demoStateRegistered", { value: true });
+    }
+    await clipboard.write("application/x-guikit-demo-state", {
+      locale: i18n.locale,
+      theme: document.documentElement.dataset.theme,
+    }, { system: false });
+    toast.info("Runtime state copied");
+  },
+});
+
+capabilities.register("demo.echo", (params) => ({ ...params, capability: "demo.echo" }), {
+  description: "Demonstrates an allowlisted backend capability.",
+});
+router.add({ id: "demo-station", path: "/station/:id", title: "GuiKit station" });
+dragDrop.registerType("application/x-guikit-demo-item", {
+  validate: (value) => typeof value?.id === "string",
 });
 
 const memorySink = new GuiMemorySink({ limit: 2_000 });
@@ -308,6 +391,7 @@ const featureStations = [
   ["✓", "Live media", "media"],
   ["✓", "Structured logging", "logging"],
   ["✓", "i18n and bridge", "platform"],
+  ["✓", "Application framework", "framework"],
   ["✓", "Persistent settings", "settings"],
 ];
 const featureGrid = document.querySelector("#feature-grid");
@@ -336,6 +420,233 @@ const syncNavigation = (page) => {
   demoStatusbar.setItemValue("page", title, { announce: false });
 };
 demoPages.addEventListener("gui:page-change", (event) => syncNavigation(event.detail.active));
+
+commands.addEventListener("gui:command-complete", (event) => recordEvent(event.type, event.detail));
+history.addEventListener("gui:history-change", (event) => recordEvent(event.type, event.detail));
+tasks.addEventListener("gui:tasks-change", (event) => recordEvent(event.type, event.detail));
+diagnostics.addEventListener("gui:diagnostic", (event) => recordEvent(event.type, {
+  name: event.detail.name,
+  value: event.detail.sample.value,
+}));
+
+const commandPalette = document.querySelector("#demo-command-palette");
+document.querySelector("#command-open").addEventListener("click", () => commandPalette.show());
+const frameworkMenu = document.querySelector("#framework-menu");
+frameworkMenu.commands = commands;
+document.querySelector("#framework-context-actions").commands = commands;
+const frameworkPopover = document.querySelector("#framework-popover");
+document.querySelector("#popover-open").addEventListener("click", () => frameworkPopover.toggle());
+frameworkMenu.addEventListener("gui:menu-select", () => frameworkPopover.hide("selection"));
+dragDrop.makeDraggable(document.querySelector("#typed-drag-source"), {
+  type: "application/x-guikit-demo-item",
+  payload: { id: "telemetry", label: "Telemetry source" },
+});
+dragDrop.makeDropTarget(document.querySelector("#typed-drop-target"), {
+  types: ["application/x-guikit-demo-item"],
+  onDrop: (value) => {
+    document.querySelector("#typed-drop-target").textContent = `Dropped ${value.label}`;
+  },
+});
+
+const frameworkDialog = document.querySelector("#framework-dialog");
+document.querySelector("#dialog-open").addEventListener("click", () => frameworkDialog.show());
+document.querySelector("#dialog-cancel").addEventListener("click", () => frameworkDialog.close("cancel", "button"));
+document.querySelector("#dialog-confirm").addEventListener("click", () => {
+  frameworkDialog.close("confirmed", "button");
+  toast.success("Dialog confirmed");
+});
+
+document.querySelector("#task-start").addEventListener("click", () => {
+  const id = `demo-task-${Date.now()}`;
+  const handle = tasks.run({
+    id,
+    label: "Generate preview",
+    detail: "Preparing",
+  }, ({ signal, report }) => new Promise((resolve) => {
+    let progress = 0;
+    const timer = setInterval(() => {
+      progress += 0.08;
+      report(progress, `${Math.round(progress * 100)}% complete`);
+      diagnostics.record("task.progress", progress, { id });
+      if (progress >= 1) {
+        clearInterval(timer);
+        resolve({ id });
+      }
+    }, 120);
+    signal.addEventListener("abort", () => {
+      clearInterval(timer);
+      resolve(undefined);
+    }, { once: true });
+  }));
+  handle.promise.catch((error) => toast.error(error.message));
+});
+
+const frameworkForm = document.querySelector("#framework-form");
+frameworkForm.model = new GuiFormModel({
+  id: "framework-settings",
+  title: "Device profile",
+  description: "Generated from a serializable schema.",
+  submitLabel: "Apply profile",
+  groups: [
+    { id: "identity", label: "Identity" },
+    { id: "signal", label: "Signal" },
+  ],
+  fields: [
+    { id: "name", label: "Name", group: "identity", required: true, default: "Sensor A" },
+    {
+      id: "mode",
+      label: "Mode",
+      type: "select",
+      group: "signal",
+      options: [
+        { value: "automatic", label: "Automatic" },
+        { value: "manual", label: "Manual" },
+      ],
+      default: "automatic",
+    },
+    {
+      id: "gain",
+      label: "Gain",
+      type: "range",
+      group: "signal",
+      min: 0,
+      max: 10,
+      step: 0.1,
+      unit: "dB",
+      default: 4,
+      visibleWhen: { field: "mode", equals: "manual" },
+    },
+    { id: "enabled", label: "Enabled", type: "boolean", group: "signal", default: true },
+    { id: "color", label: "Accent", type: "color", group: "identity", default: "#5b5ce2" },
+  ],
+});
+frameworkForm.addEventListener("gui:form-submit", () => {
+  frameworkForm.model.commit();
+  persistence.save("demo-form", frameworkForm.value);
+  toast.success("Schema profile saved");
+});
+
+const frameworkTree = document.querySelector("#framework-tree");
+frameworkTree.model = new GuiTreeModel([
+  {
+    id: "workspace",
+    label: "Workspace",
+    children: [
+      { id: "sources", label: "Sources", children: [{ id: "camera", label: "Camera" }] },
+      { id: "pipelines", label: "Pipelines", children: [{ id: "edge", label: "Edge detection" }] },
+    ],
+  },
+  {
+    id: "runtime",
+    label: "Runtime",
+    children: [{ id: "logs-tree", label: "Logs" }, { id: "tasks-tree", label: "Tasks" }],
+  },
+]);
+frameworkTree.model.expandAll();
+
+const frameworkRows = Array.from({ length: 5_000 }, (_, index) => ({
+  id: `record-${index}`,
+  time: new Date(Date.now() - index * 1000).toLocaleTimeString(),
+  level: ["info", "debug", "warning", "error"][index % 4],
+  message: `Telemetry event ${index.toLocaleString()} from channel ${index % 12}`,
+  value: Math.round(Math.sin(index / 20) * 1000) / 10,
+}));
+const frameworkGrid = document.querySelector("#framework-grid");
+frameworkGrid.columns = [
+  { field: "time", label: "Time", width: 120, pinned: true },
+  { field: "level", label: "Level", width: 100 },
+  { field: "message", label: "Message", width: "minmax(24rem, 1fr)", editable: true },
+  { field: "value", label: "Value", width: 100 },
+];
+frameworkGrid.model = new GuiDataCollection(frameworkRows);
+document.querySelector("#grid-filter").addEventListener("input", (event) => {
+  frameworkGrid.model.setFilter("message", event.currentTarget.value);
+});
+document.querySelector("#grid-export").addEventListener("click", () => {
+  const csv = frameworkGrid.export("csv");
+  toast.success(`Generated ${csv.length.toLocaleString()} CSV characters.`);
+});
+const frameworkPagedSource = new GuiPagedDataSource(async ({ offset, pageSize, signal }) => {
+  await new Promise((resolve, reject) => {
+    const timer = setTimeout(resolve, 180);
+    signal?.addEventListener("abort", () => {
+      clearTimeout(timer);
+      reject(new DOMException("Canceled", "AbortError"));
+    }, { once: true });
+  });
+  return {
+    total: 1_000_000,
+    rows: Array.from({ length: pageSize }, (_, index) => ({
+      id: `server-${offset + index}`,
+      time: new Date().toLocaleTimeString(),
+      level: "info",
+      message: `Server-side record ${(offset + index).toLocaleString()}`,
+      value: offset + index,
+    })),
+  };
+}, { pageSize: 100, maxPages: 4 });
+document.querySelector("#grid-page").addEventListener("click", async () => {
+  const page = await frameworkGrid.setDataSource(frameworkPagedSource, { page: 1 });
+  toast.info(`Loaded ${page.rows.length} of ${page.total.toLocaleString()} server rows.`);
+});
+
+const frameworkList = document.querySelector("#framework-list");
+frameworkList.itemHeight = 34;
+frameworkList.items = frameworkRows;
+frameworkList.renderItem = (item, index) => {
+  const row = document.createElement("div");
+  row.style.padding = ".45rem .65rem";
+  row.textContent = `${index + 1}. ${item.message}`;
+  return row;
+};
+
+const frameworkWorkspace = document.querySelector("#framework-workspace");
+frameworkWorkspace.model = new GuiWorkspaceModel({
+  panels: [
+    { id: "workspace-editor", title: "Editor", closable: false },
+    { id: "workspace-preview", title: "Preview" },
+    { id: "workspace-logs", title: "Logs" },
+  ],
+  layout: {
+    type: "split",
+    id: "framework-root-split",
+    direction: "vertical",
+    sizes: [0.68, 0.32],
+    children: [
+      {
+        type: "tabs",
+        id: "framework-main-tabs",
+        panels: ["workspace-editor", "workspace-preview"],
+        active: "workspace-editor",
+      },
+      {
+        type: "tabs",
+        id: "framework-bottom-tabs",
+        panels: ["workspace-logs"],
+        active: "workspace-logs",
+      },
+    ],
+  },
+});
+frameworkWorkspace.model.savePreset("default");
+frameworkWorkspace.usePersistence(persistence, "demo-workspace");
+document.querySelector("#workspace-preset").addEventListener("click", () => {
+  frameworkWorkspace.model.restorePreset("default");
+});
+document.querySelector("#workspace-save").addEventListener("click", () => {
+  frameworkWorkspace.save();
+  toast.success("Workspace layout saved");
+});
+
+const frameworkPlayground = document.querySelector("#framework-playground");
+frameworkPlayground.controls = [
+  { label: "Label", property: "textContent", type: "text", value: "Inspectable component" },
+  { label: "Disabled", property: "disabled", type: "boolean", value: false },
+];
+frameworkPlayground.events = ["click"];
+document.querySelector("#framework-diagnostics").diagnostics = diagnostics;
+diagnostics.record("demo.bootstrap", performance.now());
+auditAccessibility(document.querySelector("[data-page=framework]"));
 
 const statusbarPosition = document.querySelector("#statusbar-position");
 const statusbarCompact = document.querySelector("#statusbar-compact");
@@ -820,6 +1131,7 @@ const graphExample = {
   nodes: [
     {
       id: "camera",
+      groupId: "Inputs",
       title: "Camera",
       type: "source",
       description: "Produces live image frames.",
@@ -866,6 +1178,27 @@ const graphExample = {
       id: "edges",
       title: "Edge Detection",
       type: "processor",
+      subgraph: {
+        nodes: [
+          {
+            id: "blur",
+            title: "Noise reduction",
+            x: 40,
+            y: 60,
+            inputs: [{ id: "blur:in", type: "image" }],
+            outputs: [{ id: "blur:out", type: "image" }],
+          },
+          {
+            id: "gradient",
+            title: "Gradient",
+            x: 360,
+            y: 60,
+            inputs: [{ id: "gradient:in", type: "image" }],
+            outputs: [{ id: "gradient:out", type: "image" }],
+          },
+        ],
+        links: [{ id: "blur-gradient", from: "blur:out", to: "gradient:in" }],
+      },
       description: "Finds high-contrast boundaries.",
       color: "#8b5cf6",
       maxConnections: 4,
@@ -929,6 +1262,7 @@ const graphExample = {
     },
     {
       id: "strength",
+      groupId: "Inputs",
       title: "Strength",
       type: "value",
       color: "#d97706",
@@ -959,6 +1293,8 @@ const graphExample = {
 const nodeEditor = document.querySelector("#full-node-editor");
 const graphJson = document.querySelector("#graph-json");
 const nodeFlowDirection = document.querySelector("#node-flow-direction");
+nodeEditor.history = history;
+nodeEditor.clipboard = clipboard;
 nodeEditor.setWireTypes({
   image: { label: "Image", color: "#8b5cf6", width: 3.25 },
   number: { label: "Number", color: "#f59e0b", width: 3 },
@@ -983,6 +1319,9 @@ function loadGraphExample() {
   }
   nodeEditor.flowDirection = currentNodeFlowDirection;
   nodeEditor.setGraph(graph);
+  nodeEditor.toggleBreakpoint("edges", true);
+  nodeEditor.setExecutionState("camera", "success");
+  nodeEditor.setExecutionState("edges", "running", { frame: 1 });
   graphJson.value = JSON.stringify(nodeEditor.getGraph(), null, 2);
   fitNodeEditor();
 }
@@ -1014,6 +1353,29 @@ document.querySelector("#node-add").addEventListener("click", () => {
   });
 });
 document.querySelector("#node-fit").addEventListener("click", () => nodeEditor.zoomToFit());
+document.querySelector("#node-layout").addEventListener("click", () => nodeEditor.autoLayout());
+document.querySelector("#node-duplicate").addEventListener("click", () => {
+  if (!nodeEditor.duplicateSelection()) toast.info("Select one or more nodes first.");
+});
+document.querySelector("#node-comment").addEventListener("click", () => {
+  const comment = nodeEditor.addComment({
+    title: "Review note",
+    text: "Comments and frames can document a graph.",
+    x: 350,
+    y: 460,
+  });
+  nodeEditor.selectNode(comment.id);
+});
+document.querySelector("#node-validate").addEventListener("click", () => {
+  const result = nodeEditor.validateGraph();
+  toast[result.valid ? "success" : "warning"](
+    result.valid
+      ? `Graph is valid with ${result.warnings.length} warning(s).`
+      : `Graph has ${result.errors.length} error(s).`,
+  );
+});
+document.querySelector("#node-undo").addEventListener("click", () => history.undo());
+document.querySelector("#node-redo").addEventListener("click", () => history.redo());
 document.querySelector("#node-reset").addEventListener("click", loadGraphExample);
 document.querySelector("#node-export").addEventListener("click", () => {
   graphJson.value = JSON.stringify(nodeEditor.getGraph(), null, 2);

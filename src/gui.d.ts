@@ -144,6 +144,15 @@ export function initializeGui(options?: {
   logger: import("./modules/logging/index.js").GuiLogger;
   modules: import("./core/module-registry.js").GuiModuleRegistry;
   mediaAdapters: import("./modules/media-player/index.js").GuiMediaAdapterRegistry;
+  commands: import("./modules/commands/index.js").GuiCommandRegistry;
+  history: import("./modules/commands/index.js").GuiHistory;
+  persistence: import("./modules/runtime/index.js").GuiPersistenceStore;
+  router: import("./modules/runtime/index.js").GuiRouter;
+  tasks: import("./modules/runtime/index.js").GuiTaskManager;
+  clipboard: import("./modules/runtime/index.js").GuiClipboard;
+  capabilities: import("./modules/runtime/index.js").GuiCapabilityRegistry;
+  diagnostics: import("./modules/runtime/index.js").GuiDiagnostics;
+  dragDrop: import("./modules/runtime/index.js").GuiDragDrop;
   ready: Promise<Map<string, unknown>>;
 };
 
@@ -234,6 +243,14 @@ export {
   logs,
 } from "./modules/logging/index.js";
 
+export * from "./modules/commands/index.js";
+export * from "./modules/overlays/index.js";
+export * from "./modules/runtime/index.js";
+export * from "./modules/forms/index.js";
+export * from "./modules/data-views/index.js";
+export * from "./modules/workspace/index.js";
+export * from "./modules/devtools/index.js";
+
 declare global {
   interface Window {
     GuiTemplate: {
@@ -244,6 +261,16 @@ declare global {
       logs: import("./modules/logging/index.js").GuiLogManager;
       logger: import("./modules/logging/index.js").GuiLogger;
       toast: GuiToastManager;
+      commands: import("./modules/commands/index.js").GuiCommandRegistry;
+      history: import("./modules/commands/index.js").GuiHistory;
+      persistence: import("./modules/runtime/index.js").GuiPersistenceStore;
+      router: import("./modules/runtime/index.js").GuiRouter;
+      tasks: import("./modules/runtime/index.js").GuiTaskManager;
+      clipboard: import("./modules/runtime/index.js").GuiClipboard;
+      capabilities: import("./modules/runtime/index.js").GuiCapabilityRegistry;
+      diagnostics: import("./modules/runtime/index.js").GuiDiagnostics;
+      dragDrop: import("./modules/runtime/index.js").GuiDragDrop;
+      overlayController: import("./modules/overlays/index.js").GuiOverlayController;
       initialize: typeof initializeGui;
       setTheme: typeof setTheme;
     };
@@ -257,5 +284,19 @@ declare global {
     "gui-live-chart": GuiLiveChart;
     "gui-toast-stack": GuiToastStack;
     "gui-log-viewer": import("./modules/logging/index.js").GuiLogViewer;
+    "gui-command-palette": import("./modules/commands/index.js").GuiCommandPalette;
+    "gui-dialog": import("./modules/overlays/index.js").GuiDialog;
+    "gui-popover": import("./modules/overlays/index.js").GuiPopover;
+    "gui-context-menu": import("./modules/overlays/index.js").GuiContextMenu;
+    "gui-menu": import("./modules/overlays/index.js").GuiMenu;
+    "gui-tooltip": import("./modules/overlays/index.js").GuiTooltip;
+    "gui-task-center": import("./modules/runtime/index.js").GuiTaskCenter;
+    "gui-form": import("./modules/forms/index.js").GuiForm;
+    "gui-virtual-list": import("./modules/data-views/index.js").GuiVirtualList;
+    "gui-data-grid": import("./modules/data-views/index.js").GuiDataGrid;
+    "gui-tree-view": import("./modules/data-views/index.js").GuiTreeView;
+    "gui-workspace": import("./modules/workspace/index.js").GuiWorkspace;
+    "gui-component-playground": import("./modules/devtools/index.js").GuiComponentPlayground;
+    "gui-diagnostics-panel": import("./modules/devtools/index.js").GuiDiagnosticsPanel;
   }
 }

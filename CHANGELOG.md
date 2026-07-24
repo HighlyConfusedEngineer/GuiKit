@@ -8,6 +8,31 @@ All notable changes to GuiKit are documented here. The format follows
 
 ### Added
 
+- Central command registry with search, configurable shortcuts, asynchronous
+  cancellation, command palette, and transaction-based undo/redo history.
+- Shared overlay layer with accessible modal dialogs, anchored popovers,
+  keyboard menus, tooltips, focus restoration, light dismissal, and cancelable
+  lifecycle requests.
+- Versioned persistence migrations, guarded hash/history routing, cancellable
+  background tasks and task center, typed clipboard payloads, allowlisted
+  capabilities, and bounded runtime diagnostics.
+- Schema-driven forms with conditional visibility/enabling, typed coercion,
+  dirty state, synchronous/asynchronous validation, generated settings UI, and
+  custom editor registration.
+- Virtualized list and sortable/editable data grid plus an accessible tree view
+  with DOM-independent collection and hierarchy models.
+- Serializable docking workspaces with tab dragging, pointer/keyboard split
+  resizing, saved presets, persistence, and host-controlled detachment.
+- Component playground, bounded event viewer, diagnostics panel, and common
+  accessibility integration audit.
+- React/Vue/native adapter helpers and packaging guidance for PWA, pywebview,
+  WebView2, WKWebView, and Avalonia hosts.
+- Advanced node-editor tooling: shared undo history, typed clipboard,
+  copy/cut/paste, duplication, box selection, groups, comments, collapse,
+  search, minimap, alignment/distribution, auto-layout, manual waypoints,
+  validation, breakpoints, and execution visualization.
+- Optional same-document View Transition API integration for sliding pages
+  with reduced-motion and Web Animations fallbacks.
 - Horizontal/vertical node-editor flow and obstacle-aware rounded link routing
   so connections remain visible around intervening nodes.
 - Fixed the node-editor connection layer to paint above node cards and route

@@ -53,6 +53,10 @@ export interface GuiNodeDefinition {
   width?: number;
   allowMultipleConnections?: boolean;
   maxConnections?: number;
+  groupId?: string;
+  collapsed?: boolean;
+  pinned?: boolean;
+  subgraph?: GuiNodeGraphData;
   inputs?: Array<string | GuiNodePort>;
   outputs?: Array<string | GuiNodePort>;
   parameters?: GuiNodeParameter[];
@@ -65,6 +69,7 @@ export interface GuiNodeLink {
   from: string;
   to: string;
   type?: string;
+  points?: GuiNodeRoutingPoint[];
   data?: unknown;
   [key: string]: unknown;
 }
@@ -151,6 +156,23 @@ export class GuiNodeGraph {
     options?: Partial<GuiNodeLink> & { replaceInput?: boolean },
   ): GuiNodeLink;
   removeLink(id: string): boolean;
+  setLinkPoints(id: string, points?: GuiNodeRoutingPoint[]): GuiNodeLink;
+  groupNodes(ids: Iterable<string>, groupId?: string | null): GuiNodeDefinition[];
+  setSubgraph(id: string, graph?: GuiNodeGraphData | null): Required<GuiNodeGraphData> | undefined;
+  getSubgraph(id: string): Required<GuiNodeGraphData> | undefined;
+  extract(ids: Iterable<string>): Required<GuiNodeGraphData>;
+  duplicate(ids: Iterable<string>, options?: {
+    x?: number; y?: number; keepTitles?: boolean;
+  }): { nodes: GuiNodeDefinition[]; links: GuiNodeLink[] };
+  autoLayout(options?: {
+    direction?: GuiNodeFlowDirection; layerGap?: number; nodeGap?: number;
+  }): GuiNodeDefinition[];
+  validate(options?: { allowCycles?: boolean }): {
+    valid: boolean;
+    errors: Array<{ code: string; message: string; [key: string]: unknown }>;
+    warnings: Array<{ code: string; message: string; [key: string]: unknown }>;
+    order: string[];
+  };
   toJSON(): Required<GuiNodeGraphData>;
 }
 
@@ -162,11 +184,17 @@ export class GuiNodeEditor extends HTMLElement {
   readonly wireTypes: GuiNodeWireType[];
   readonly selectedNodes: string[];
   readonly selectedLink: string | null;
+  readonly graphPath: string[];
+  history: import("../commands/index.js").GuiHistory | null;
+  clipboard: import("../runtime/index.js").GuiClipboard | null;
   readonly minZoom: number;
   readonly maxZoom: number;
   readonly gridSize: number;
   readonly snapSize: number;
-  setGraph(graph: GuiNodeGraph | GuiNodeGraphData): void;
+  setGraph(graph: GuiNodeGraph | GuiNodeGraphData, options?: { preservePath?: boolean }): void;
+  setNodeSubgraph(id: string, graph: GuiNodeGraphData): Required<GuiNodeGraphData>;
+  enterSubgraph(id: string): boolean;
+  exitSubgraph(options?: { save?: boolean }): boolean;
   getGraph(): Required<GuiNodeGraphData>;
   addNode(node: GuiNodeDefinition): GuiNodeDefinition;
   updateNode(id: string, patch: Partial<GuiNodeDefinition>): GuiNodeDefinition;
@@ -204,11 +232,34 @@ export class GuiNodeEditor extends HTMLElement {
   closeNodeSettings(): boolean;
   setView(view: { x?: number; y?: number; zoom?: number }): void;
   zoomToFit(padding?: number): void;
+  zoomToSelection(padding?: number): void;
+  findNodes(query: string, options?: { select?: boolean; focus?: boolean }): GuiNodeDefinition[];
+  autoLayout(options?: {
+    direction?: GuiNodeFlowDirection; layerGap?: number; nodeGap?: number; fit?: boolean;
+  }): GuiNodeDefinition[];
+  alignSelection(alignment?: "left" | "center" | "right" | "top" | "middle" | "bottom"): boolean;
+  distributeSelection(axis?: "horizontal" | "vertical"): boolean;
+  groupSelection(groupId?: string): { id: string; nodes: GuiNodeDefinition[] } | null;
+  ungroupSelection(): boolean;
+  addComment(comment?: Partial<GuiNodeDefinition> & { text?: string }): GuiNodeDefinition;
+  setNodeCollapsed(id: string, collapsed?: boolean): boolean;
+  toggleBreakpoint(id: string, force?: boolean): boolean;
+  setExecutionState(id: string,
+    state?: "idle" | "queued" | "running" | "success" | "error" | "paused",
+    detail?: Record<string, unknown>): boolean;
+  setLinkPoints(id: string, points?: GuiNodeRoutingPoint[]): GuiNodeLink;
+  validateGraph(options?: { allowCycles?: boolean }): ReturnType<GuiNodeGraph["validate"]>;
+  copySelection(options?: { system?: boolean }): Promise<boolean>;
+  cutSelection(options?: { system?: boolean }): Promise<boolean>;
+  paste(options?: { system?: boolean; x?: number; y?: number; keepTitles?: boolean }):
+    Promise<GuiNodeDefinition[] | null>;
+  duplicateSelection(options?: { x?: number; y?: number; keepTitles?: boolean }):
+    { nodes: GuiNodeDefinition[]; links: GuiNodeLink[] } | null;
 }
 
 export const nodeEditorModule: {
   readonly id: "node-editor";
-  readonly version: "0.3.0";
+  readonly version: "0.4.0";
   readonly description: string;
   readonly dependencies: readonly ["core"];
   readonly components: readonly ["gui-node-editor"];

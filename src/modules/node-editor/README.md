@@ -13,8 +13,13 @@ It supports:
 - per-port and per-node connection limits;
 - cancelable double-click wire deletion;
 - click and keyboard selection;
+- box selection, copy/cut/paste, duplication, grouping, and comments;
 - Delete/Backspace removal;
 - pan, zoom, grid snapping, and fit-to-view;
+- minimap navigation, search, alignment, distribution, and automatic layout;
+- shared undo/redo history and typed clipboard integration;
+- graph validation, manual reroute points, breakpoints, and execution states;
+- nested serializable subgraphs with enter/exit navigation;
 - graph serialization;
 - inline text, number, range, select, boolean, and read-only parameters;
 - per-node settings dialog with extensible open and save events;

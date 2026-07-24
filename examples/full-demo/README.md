@@ -35,6 +35,7 @@ and keeps every frontend feature operational.
 | Media | Direct `MediaStream`, custom media adapter, native URL loading, live controls, PiP and fullscreen capability detection |
 | Logging | Levels, child context, errors, redaction, nested spans, memory, console, viewer, batch, bridge and HTTP sinks |
 | Platform | English/German/Spanish localization, light/dark/system themes, native bridge calls/events, module registry |
+| Framework | Commands, shortcuts, undo/redo, dialogs, popovers, menus, tooltips, tasks, schema forms, virtual list/grid/tree, docking workspace, typed clipboard, persistence, capabilities, diagnostics, component playground, accessibility audit |
 | Settings | Persistent account, appearance, locale, notification, performance, storage, and advanced settings with typed serialization |
 | Node backend | Static hosting, structured backend logger, validated HTTP batches, rotating JSONL files |
 

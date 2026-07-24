@@ -45,13 +45,95 @@ import {
   loggingModule,
   logs,
 } from "./modules/logging/index.js";
+import {
+  GuiCommandPalette,
+  GuiCommandRegistry,
+  GuiHistory,
+  commands,
+  commandsModule,
+  history,
+  installDefaultCommands,
+} from "./modules/commands/index.js";
+import {
+  GuiDialog,
+  GuiContextMenu,
+  GuiMenu,
+  GuiOverlayController,
+  GuiPopover,
+  GuiTooltip,
+  overlayController,
+  overlaysModule,
+} from "./modules/overlays/index.js";
+import {
+  GuiCapabilityRegistry,
+  GuiClipboard,
+  GuiDiagnostics,
+  GuiDragDrop,
+  GuiMemoryStorage,
+  GuiPersistenceStore,
+  GuiRouter,
+  GuiTaskCenter,
+  GuiTaskManager,
+  capabilities,
+  clipboard,
+  diagnostics,
+  dragDrop,
+  persistence,
+  router,
+  runtimeModule,
+  tasks,
+} from "./modules/runtime/index.js";
+import {
+  GuiForm,
+  GuiFormEditorRegistry,
+  GuiFormModel,
+  formEditors,
+  formsModule,
+} from "./modules/forms/index.js";
+import {
+  GuiDataCollection,
+  GuiDataGrid,
+  GuiPagedDataSource,
+  GuiTreeModel,
+  GuiTreeView,
+  GuiVirtualList,
+  dataViewsModule,
+} from "./modules/data-views/index.js";
+import {
+  GuiWorkspace,
+  GuiWorkspaceModel,
+  workspaceModule,
+} from "./modules/workspace/index.js";
+import {
+  GuiComponentPlayground,
+  GuiDiagnosticsPanel,
+  auditAccessibility,
+  devtoolsModule,
+} from "./modules/devtools/index.js";
 
 export {
   GUI_LOG_LEVELS,
   GUI_LOG_SCHEMA,
   GuiBatchSink,
   GuiBridgeLogSink,
+  GuiCapabilityRegistry,
+  GuiClipboard,
+  GuiCommandPalette,
+  GuiCommandRegistry,
+  GuiComponentPlayground,
   GuiConsoleSink,
+  GuiDataCollection,
+  GuiDataGrid,
+  GuiPagedDataSource,
+  GuiDiagnostics,
+  GuiDiagnosticsPanel,
+  GuiDragDrop,
+  GuiDialog,
+  GuiContextMenu,
+  GuiForm,
+  GuiFormEditorRegistry,
+  GuiFormModel,
+  GuiHistory,
   GuiHttpLogSink,
   GuiLogger,
   GuiLogManager,
@@ -61,22 +143,56 @@ export {
   GuiMediaAdapterRegistry,
   GuiMediaPlayer,
   GuiMemorySink,
+  GuiMemoryStorage,
+  GuiMenu,
   GuiNodeEditor,
   GuiNodeGraph,
+  GuiOverlayController,
+  GuiPersistenceStore,
+  GuiPopover,
+  GuiRouter,
   GuiStatusbar,
+  GuiTaskCenter,
+  GuiTaskManager,
+  GuiTooltip,
+  GuiTreeModel,
+  GuiTreeView,
+  GuiVirtualList,
   GuiWizard,
   GuiWizardModel,
+  GuiWorkspace,
+  GuiWorkspaceModel,
+  auditAccessibility,
+  capabilities,
+  clipboard,
+  commands,
+  commandsModule,
+  dataViewsModule,
   defineGuiModule,
+  devtoolsModule,
+  diagnostics,
+  dragDrop,
+  formEditors,
+  formsModule,
   guiModules,
+  history,
+  installDefaultCommands,
   logger,
   loggingModule,
   logs,
   mediaAdapters,
   mediaPlayerModule,
   nodeEditorModule,
+  overlayController,
+  overlaysModule,
+  persistence,
   routeNodeConnection,
+  router,
+  runtimeModule,
   statusbarModule,
+  tasks,
   wizardModule,
+  workspaceModule,
 };
 
 const hasDOM = typeof window !== "undefined" && typeof document !== "undefined";
@@ -1173,6 +1289,8 @@ export class GuiPages extends GuiElement {
   static observedAttributes = ["active"];
   #history = [];
   #transitionToken = 0;
+  #nativeTransition = false;
+  #nativeTransitionToken = 0;
 
   connectedCallback() {
     this.#prepare();
@@ -1205,7 +1323,23 @@ export class GuiPages extends GuiElement {
     if (previous === name) return;
     if (options.history !== false && previous) this.#history.push(previous);
     this.dataset.direction = options.direction ?? "forward";
-    this.active = name;
+    const requestToken = ++this.#nativeTransitionToken;
+    const change = () => {
+      if (requestToken === this.#nativeTransitionToken) this.active = name;
+    };
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (
+      this.hasAttribute("view-transitions")
+      && !reducedMotion
+      && typeof document.startViewTransition === "function"
+      && !document.activeViewTransition
+    ) {
+      this.#nativeTransition = true;
+      const transition = document.startViewTransition(change);
+      transition.finished
+        .catch(() => {})
+        .finally(() => { this.#nativeTransition = false; });
+    } else change();
     emit(this, "gui:page-change", { active: name, previous });
   }
 
@@ -1244,6 +1378,14 @@ export class GuiPages extends GuiElement {
     incoming.hidden = false;
     incoming.dataset.pageState = "incoming";
     if (outgoing) outgoing.dataset.pageState = "outgoing";
+
+    if (this.#nativeTransition) {
+      pages.forEach((page) => {
+        page.hidden = page !== incoming;
+        delete page.dataset.pageState;
+      });
+      return;
+    }
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (!outgoing || reducedMotion || !incoming.animate) {
@@ -1306,7 +1448,19 @@ export function initializeGui(options = {}) {
       logger,
       modules: guiModules,
       mediaAdapters,
-      ready: guiModules.initializeAll({ i18n, bridge, toast, logs, logger, mediaAdapters }),
+      commands,
+      history,
+      persistence,
+      router,
+      tasks,
+      clipboard,
+      capabilities,
+      diagnostics,
+      dragDrop,
+      ready: guiModules.initializeAll({
+        i18n, bridge, toast, logs, logger, mediaAdapters, commands, history,
+        persistence, router, tasks, clipboard, dragDrop, capabilities, diagnostics,
+      }),
     };
   }
 
@@ -1364,7 +1518,19 @@ export function initializeGui(options = {}) {
     logger,
     modules: guiModules,
     mediaAdapters,
-    ready: guiModules.initializeAll({ i18n, bridge, toast, logs, logger, mediaAdapters }),
+    commands,
+    history,
+    persistence,
+    router,
+    tasks,
+    clipboard,
+    capabilities,
+    diagnostics,
+    dragDrop,
+    ready: guiModules.initializeAll({
+      i18n, bridge, toast, logs, logger, mediaAdapters, commands, history,
+      persistence, router, tasks, clipboard, dragDrop, capabilities, diagnostics,
+    }),
   };
 }
 
@@ -1406,6 +1572,13 @@ registerElement("gui-toast-stack", GuiToastStack);
   statusbarModule,
   wizardModule,
   loggingModule,
+  commandsModule,
+  overlaysModule,
+  runtimeModule,
+  formsModule,
+  dataViewsModule,
+  workspaceModule,
+  devtoolsModule,
 ].forEach((module) => {
   if (!guiModules.has(module.id)) defineGuiModule(module);
 });
@@ -1419,6 +1592,16 @@ if (hasDOM) {
     logs,
     logger,
     toast,
+    commands,
+    history,
+    persistence,
+    router,
+    tasks,
+    clipboard,
+    capabilities,
+    diagnostics,
+    dragDrop,
+    overlayController,
     initialize: initializeGui,
     setTheme,
   };

@@ -19,6 +19,17 @@ The current `0.1` foundation includes:
 - structured cross-runtime logging with redaction, spans, batching, transports,
   rotating Node JSONL files, and a live viewer;
 - a dependency-aware module registry and feature generator;
+- a central command palette, configurable shortcuts, cancellation, and
+  transaction-based undo/redo;
+- accessible dialogs, popovers, menus, tooltips, and shared overlay stacking;
+- schema-driven forms with dependencies, custom editors, dirty state, and
+  asynchronous validation;
+- virtualized lists, sortable/editable data grids, and keyboard-navigable
+  trees;
+- dockable, draggable, resizable, and persistable application workspaces;
+- guarded routing, background task progress, typed clipboard payloads,
+  allowlisted capabilities, and bounded performance diagnostics;
+- a component playground with event inspection and accessibility auditing;
 - light, dark, and system themes powered by CSS variables;
 - runtime localization with fallback and interpolation;
 - a promise-based host bridge for pywebview, WebView2, WebKit, and browser mocks;
@@ -235,7 +246,41 @@ dedicated foreground connection layer. Port types can use independent wire
 palettes—for example red `analog` links and blue `digital` links—while the graph
 continues to reject incompatible types. Nodes can cap links per port or in
 total, and users can double-click a wire to remove it.
+The editor also supports shared command history, typed copy/cut/paste, box
+selection, groups, comments, collapsible nodes, alignment and distribution,
+automatic layout, minimap navigation, search, manual reroute points, graph
+validation, breakpoints, and execution-state visualization.
 See [the node-editor guide](docs/NODE_EDITOR.md).
+
+### Application framework
+
+```js
+import {
+  commands,
+  history,
+  tasks,
+} from "@gui-template/core";
+
+commands.register({
+  id: "project.save",
+  label: "Save project",
+  shortcut: "Ctrl+S",
+  run: ({ signal }) => saveProject({ signal }),
+});
+
+await history.perform({
+  label: "Rename node",
+  redo: () => renameNode("Filter"),
+  undo: () => renameNode("Processor"),
+});
+
+tasks.run({ id: "export", label: "Export project" }, async ({ signal, report }) => {
+  await exportProject({ signal, report });
+});
+```
+
+Focused package subpaths are available for `commands`, `overlays`, `runtime`,
+`forms`, `data-views`, `workspace`, `devtools`, and `adapters`.
 
 ### Wizard
 
@@ -426,10 +471,11 @@ docs/             architecture, API, bridge, and performance references
 
 ## Design boundaries
 
-GuiKit owns presentation, navigation primitives, localization, and host
-transport. Application code should own domain data, persistence, permissions,
-and routing policy. This boundary lets the same front end run against several
-host languages without teaching UI components about Python or .NET.
+GuiKit owns presentation and reusable mechanisms for navigation, persistence,
+permissions, localization, and host transport. Application code owns domain
+data and policy: what may be saved, which route is allowed, and who may invoke
+a capability. This boundary lets the same front end run against several host
+languages without teaching UI components about Python or .NET.
 
 The core intentionally avoids a build step. A later package can add optional
 framework bindings or advanced components without increasing the base runtime.
@@ -451,6 +497,8 @@ is the reference implementation for larger features.
 
 - [API reference](docs/API.md)
 - [Architecture](docs/ARCHITECTURE.md)
+- [Framework and native adapters](docs/ADAPTERS.md)
+- [Packaging profiles](docs/PACKAGING.md)
 - [Native bridge protocol](docs/BRIDGE.md)
 - [Chart performance](docs/PERFORMANCE.md)
 - [Node editor](docs/NODE_EDITOR.md)

@@ -6,15 +6,16 @@ about one another.
 ```text
 Application
     │
-    ├── domain state, routing policy, persistence, permissions
+    ├── domain state, routing policy, persistence policy, permissions policy
     │
 GuiKit components
     │
-    ├── tabs, sidebars, pages, charts, toasts
+    ├── tabs, sidebars, pages, charts, forms, grids, workspaces, overlays
     │
 GuiKit services
     │
-    ├── localization, theming, host bridge
+    ├── localization, themes, bridge, commands, persistence, routing,
+    │   tasks, clipboard, capabilities, diagnostics
     │
 Web platform
     └── custom elements, canvas, CSS, DOM events, postMessage
@@ -30,6 +31,13 @@ src/
     module-registry.js         dependency and setup lifecycle
   modules/
     logging/                   runtime-neutral records and transport sinks
+    commands/                  actions, shortcuts, palette, undo history
+    overlays/                  dialogs, popovers, menus, tooltips
+    runtime/                   persistence, routing, tasks, capabilities
+    forms/                     schema form model and renderer
+    data-views/                virtual list/grid/tree models and renderers
+    workspace/                 serializable docking layout
+    devtools/                  playground, diagnostics, accessibility audit
     <feature>/
       index.js                 public implementation and manifest
       index.d.ts               public type contract
@@ -84,6 +92,15 @@ Features with structural rules split those rules into a DOM-independent model.
 `GuiNodeGraph` validates graph structure while `<gui-node-editor>` owns pointer
 and keyboard interaction. This model/view boundary is the preferred pattern for
 data grids, form builders, timelines, and other complex future modules.
+
+The command registry owns action discovery and invocation, not application
+business logic. History entries contain local redo/undo functions plus optional
+serializable metadata. Runtime services return detached snapshots so native
+hosts never need to receive JavaScript callbacks.
+
+`GuiPersistenceStore` wraps a storage adapter in a versioned envelope and runs
+explicit migrations. `GuiCapabilityRegistry` is an allowlist: web content
+cannot invoke a backend operation until the host registers and authorizes it.
 
 `<gui-media-player>` demonstrates the capability-adapter pattern. The core
 uses native playback and `MediaStream`; protocol engines register against

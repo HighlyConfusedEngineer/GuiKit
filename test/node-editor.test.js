@@ -42,7 +42,7 @@ test("node editor module exposes its model, component, and manifest", () => {
   assert.equal(typeof routeNodeConnection, "function");
   assert.equal(bundledRouteNodeConnection, routeNodeConnection);
   assert.equal(nodeEditorModule.id, "node-editor");
-  assert.equal(nodeEditorModule.version, "0.3.0");
+  assert.equal(nodeEditorModule.version, "0.4.0");
   assert.deepEqual(nodeEditorModule.components, ["gui-node-editor"]);
 });
 
@@ -410,4 +410,79 @@ test("moving and updating nodes preserve valid graph state", () => {
   assert.equal(graph.getNode("filter").color, "#8b5cf6");
   assert.deepEqual(graph.getNode("filter").data, { strength: 0.8 });
   assert.equal(graph.getLink("connection").to, "filter:image");
+});
+
+test("graph validation detects required inputs and cycles", () => {
+  const graph = new GuiNodeGraph({
+    nodes: [
+      {
+        id: "first",
+        inputs: [{ id: "first:in", type: "number", required: true }],
+        outputs: [{ id: "first:out", type: "number" }],
+      },
+      {
+        id: "second",
+        inputs: [{ id: "second:in", type: "number" }],
+        outputs: [{ id: "second:out", type: "number" }],
+      },
+    ],
+  });
+  assert.equal(graph.validate().errors[0].code, "required-input");
+  graph.connect("first:out", "second:in");
+  graph.connect("second:out", "first:in");
+  assert.equal(graph.validate().errors.some((error) => error.code === "cycle"), true);
+  assert.equal(graph.validate({ allowCycles: true }).valid, true);
+});
+
+test("graph supports grouping, duplication, waypoints, and automatic layout", () => {
+  const graph = createGraph();
+  const link = graph.connect("source:image", "filter:image");
+  graph.setLinkPoints(link.id, [{ x: 120, y: 80 }]);
+  assert.deepEqual(graph.getLink(link.id).points, [{ x: 120, y: 80 }]);
+  graph.groupNodes(["source", "filter"], "pipeline");
+  assert.equal(graph.getNode("source").groupId, "pipeline");
+  assert.equal(graph.extract(["source", "filter"]).links.length, 1);
+  const duplicated = graph.duplicate(["source", "filter"]);
+  assert.equal(duplicated.nodes.length, 2);
+  assert.equal(duplicated.links.length, 1);
+  const positions = graph.autoLayout({ direction: "vertical" });
+  assert.equal(positions.every((node) => Number.isFinite(node.x) && Number.isFinite(node.y)), true);
+});
+
+test("graph nodes can contain validated serializable subgraphs", () => {
+  const graph = new GuiNodeGraph({
+    nodes: [{ id: "container", title: "Container" }],
+  });
+  graph.setSubgraph("container", {
+    nodes: [
+      { id: "nested-source", outputs: [{ id: "nested:out", type: "number" }] },
+      { id: "nested-target", inputs: [{ id: "nested:in", type: "number" }] },
+    ],
+    links: [{ id: "nested-link", from: "nested:out", to: "nested:in" }],
+  });
+  assert.equal(graph.getSubgraph("container").nodes.length, 2);
+  assert.equal(new GuiNodeGraph(graph.toJSON()).getSubgraph("container").links.length, 1);
+});
+
+test("editor exposes advanced editing and execution APIs", () => {
+  [
+    "zoomToSelection",
+    "findNodes",
+    "autoLayout",
+    "alignSelection",
+    "distributeSelection",
+    "groupSelection",
+    "addComment",
+    "setNodeCollapsed",
+    "toggleBreakpoint",
+    "setExecutionState",
+    "setLinkPoints",
+    "validateGraph",
+    "copySelection",
+    "paste",
+    "duplicateSelection",
+    "setNodeSubgraph",
+    "enterSubgraph",
+    "exitSubgraph",
+  ].forEach((method) => assert.equal(typeof GuiNodeEditor.prototype[method], "function", method));
 });

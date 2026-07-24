@@ -53,13 +53,59 @@
       "types": "./src/modules/logging/node.d.ts",
       "import": "./src/modules/logging/node.js",
       "default": "./src/modules/logging/node.js"
+    },
+    "./commands": {
+      "types": "./src/modules/commands/index.d.ts",
+      "import": "./src/modules/commands/index.js",
+      "default": "./src/modules/commands/index.js"
+    },
+    "./overlays": {
+      "types": "./src/modules/overlays/index.d.ts",
+      "import": "./src/modules/overlays/index.js",
+      "default": "./src/modules/overlays/index.js"
+    },
+    "./runtime": {
+      "types": "./src/modules/runtime/index.d.ts",
+      "import": "./src/modules/runtime/index.js",
+      "default": "./src/modules/runtime/index.js"
+    },
+    "./forms": {
+      "types": "./src/modules/forms/index.d.ts",
+      "import": "./src/modules/forms/index.js",
+      "default": "./src/modules/forms/index.js"
+    },
+    "./data-views": {
+      "types": "./src/modules/data-views/index.d.ts",
+      "import": "./src/modules/data-views/index.js",
+      "default": "./src/modules/data-views/index.js"
+    },
+    "./workspace": {
+      "types": "./src/modules/workspace/index.d.ts",
+      "import": "./src/modules/workspace/index.js",
+      "default": "./src/modules/workspace/index.js"
+    },
+    "./devtools": {
+      "types": "./src/modules/devtools/index.d.ts",
+      "import": "./src/modules/devtools/index.js",
+      "default": "./src/modules/devtools/index.js"
+    },
+    "./adapters": {
+      "types": "./src/adapters/index.d.ts",
+      "import": "./src/adapters/index.js",
+      "default": "./src/adapters/index.js"
     }
   },
   "files": [
     "src",
     "locales",
     "docs",
-    "examples",
+    "examples/csharp",
+    "examples/full-demo/app.js",
+    "examples/full-demo/demo.css",
+    "examples/full-demo/index.html",
+    "examples/full-demo/README.md",
+    "examples/full-demo/server.mjs",
+    "examples/python/app.py",
     "tools/create-module.mjs",
     "index.html",
     "CHANGELOG.md",
@@ -72,7 +118,7 @@
   "scripts": {
     "dev": "node tools/dev-server.mjs",
     "demo:full": "node examples/full-demo/server.mjs",
-    "check": "node --check src/gui.js && node --check src/core/module-registry.js && node --check src/modules/node-editor/index.js && node --check src/modules/media-player/index.js && node --check src/modules/statusbar/index.js && node --check src/modules/wizard/index.js && node --check src/modules/logging/index.js && node --check src/modules/logging/node.js && node --check examples/full-demo/app.js && node --check examples/full-demo/server.mjs && node --check tools/create-module.mjs && node --test",
+    "check": "node --check src/gui.js && node --check src/core/module-registry.js && node --check src/modules/node-editor/index.js && node --check src/modules/media-player/index.js && node --check src/modules/statusbar/index.js && node --check src/modules/wizard/index.js && node --check src/modules/logging/index.js && node --check src/modules/logging/node.js && node --check src/modules/commands/index.js && node --check src/modules/overlays/index.js && node --check src/modules/runtime/index.js && node --check src/modules/forms/index.js && node --check src/modules/data-views/index.js && node --check src/modules/workspace/index.js && node --check src/modules/devtools/index.js && node --check src/adapters/index.js && node --check examples/full-demo/app.js && node --check examples/full-demo/server.mjs && node --check tools/create-module.mjs && node --test",
     "test": "node --test",
     "prepack": "npm run check",
     "release:check": "npm pack --dry-run --ignore-scripts",
@@ -97,7 +143,14 @@
     "application-status",
     "wizard",
     "stepper",
-    "onboarding"
+    "onboarding",
+    "command-palette",
+    "undo-redo",
+    "data-grid",
+    "tree-view",
+    "schema-forms",
+    "docking-workspace",
+    "accessibility"
   ],
   "license": "MIT"
 }

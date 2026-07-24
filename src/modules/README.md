@@ -20,3 +20,14 @@ Current reference module:
   responsive controls, and media accessibility.
 - [`statusbar`](statusbar/) demonstrates keyed live updates, responsive item
   priority, named slots, action events, and configurable viewport placement.
+- [`commands`](commands/) centralizes actions, shortcuts, command discovery,
+  cancellation, and undo/redo history.
+- [`overlays`](overlays/) provides the common dialog, popover, menu, tooltip,
+  focus, and dismissal layer.
+- [`runtime`](runtime/) contains persistence, routing, tasks, typed clipboard,
+  capabilities, and diagnostics.
+- [`forms`](forms/) demonstrates schema-driven models and generated editors.
+- [`data-views`](data-views/) contains virtual list/grid and accessible tree
+  models and renderers.
+- [`workspace`](workspace/) implements serializable docking layouts.
+- [`devtools`](devtools/) provides the component laboratory and audit surfaces.

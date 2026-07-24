@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Complete interactive demonstration of every GuiKit feature.">
     <title>GuiKit Full Demo</title>
+    <link rel="icon" href="data:,">
     <link rel="stylesheet" href="../../src/gui.css">
     <link rel="stylesheet" href="./demo.css">
   </head>
@@ -71,6 +72,10 @@
             <span aria-hidden="true">⚙</span>
             <span class="gui-sidebar-label" data-i18n="fullDemo.nav.platform">Platform</span>
           </button>
+          <button type="button" data-gui-page-open="framework">
+            <span aria-hidden="true">▦</span>
+            <span class="gui-sidebar-label" data-i18n="fullDemo.nav.framework">Framework</span>
+          </button>
           <button type="button" data-gui-page-open="settings">
             <span aria-hidden="true">☷</span>
             <span class="gui-sidebar-label" data-i18n="fullDemo.nav.settings">Settings</span>
@@ -118,7 +123,7 @@
           </div>
         </header>
 
-        <gui-pages id="demo-pages" active="overview">
+        <gui-pages id="demo-pages" active="overview" view-transitions>
           <section data-page="overview">
             <div class="gui-stack demo-page">
               <section class="demo-hero">
@@ -402,6 +407,12 @@
               <div class="gui-cluster">
                 <button class="gui-button gui-button--primary" id="node-add" type="button">Add processor</button>
                 <button class="gui-button" id="node-fit" type="button">Fit graph</button>
+                <button class="gui-button" id="node-layout" type="button">Auto-layout</button>
+                <button class="gui-button" id="node-duplicate" type="button">Duplicate</button>
+                <button class="gui-button" id="node-comment" type="button">Comment</button>
+                <button class="gui-button" id="node-validate" type="button">Validate</button>
+                <button class="gui-button" id="node-undo" type="button">Undo</button>
+                <button class="gui-button" id="node-redo" type="button">Redo</button>
                 <button class="gui-button" id="node-reset" type="button">Reset</button>
                 <button class="gui-button" id="node-export" type="button">Export JSON</button>
                 <button class="gui-button" id="node-import" type="button">Import JSON</button>
@@ -703,6 +714,107 @@
                   <span class="gui-badge" id="modules-ready">Initializing…</span>
                 </div>
                 <div class="demo-module-table" id="module-table"></div>
+              </article>
+            </div>
+          </section>
+
+          <section data-page="framework">
+            <div class="gui-stack demo-page">
+              <header class="demo-section-heading">
+                <div>
+                  <p class="gui-eyebrow">Application infrastructure</p>
+                  <h2>Commands, overlays, data, forms, tasks, workspaces, and developer tools</h2>
+                  <p class="gui-muted">The framework services share serializable state and cancelable request events.</p>
+                </div>
+                <button class="gui-button" type="button" data-gui-page-back>Back</button>
+              </header>
+
+              <div class="demo-two-column">
+                <article class="gui-card gui-stack">
+                  <h3>Commands and overlays</h3>
+                  <p class="gui-muted">Press Ctrl+K, use the menu, or open an anchored popover and modal dialog.</p>
+                  <div class="gui-cluster">
+                    <button class="gui-button gui-button--primary" id="command-open" type="button">Command palette</button>
+                    <button class="gui-button" id="popover-open" type="button">Open popover</button>
+                    <button class="gui-button" id="dialog-open" type="button">Open dialog</button>
+                    <button class="gui-button" id="tooltip-target" type="button">Focus for tooltip</button>
+                    <gui-tooltip for="tooltip-target">Accessible tooltip with focus and pointer support.</gui-tooltip>
+                    <gui-context-menu id="framework-context-menu" for="tooltip-target">
+                      <gui-menu id="framework-context-actions">
+                        <button role="menuitem" data-command="demo.refresh">Refresh from context menu</button>
+                        <button role="menuitem" data-command="demo.copy-state">Copy runtime state</button>
+                      </gui-menu>
+                    </gui-context-menu>
+                  </div>
+                  <gui-popover id="framework-popover" anchor="popover-open" placement="bottom-start">
+                    <gui-menu id="framework-menu">
+                      <button role="menuitem" data-command="demo.refresh">Refresh demo</button>
+                      <button role="menuitemcheckbox" data-command="demo.compact">Compact mode</button>
+                    </gui-menu>
+                  </gui-popover>
+                  <gui-dialog id="framework-dialog" label="Framework dialog" light-dismiss>
+                    <p>This modal restores focus and exposes cancelable open and close requests.</p>
+                    <button slot="footer" class="gui-button" id="dialog-cancel" type="button">Cancel</button>
+                    <button slot="footer" class="gui-button gui-button--primary" id="dialog-confirm" type="button">Confirm</button>
+                  </gui-dialog>
+                  <div class="gui-cluster">
+                    <button class="gui-button" id="typed-drag-source" type="button">Drag typed payload</button>
+                    <div class="demo-drop-target" id="typed-drop-target">Drop here</div>
+                  </div>
+                </article>
+
+                <article class="gui-card gui-stack">
+                  <div class="gui-cluster demo-space-between">
+                    <div><h3>Background tasks</h3><p class="gui-muted">Progress, cancellation, retry surfaces, and bounded history.</p></div>
+                    <button class="gui-button" id="task-start" type="button">Start task</button>
+                  </div>
+                  <gui-task-center id="framework-tasks"></gui-task-center>
+                </article>
+              </div>
+
+              <div class="demo-two-column">
+                <article class="gui-card gui-stack">
+                  <h3>Schema-driven settings</h3>
+                  <gui-form id="framework-form"></gui-form>
+                </article>
+                <article class="gui-card gui-stack">
+                  <h3>Accessible tree</h3>
+                  <gui-tree-view id="framework-tree"></gui-tree-view>
+                </article>
+              </div>
+
+              <article class="gui-card gui-stack">
+                <div class="gui-cluster demo-space-between">
+                  <div><h3>Virtualized data grid</h3><p class="gui-muted">Only visible rows are mounted while sort, edit, filter, and selection remain model-driven.</p></div>
+                  <input class="gui-input" id="grid-filter" type="search" placeholder="Filter message" aria-label="Filter grid messages">
+                  <button class="gui-button" id="grid-export" type="button">Export CSV</button>
+                  <button class="gui-button" id="grid-page" type="button">Load server page</button>
+                </div>
+                <gui-data-grid id="framework-grid" class="demo-framework-grid"></gui-data-grid>
+                <gui-virtual-list id="framework-list" class="demo-framework-list" aria-label="Virtualized event list"></gui-virtual-list>
+              </article>
+
+              <article class="gui-card gui-stack">
+                <div class="gui-cluster demo-space-between">
+                  <div><h3>Dockable workspace</h3><p class="gui-muted">Drag tabs between groups and resize the keyboard-accessible splitter.</p></div>
+                  <div class="gui-cluster">
+                    <button class="gui-button" id="workspace-preset" type="button">Restore preset</button>
+                    <button class="gui-button" id="workspace-save" type="button">Save layout</button>
+                  </div>
+                </div>
+                <gui-workspace id="framework-workspace" class="demo-framework-workspace">
+                  <section slot="workspace-editor" class="demo-workspace-panel"><strong>Editor</strong><p>Primary document surface</p></section>
+                  <section slot="workspace-preview" class="demo-workspace-panel"><strong>Preview</strong><p>Live application preview</p></section>
+                  <section slot="workspace-logs" class="demo-workspace-panel"><strong>Logs</strong><p>Structured runtime output</p></section>
+                </gui-workspace>
+              </article>
+
+              <article class="gui-card gui-stack">
+                <h3>Developer playground and diagnostics</h3>
+                <gui-component-playground id="framework-playground">
+                  <button class="gui-button gui-button--primary" id="playground-button" type="button">Inspectable component</button>
+                </gui-component-playground>
+                <gui-diagnostics-panel id="framework-diagnostics"></gui-diagnostics-panel>
               </article>
             </div>
           </section>
@@ -1060,6 +1172,7 @@
           label="Full demo application status">
           <span slot="center" class="demo-statusbar-slot">Custom slot</span>
         </gui-statusbar>
+        <gui-command-palette id="demo-command-palette"></gui-command-palette>
       </main>
     </div>
 

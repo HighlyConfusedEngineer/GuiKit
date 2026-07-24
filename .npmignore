@@ -1,0 +1,4 @@
+examples/full-demo/runtime/
+**/__pycache__/
+**/*.pyc
+.guikit-demo.*.log

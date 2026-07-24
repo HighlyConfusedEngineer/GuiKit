@@ -132,6 +132,10 @@ component emits `gui:page-change`. Forward and back navigation use coordinated
 entrance and exit motion. Starting another navigation safely cancels and
 replaces the current transition.
 
+Add the `view-transitions` attribute to progressively use the browser View
+Transition API. GuiKit falls back to its Web Animations implementation, skips
+motion for reduced-motion users, and preserves interruption safety.
+
 ## Sidebar
 
 The mobile drawer API remains `toggle(force?)`. Desktop collapse is optional:
@@ -242,8 +246,9 @@ defineGuiModule(featureModule);
 await guiModules.initialize(featureModule.id, applicationContext);
 ```
 
-`initializeGui()` now returns
-`{ i18n, bridge, toast, logs, logger, modules, mediaAdapters, ready }`. Await `ready` when
+`initializeGui()` returns
+`{ i18n, bridge, toast, logs, logger, modules, mediaAdapters, commands, history,
+persistence, router, tasks, clipboard, capabilities, diagnostics, ready }`. Await `ready` when
 application startup depends on module setup results. See
 [MODULES.md](MODULES.md) for the complete extension contract.
 
@@ -277,3 +282,68 @@ Use `logger.child(name, context)` for a module, `startSpan()` for correlated
 work, and `logs.flush()` at a durability boundary. See
 [LOGGING.md](LOGGING.md) for the record contract, privacy behavior, transports,
 viewer, and backend examples.
+
+## Commands and history
+
+The `commands` subpath exports `GuiCommandRegistry`, `GuiHistory`,
+`GuiCommandPalette`, and the shared `commands` and `history` instances.
+Commands have stable ids, searchable metadata, configurable shortcuts,
+enabled/checked state, asynchronous execution, and an abort signal.
+
+`GuiHistory.perform()` executes and records a redo/undo pair.
+`GuiHistory.record()` records a change that has already happened.
+`begin()`, `commit()`, and `rollback()` group several changes into one
+transaction.
+
+## Overlays
+
+The `overlays` subpath exports `<gui-dialog>`, `<gui-popover>`,
+`<gui-context-menu>`, `<gui-menu>`, `<gui-tooltip>`, and `overlayController`.
+Every open or close operation has a cancelable request event. Dialogs restore
+focus, popovers reposition on resize and scroll, and menus implement roving
+focus with arrow, Home, and End keys.
+
+## Runtime services
+
+The `runtime` subpath exports:
+
+- `GuiPersistenceStore` and `GuiMemoryStorage` for versioned state envelopes;
+- `GuiRouter` for hash/history routes, parameters, queries, and async guards;
+- `GuiTaskManager` and `<gui-task-center>` for bounded cancellable work;
+- `GuiClipboard` for registered typed payloads and system-clipboard fallback;
+- `GuiDragDrop` for registered payloads and reusable drag/drop target cleanup;
+- `GuiCapabilityRegistry` for allowlisted, authorizable backend operations;
+- `GuiDiagnostics` for bounded metric samples and timing marks.
+
+All snapshots are structured-cloneable.
+
+## Schema forms
+
+`GuiFormModel` owns schemas, values, dependencies, dirty state, and validation.
+`<gui-form>` renders native controls and emits `gui:form-change`,
+`gui:form-submit-request`, `gui:form-submit`, and `gui:form-invalid`.
+Register application-specific input types with `formEditors`.
+
+## Data views
+
+`GuiDataCollection` owns filtering, multi-column sorting, editing, and
+selection. `<gui-data-grid>` renders a fixed-height visible window.
+`<gui-virtual-list>` accepts an item array and renderer. `GuiTreeModel` and
+`<gui-tree-view>` provide expandable hierarchy state and the WAI-ARIA tree
+keyboard model. `GuiPagedDataSource` adds bounded async page caching for
+server-side datasets. Grids support custom renderers, pinned leading columns,
+inline edits, and JSON/CSV export.
+
+## Workspace
+
+`GuiWorkspaceModel` serializes nested tab groups and horizontal/vertical
+splits. `<gui-workspace>` uses named slots for panel content and supports tab
+dragging, close requests, pointer/keyboard split resizing, presets, persistence,
+and host-controlled detach requests.
+
+## Developer tools and adapters
+
+The `devtools` subpath exports `<gui-component-playground>`,
+`<gui-diagnostics-panel>`, and `auditAccessibility(root)`. The `adapters`
+subpath exports React/Vue wrappers, event binding, lazy element definition, and
+`GuiNativeController`. See [ADAPTERS.md](ADAPTERS.md).

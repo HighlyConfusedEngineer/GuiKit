@@ -852,6 +852,63 @@ body {
   }
 }
 
+.demo-framework-grid {
+  height: 22rem;
+}
+
+.demo-drop-target {
+  min-width: 9rem;
+  padding: .55rem .75rem;
+  border: 1px dashed var(--gui-border);
+  border-radius: var(--gui-radius-md);
+  color: var(--gui-text-muted);
+}
+
+.demo-drop-target[data-gui-drag-over] {
+  border-color: var(--gui-accent);
+  background: var(--gui-accent-soft);
+}
+
+html[data-compact] .gui-card {
+  --gui-card-padding: .7rem;
+}
+
+html[data-compact] .demo-page {
+  gap: .7rem;
+}
+
+.demo-framework-list {
+  height: 11rem;
+  border: 1px solid var(--gui-border);
+  border-radius: var(--gui-radius-md);
+}
+
+.demo-framework-list::part(item) {
+  padding: .5rem;
+}
+
+.demo-framework-workspace {
+  height: 28rem;
+}
+
+.demo-workspace-panel {
+  min-height: 100%;
+  padding: 1rem;
+}
+
+#framework-tasks {
+  min-height: 8rem;
+}
+
+#framework-tree {
+  min-height: 18rem;
+}
+
+#framework-diagnostics {
+  display: block;
+  overflow-x: auto;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .demo-orbit,
   .demo-orbit strong,

@@ -336,6 +336,11 @@ editor.addEventListener("gui:node-parameter-change", (event) => {
 - Switch `flow-direction` when a workflow reads more naturally top-to-bottom.
 - Click a node or link to select it.
 - Ctrl/Cmd-click nodes for additive selection.
+- Shift-drag empty space for box selection.
+- Ctrl/Cmd+C, X, and V copy, cut, and paste through `GuiClipboard`.
+- Ctrl/Cmd+D duplicates the selected subgraph.
+- Ctrl/Cmd+G groups selected nodes; Ctrl/Cmd+Shift+G ungroups them.
+- `/` focuses node search and F9 toggles a breakpoint on one selected node.
 - Delete or Backspace removes the selection.
 - Arrow keys move selected nodes; Shift moves by ten increments.
 - Ctrl/Cmd+A selects all nodes.
@@ -357,6 +362,43 @@ const snapshot = graph.toJSON();
 
 Use the model in host-side tests, import pipelines, undo/redo commands, or
 alternate renderers.
+
+## Advanced editing
+
+Assign the shared framework services once:
+
+```js
+editor.history = history;
+editor.clipboard = clipboard;
+```
+
+Structural edits then create reversible history entries. `copySelection()`,
+`cutSelection()`, `paste()`, and `duplicateSelection()` preserve links whose
+endpoints are both selected. Other editing methods include:
+
+- `alignSelection()` and `distributeSelection()`;
+- `groupSelection()` and `ungroupSelection()`;
+- `addComment()` and `setNodeCollapsed()`;
+- `autoLayout()` and `zoomToSelection()`;
+- `findNodes()` and `validateGraph()`;
+- `setLinkPoints()` for persistent manual reroute points.
+- `setNodeSubgraph()`, `enterSubgraph()`, and `exitSubgraph()` for nested
+  workflows. Double-clicking a node with a subgraph enters it; the toolbar back
+  action returns and saves the nested graph.
+
+The built-in minimap shows graph extent, viewport, and execution errors or
+active nodes.
+
+## Execution and validation
+
+`GuiNodeGraph.validate()` reports missing required inputs, cycles, isolated
+nodes, and a topological execution order. Cycles can be permitted explicitly
+for feedback or state-machine graphs.
+
+`setExecutionState(nodeId, state, detail)` accepts `idle`, `queued`, `running`,
+`success`, `error`, and `paused`. `toggleBreakpoint()` stores editor-local
+breakpoint state. Both APIs emit serializable events so a Python or C# executor
+can drive visualization without owning the component DOM.
 
 ## Performance boundary
 

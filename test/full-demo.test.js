@@ -17,6 +17,20 @@ test("full demo contains every GuiKit custom element", () => {
     "gui-statusbar",
     "gui-media-player",
     "gui-log-viewer",
+    "gui-command-palette",
+    "gui-dialog",
+    "gui-popover",
+    "gui-context-menu",
+    "gui-menu",
+    "gui-tooltip",
+    "gui-task-center",
+    "gui-form",
+    "gui-virtual-list",
+    "gui-data-grid",
+    "gui-tree-view",
+    "gui-workspace",
+    "gui-component-playground",
+    "gui-diagnostics-panel",
   ].forEach((tag) => assert.match(html, new RegExp(`<${tag}(?:\\s|>)`)));
 });
 
@@ -96,6 +110,27 @@ test("full demo exercises services, transports, and module extension", () => {
     "demoStatusbar.setItems",
     "demoStatusbar.updateItem",
   ].forEach((surface) => assert.match(app, new RegExp(surface.replace(".", "\\."))));
+});
+
+test("full demo exercises the application framework milestone", () => {
+  [
+    "commands.register",
+    "nodeEditor.history = history",
+    "nodeEditor.clipboard = clipboard",
+    "new GuiFormModel",
+    "new GuiDataCollection",
+    "new GuiPagedDataSource",
+    "new GuiTreeModel",
+    "new GuiWorkspaceModel",
+    "tasks.run",
+    "persistence.save",
+    "capabilities.register",
+    "diagnostics.record",
+    "dragDrop.makeDraggable",
+    "auditAccessibility",
+  ].forEach((surface) => assert.match(app, new RegExp(surface.replace(".", "\\."))));
+  assert.match(html, /data-page="framework"/);
+  assert.match(html, /view-transitions/);
 });
 
 test("full demo backend bounds and validates log ingestion", () => {

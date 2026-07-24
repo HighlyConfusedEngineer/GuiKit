@@ -32,6 +32,12 @@ A production-ready GuiKit module has:
 | Observability | Structured logs, privacy limits, spans, batching, live viewer, backend sinks |
 | Platform | Themes, localization, native bridge, Web Components, TypeScript |
 | Extensibility | Module registry, dependency lifecycle, generator, subpath exports |
+| Application runtime | Commands, shortcuts, undo/redo, persistence, routing, tasks, clipboard, capabilities |
+| Overlays | Dialogs, anchored popovers, menus, tooltips, shared stacking |
+| Data entry | Schema forms, conditional fields, validation, custom editors |
+| Data views | Virtualized list/grid and accessible tree model |
+| Workspaces | Docking tabs, splits, drag/drop, presets, persistence |
+| Developer tools | Component playground, event log, diagnostics, accessibility audit |
 | Governance | CI, security policy, contribution guide, API and architecture docs |
 
 ## Next framework modules
@@ -39,16 +45,12 @@ A production-ready GuiKit module has:
 The following modules fit the architecture but are not silently implied to
 exist yet:
 
-1. accessible dialogs, popovers, menus, tooltips, and command palette;
-2. virtualized data grid and tree view with keyboard navigation;
-3. schema-driven forms, validation, date/time, and rich input controls;
-4. docking, resizable panels, split views, and persisted workspaces;
-5. drag-and-drop and sortable collections;
-6. file browser, upload queue, and progress surfaces;
-7. canvas and WebGL rendering adapter for very large node graphs;
-8. automated browser accessibility and visual-regression suites;
-9. optional React, Vue, Blazor, Python, and C# convenience bindings;
-10. packaging profiles for PWA, pywebview, WebView2, WKWebView, and Avalonia.
+1. file browser and resumable upload/download queues;
+2. canvas and WebGL rendering adapter for very large node graphs;
+3. automated visual-regression baselines across browser engines;
+4. standalone React, Vue, and Blazor packages generated from the adapter core;
+5. application templates for PWA, pywebview, WebView2, WKWebView, and Avalonia;
+6. locale-aware date, time, number, and rich text editor modules.
 
 Each should be delivered as a module with a narrow responsibility rather than
 expanding `gui.js` indefinitely.

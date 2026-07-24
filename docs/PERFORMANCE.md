@@ -63,3 +63,24 @@ manager level in production when it is not needed.
 dropped when a transport cannot keep up. Use batching for native and network
 transports, and call `flush()` at shutdown instead of using a zero interval for
 every record.
+
+## Virtualized data views
+
+`<gui-virtual-list>` and `<gui-data-grid>` render the visible window plus a
+small overscan region. Collection size therefore does not determine DOM node
+count. Keep row heights fixed, use text for ordinary cells, and reserve custom
+DOM renderers for columns that need them. Sorting and filtering are in-memory;
+for datasets that do not fit comfortably in host memory, replace the
+collection page through an application data source.
+
+The full demo uses 5,000 grid rows and a 5,000-item virtual list. Profile
+application-specific cell renderers at the intended viewport size.
+
+## Node editor
+
+The DOM renderer is intended for hundreds of interactive nodes. Minimap
+painting is one bounded canvas pass over the model. Obstacle routing cost grows
+with visible nodes in a connection corridor; group or collapse complex graphs
+and avoid rerouting on unrelated animation frames. A future canvas/WebGL
+renderer can consume the same `GuiNodeGraph` serialization when graphs grow
+beyond the interactive DOM boundary.

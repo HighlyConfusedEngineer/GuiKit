@@ -399,6 +399,213 @@ export class GuiNodeGraph {
     return this.#links.delete(String(id));
   }
 
+  setLinkPoints(id, points = []) {
+    const link = this.#links.get(String(id));
+    if (!link) throw new Error(`Unknown link "${id}".`);
+    link.points = points.map((point) => ({
+      x: finite(point?.x),
+      y: finite(point?.y),
+    }));
+    return clone(link);
+  }
+
+  groupNodes(ids, groupId) {
+    const selected = new Set([...ids].map(String));
+    const group = groupId == null || groupId === "" ? undefined : String(groupId);
+    for (const id of selected) {
+      const node = this.#nodes.get(id);
+      if (!node) throw new Error(`Unknown node "${id}".`);
+      node.groupId = group;
+    }
+    return this.nodes.filter((node) => selected.has(node.id));
+  }
+
+  setSubgraph(id, graph) {
+    const node = this.#nodes.get(String(id));
+    if (!node) throw new Error(`Unknown node "${id}".`);
+    node.subgraph = graph == null ? undefined : new GuiNodeGraph(graph).toJSON();
+    return clone(node.subgraph);
+  }
+
+  getSubgraph(id) {
+    const node = this.#nodes.get(String(id));
+    if (!node) return undefined;
+    return clone(node.subgraph);
+  }
+
+  extract(ids) {
+    const selected = new Set([...ids].map(String));
+    return {
+      nodes: this.nodes.filter((node) => selected.has(node.id)),
+      links: this.links.filter((link) => {
+        const from = this.#ports.get(link.from)?.nodeId;
+        const to = this.#ports.get(link.to)?.nodeId;
+        return selected.has(from) && selected.has(to);
+      }),
+    };
+  }
+
+  duplicate(ids, options = {}) {
+    const source = this.extract(ids);
+    const offset = {
+      x: finite(options.x, 32),
+      y: finite(options.y, 32),
+    };
+    const nodeIds = new Map();
+    const portIds = new Map();
+    const unique = (requested, exists) => {
+      let candidate = requested;
+      let sequence = 2;
+      while (exists(candidate)) candidate = `${requested}-${sequence++}`;
+      return candidate;
+    };
+    const nodes = source.nodes.map((node) => {
+      const id = unique(`${node.id}-copy`, (candidate) => (
+        this.#nodes.has(candidate) || [...nodeIds.values()].includes(candidate)
+      ));
+      nodeIds.set(node.id, id);
+      const remapPorts = (ports) => ports.map((port) => {
+        const portId = unique(`${id}:${port.id.split(":").at(-1)}`, (candidate) => (
+          this.#ports.has(candidate) || [...portIds.values()].includes(candidate)
+        ));
+        portIds.set(port.id, portId);
+        return { ...port, id: portId };
+      });
+      return {
+        ...node,
+        id,
+        title: options.keepTitles ? node.title : `${node.title} copy`,
+        x: node.x + offset.x,
+        y: node.y + offset.y,
+        inputs: remapPorts(node.inputs),
+        outputs: remapPorts(node.outputs),
+      };
+    });
+    nodes.forEach((node) => this.addNode(node));
+    const links = source.links.map((link) => this.connect(
+      portIds.get(link.from),
+      portIds.get(link.to),
+      {
+        ...link,
+        id: undefined,
+        points: link.points?.map((point) => ({
+          x: point.x + offset.x,
+          y: point.y + offset.y,
+        })),
+      },
+    ));
+    return { nodes: nodes.map((node) => this.getNode(node.id)), links };
+  }
+
+  autoLayout(options = {}) {
+    const direction = normalizeFlowDirection(options.direction);
+    const layerGap = Math.max(80, finite(options.layerGap, 160));
+    const nodeGap = Math.max(24, finite(options.nodeGap, 56));
+    const nodes = [...this.#nodes.values()];
+    const incoming = new Map(nodes.map((node) => [node.id, 0]));
+    const outgoing = new Map(nodes.map((node) => [node.id, []]));
+    for (const link of this.#links.values()) {
+      const from = this.#ports.get(link.from)?.nodeId;
+      const to = this.#ports.get(link.to)?.nodeId;
+      if (!from || !to || from === to) continue;
+      outgoing.get(from).push(to);
+      incoming.set(to, incoming.get(to) + 1);
+    }
+    const queue = nodes.filter((node) => incoming.get(node.id) === 0).map((node) => node.id);
+    const layerById = new Map(queue.map((id) => [id, 0]));
+    const visited = new Set();
+    while (queue.length) {
+      const id = queue.shift();
+      visited.add(id);
+      for (const next of outgoing.get(id)) {
+        layerById.set(next, Math.max(layerById.get(next) ?? 0, (layerById.get(id) ?? 0) + 1));
+        incoming.set(next, incoming.get(next) - 1);
+        if (incoming.get(next) === 0) queue.push(next);
+      }
+    }
+    for (const node of nodes) {
+      if (!visited.has(node.id)) layerById.set(node.id, layerById.get(node.id) ?? 0);
+    }
+    const layers = new Map();
+    for (const node of nodes) {
+      const layer = layerById.get(node.id) ?? 0;
+      if (!layers.has(layer)) layers.set(layer, []);
+      layers.get(layer).push(node);
+    }
+    for (const [layer, entries] of [...layers].sort(([a], [b]) => a - b)) {
+      entries.sort((a, b) => a.y - b.y || a.x - b.x || a.id.localeCompare(b.id));
+      entries.forEach((node, index) => {
+        if (node.pinned) return;
+        const primary = layer * (Math.max(...nodes.map((candidate) => candidate.width), 220) + layerGap);
+        const secondary = index * (160 + nodeGap);
+        node.x = direction === "vertical" ? secondary : primary;
+        node.y = direction === "vertical" ? primary : secondary;
+      });
+    }
+    return this.nodes;
+  }
+
+  validate(options = {}) {
+    const errors = [];
+    const warnings = [];
+    const incoming = new Map(this.nodes.map((node) => [node.id, 0]));
+    const adjacency = new Map(this.nodes.map((node) => [node.id, []]));
+    for (const link of this.#links.values()) {
+      const from = this.#ports.get(link.from);
+      const to = this.#ports.get(link.to);
+      if (!from || !to) {
+        errors.push({ code: "dangling-link", linkId: link.id, message: `Link "${link.id}" has a missing endpoint.` });
+        continue;
+      }
+      adjacency.get(from.nodeId).push(to.nodeId);
+      incoming.set(to.nodeId, incoming.get(to.nodeId) + 1);
+    }
+    for (const node of this.#nodes.values()) {
+      const missing = node.inputs.filter((port) => (
+        port.required && ![...this.#links.values()].some((link) => link.to === port.id)
+      ));
+      missing.forEach((port) => errors.push({
+        code: "required-input",
+        nodeId: node.id,
+        portId: port.id,
+        message: `${node.title}: required input "${port.label}" is not connected.`,
+      }));
+      if (!node.inputs.length && !node.outputs.length && node.type !== "comment") {
+        warnings.push({ code: "isolated-node", nodeId: node.id, message: `${node.title} has no ports.` });
+      }
+      if (node.subgraph) {
+        const nested = new GuiNodeGraph(node.subgraph).validate(options);
+        nested.errors.forEach((error) => errors.push({
+          ...error,
+          code: `subgraph:${error.code}`,
+          path: [node.id, ...(error.path ?? [])],
+          message: `${node.title}: ${error.message}`,
+        }));
+        nested.warnings.forEach((warning) => warnings.push({
+          ...warning,
+          code: `subgraph:${warning.code}`,
+          path: [node.id, ...(warning.path ?? [])],
+          message: `${node.title}: ${warning.message}`,
+        }));
+      }
+    }
+    const queue = [...incoming].filter(([, count]) => count === 0).map(([id]) => id);
+    const order = [];
+    while (queue.length) {
+      const id = queue.shift();
+      order.push(id);
+      for (const next of adjacency.get(id)) {
+        incoming.set(next, incoming.get(next) - 1);
+        if (incoming.get(next) === 0) queue.push(next);
+      }
+    }
+    if (order.length !== this.#nodes.size && options.allowCycles !== true) {
+      const nodes = [...incoming].filter(([, count]) => count > 0).map(([id]) => id);
+      errors.push({ code: "cycle", nodeIds: nodes, message: `Graph contains a cycle involving ${nodes.join(", ")}.` });
+    }
+    return { valid: errors.length === 0, errors, warnings, order };
+  }
+
   toJSON() {
     return {
       nodes: this.nodes.map((node) => ({
@@ -776,6 +983,18 @@ export class GuiNodeEditor extends GuiElement {
   #settingsNodeId = null;
   #settingsTrigger = null;
   #wireTypes = new Map();
+  #history = null;
+  #clipboard = null;
+  #restoringHistory = false;
+  #execution = new Map();
+  #breakpoints = new Set();
+  #minimap;
+  #searchInput;
+  #selectionBox;
+  #graphStack = [];
+  #subgraphButton;
+  #guideX;
+  #guideY;
 
   connectedCallback() {
     if (!this.shadowRoot) this.#createView();
@@ -872,8 +1091,38 @@ export class GuiNodeEditor extends GuiElement {
     return this.#selectedLink;
   }
 
-  setGraph(graph) {
+  get graphPath() {
+    return this.#graphStack.map((entry) => entry.nodeId);
+  }
+
+  set history(value) {
+    this.#history = value;
+  }
+
+  get history() {
+    return this.#history;
+  }
+
+  set clipboard(value) {
+    this.#clipboard = value;
+    if (value?.registerType && !value.__guiNodeGraphRegistered) {
+      value.registerType("application/x-guikit-node-graph", {
+        validate: (payload) => Array.isArray(payload?.nodes) && Array.isArray(payload?.links),
+      });
+      Object.defineProperty(value, "__guiNodeGraphRegistered", {
+        configurable: true,
+        value: true,
+      });
+    }
+  }
+
+  get clipboard() {
+    return this.#clipboard;
+  }
+
+  setGraph(graph, options = {}) {
     this.#hideNodeSettings("graph-change");
+    if (!options.preservePath) this.#graphStack = [];
     this.#graph = graph instanceof GuiNodeGraph
       ? new GuiNodeGraph(graph.toJSON())
       : new GuiNodeGraph(graph);
@@ -883,21 +1132,67 @@ export class GuiNodeEditor extends GuiElement {
     this.#graphChanged("load");
   }
 
+  setNodeSubgraph(id, graph) {
+    const before = this.getGraph();
+    const subgraph = this.#graph.setSubgraph(id, graph);
+    this.#render();
+    this.#graphChanged("subgraph-change", { id: String(id), subgraph });
+    this.#recordHistory("Update subgraph", before);
+    return subgraph;
+  }
+
+  enterSubgraph(id) {
+    const node = this.#graph.getNode(id);
+    if (!node?.subgraph) return false;
+    const detail = { node, path: [...this.graphPath, node.id] };
+    if (!dispatch(this, "gui:subgraph-enter-request", detail, true)) return false;
+    this.#graphStack.push({
+      nodeId: node.id,
+      title: node.title,
+      graph: this.getGraph(),
+      view: clone(this.#view),
+    });
+    this.setGraph(node.subgraph, { preservePath: true });
+    this.setView({ x: 64, y: 48, zoom: 1 });
+    dispatch(this, "gui:subgraph-enter", detail);
+    return true;
+  }
+
+  exitSubgraph(options = {}) {
+    const entry = this.#graphStack.pop();
+    if (!entry) return false;
+    const nested = this.getGraph();
+    const parent = new GuiNodeGraph(entry.graph);
+    if (options.save !== false) parent.setSubgraph(entry.nodeId, nested);
+    this.setGraph(parent, { preservePath: true });
+    this.setView(entry.view);
+    dispatch(this, "gui:subgraph-exit", {
+      nodeId: entry.nodeId,
+      saved: options.save !== false,
+      path: this.graphPath,
+    });
+    return true;
+  }
+
   getGraph() {
     return this.#graph.toJSON();
   }
 
   addNode(node) {
+    const before = this.getGraph();
     const created = this.#graph.addNode(node);
     this.#render();
     this.#graphChanged("node-add", { node: created });
+    this.#recordHistory(`Add ${created.title}`, before);
     return created;
   }
 
   updateNode(id, patch) {
+    const before = this.getGraph();
     const updated = this.#graph.updateNode(id, patch);
     this.#render();
     this.#graphChanged("node-update", { node: updated });
+    this.#recordHistory(`Update ${updated.title}`, before);
     return updated;
   }
 
@@ -933,6 +1228,7 @@ export class GuiNodeEditor extends GuiElement {
       return null;
     }
 
+    const before = this.getGraph();
     const parameters = node.parameters.map((candidate) => (
       candidate.id === id ? { ...candidate, value: nextValue } : candidate
     ));
@@ -949,16 +1245,20 @@ export class GuiNodeEditor extends GuiElement {
       node: updatedNode,
       parameter: updated,
     });
+    this.#recordHistory(`Change ${parameter.label}`, before);
     return clone(updated);
   }
 
   removeNode(id) {
+    const before = this.getGraph();
+    const node = this.#graph.getNode(id);
     if (String(id) === this.#settingsNodeId) this.#hideNodeSettings("node-remove");
     const removed = this.#graph.removeNode(id);
     if (!removed) return false;
     this.#selectedNodes.delete(String(id));
     this.#render();
     this.#graphChanged("node-remove", { id: String(id) });
+    this.#recordHistory(`Delete ${node?.title ?? id}`, before);
     return true;
   }
 
@@ -966,6 +1266,7 @@ export class GuiNodeEditor extends GuiElement {
     const allowed = dispatch(this, "gui:node-connect-request", { from, to, options }, true);
     if (!allowed) return null;
     try {
+      const historyBefore = this.getGraph();
       const before = this.#graph.links;
       const link = this.#graph.connect(from, to, options);
       if (before.some((existing) => existing.id === link.id)) return link;
@@ -978,6 +1279,7 @@ export class GuiNodeEditor extends GuiElement {
       this.#renderConnections();
       dispatch(this, "gui:node-connect", { link });
       this.#graphChanged("link-add", { link });
+      this.#recordHistory("Connect nodes", historyBefore);
       return link;
     } catch (error) {
       dispatch(this, "gui:node-error", { operation: "connect", error });
@@ -995,21 +1297,25 @@ export class GuiNodeEditor extends GuiElement {
       { link, reason },
       true,
     )) return false;
+    const before = this.getGraph();
     if (!this.#graph.removeLink(id)) return false;
     if (this.#selectedLink === String(id)) this.#selectedLink = null;
     this.#renderConnections();
     dispatch(this, "gui:node-disconnect", { link, reason });
     this.#graphChanged("link-remove", { link, reason });
+    this.#recordHistory("Disconnect nodes", before);
     return true;
   }
 
   clear() {
+    const before = this.getGraph();
     this.#hideNodeSettings("clear");
     this.#graph.clear();
     this.#selectedNodes.clear();
     this.#selectedLink = null;
     this.#render();
     this.#graphChanged("clear");
+    this.#recordHistory("Clear graph", before);
   }
 
   selectNode(id, additive = false) {
@@ -1100,6 +1406,275 @@ export class GuiNodeEditor extends GuiElement {
     });
   }
 
+  zoomToSelection(padding = 96) {
+    const nodes = this.#graph.nodes.filter((node) => this.#selectedNodes.has(node.id));
+    if (!nodes.length) return this.zoomToFit(padding);
+    const bounds = this.#viewport?.getBoundingClientRect();
+    if (!bounds?.width || !bounds?.height) return;
+    const boxes = nodes.map((node) => {
+      const element = this.#nodeElements.get(node.id);
+      return {
+        left: node.x,
+        top: node.y,
+        right: node.x + (element?.offsetWidth ?? node.width),
+        bottom: node.y + (element?.offsetHeight ?? 160),
+      };
+    });
+    const left = Math.min(...boxes.map((box) => box.left));
+    const top = Math.min(...boxes.map((box) => box.top));
+    const right = Math.max(...boxes.map((box) => box.right));
+    const bottom = Math.max(...boxes.map((box) => box.bottom));
+    const width = Math.max(1, right - left);
+    const height = Math.max(1, bottom - top);
+    const zoom = Math.min(
+      this.maxZoom,
+      Math.max(this.minZoom, Math.min(
+        (bounds.width - padding * 2) / width,
+        (bounds.height - padding * 2) / height,
+      )),
+    );
+    this.setView({
+      zoom,
+      x: (bounds.width - width * zoom) / 2 - left * zoom,
+      y: (bounds.height - height * zoom) / 2 - top * zoom,
+    });
+  }
+
+  findNodes(query, options = {}) {
+    const needle = String(query ?? "").trim().toLocaleLowerCase();
+    const matches = this.#graph.nodes.filter((node) => {
+      if (!needle) return true;
+      return [
+        node.id,
+        node.title,
+        node.type,
+        node.description,
+        ...node.parameters.map((parameter) => `${parameter.label} ${parameter.value}`),
+      ].join(" ").toLocaleLowerCase().includes(needle);
+    });
+    if (options.select && matches.length) {
+      this.#selectedNodes = new Set(matches.map((node) => node.id));
+      this.#selectedLink = null;
+      this.#syncSelection();
+      if (options.focus !== false) this.zoomToSelection();
+      dispatch(this, "gui:node-select", { nodes: this.selectedNodes, link: null });
+    }
+    return matches;
+  }
+
+  autoLayout(options = {}) {
+    const before = this.getGraph();
+    const nodes = this.#graph.autoLayout({
+      direction: options.direction ?? this.flowDirection,
+      ...options,
+    });
+    this.#render();
+    this.#graphChanged("auto-layout", { nodes });
+    this.#recordHistory("Auto-layout graph", before);
+    if (options.fit !== false) requestAnimationFrame(() => this.zoomToFit());
+    return nodes;
+  }
+
+  alignSelection(alignment = "left") {
+    const nodes = this.#graph.nodes.filter((node) => this.#selectedNodes.has(node.id));
+    if (nodes.length < 2) return false;
+    const before = this.getGraph();
+    const horizontal = ["left", "center", "right"].includes(alignment);
+    const values = nodes.map((node) => {
+      if (alignment === "right") return node.x + node.width;
+      if (alignment === "center") return node.x + node.width / 2;
+      if (alignment === "bottom") return node.y + (this.#nodeElements.get(node.id)?.offsetHeight ?? 160);
+      if (alignment === "middle") return node.y + (this.#nodeElements.get(node.id)?.offsetHeight ?? 160) / 2;
+      return horizontal ? node.x : node.y;
+    });
+    const target = Math.min(...values);
+    nodes.forEach((node, index) => {
+      const x = horizontal ? node.x + target - values[index] : node.x;
+      const y = horizontal ? node.y : node.y + target - values[index];
+      this.#graph.moveNode(node.id, x, y);
+    });
+    this.#render();
+    this.#graphChanged("node-align", { nodes: this.selectedNodes, alignment });
+    this.#recordHistory(`Align nodes ${alignment}`, before);
+    return true;
+  }
+
+  distributeSelection(axis = "horizontal") {
+    const nodes = this.#graph.nodes
+      .filter((node) => this.#selectedNodes.has(node.id))
+      .sort((a, b) => axis === "vertical" ? a.y - b.y : a.x - b.x);
+    if (nodes.length < 3) return false;
+    const before = this.getGraph();
+    const start = axis === "vertical" ? nodes[0].y : nodes[0].x;
+    const end = axis === "vertical" ? nodes.at(-1).y : nodes.at(-1).x;
+    const gap = (end - start) / (nodes.length - 1);
+    nodes.forEach((node, index) => this.#graph.moveNode(
+      node.id,
+      axis === "vertical" ? node.x : start + gap * index,
+      axis === "vertical" ? start + gap * index : node.y,
+    ));
+    this.#render();
+    this.#graphChanged("node-distribute", { nodes: this.selectedNodes, axis });
+    this.#recordHistory(`Distribute nodes ${axis}`, before);
+    return true;
+  }
+
+  groupSelection(groupId = `group-${Date.now().toString(36)}`) {
+    if (!this.#selectedNodes.size) return null;
+    const before = this.getGraph();
+    const nodes = this.#graph.groupNodes(this.#selectedNodes, groupId);
+    this.#render();
+    this.#graphChanged("node-group", { groupId, nodes: this.selectedNodes });
+    this.#recordHistory("Group nodes", before);
+    return { id: groupId, nodes };
+  }
+
+  ungroupSelection() {
+    if (!this.#selectedNodes.size) return false;
+    const before = this.getGraph();
+    this.#graph.groupNodes(this.#selectedNodes, null);
+    this.#render();
+    this.#graphChanged("node-ungroup", { nodes: this.selectedNodes });
+    this.#recordHistory("Ungroup nodes", before);
+    return true;
+  }
+
+  addComment(comment = {}) {
+    const id = comment.id ?? `comment-${Date.now().toString(36)}`;
+    return this.addNode({
+      id,
+      title: comment.title ?? "Comment",
+      type: "comment",
+      description: comment.text ?? comment.description ?? "",
+      color: comment.color ?? "#f59e0b",
+      width: comment.width ?? 240,
+      x: comment.x ?? 0,
+      y: comment.y ?? 0,
+      inputs: [],
+      outputs: [],
+      data: comment.data ?? {},
+    });
+  }
+
+  setNodeCollapsed(id, collapsed = true) {
+    const node = this.#graph.getNode(id);
+    if (!node) return false;
+    this.updateNode(id, { collapsed: Boolean(collapsed) });
+    dispatch(this, "gui:node-collapse", { id: node.id, collapsed: Boolean(collapsed) });
+    return true;
+  }
+
+  toggleBreakpoint(id, force) {
+    if (!this.#graph.getNode(id)) return false;
+    const enabled = force ?? !this.#breakpoints.has(String(id));
+    if (enabled) this.#breakpoints.add(String(id));
+    else this.#breakpoints.delete(String(id));
+    this.#syncExecution();
+    dispatch(this, "gui:node-breakpoint", { id: String(id), enabled });
+    return enabled;
+  }
+
+  setExecutionState(id, state = "idle", detail = {}) {
+    if (!this.#graph.getNode(id)) return false;
+    const normalized = ["idle", "queued", "running", "success", "error", "paused"].includes(state)
+      ? state
+      : "idle";
+    if (normalized === "idle") this.#execution.delete(String(id));
+    else this.#execution.set(String(id), { state: normalized, detail: clone(detail), updatedAt: Date.now() });
+    this.#syncExecution();
+    dispatch(this, "gui:node-execution", {
+      id: String(id),
+      state: normalized,
+      detail: clone(detail),
+    });
+    return true;
+  }
+
+  setLinkPoints(id, points = []) {
+    const before = this.getGraph();
+    const link = this.#graph.setLinkPoints(id, points);
+    this.#renderConnections();
+    this.#graphChanged("link-route", { link });
+    this.#recordHistory("Route connection", before);
+    return link;
+  }
+
+  validateGraph(options = {}) {
+    const result = this.#graph.validate(options);
+    dispatch(this, "gui:graph-validation", result);
+    return result;
+  }
+
+  async copySelection(options = {}) {
+    const graph = this.#graph.extract(this.#selectedNodes);
+    if (!graph.nodes.length || !this.#clipboard) return false;
+    await this.#clipboard.write("application/x-guikit-node-graph", graph, options);
+    dispatch(this, "gui:node-copy", { nodes: graph.nodes.map((node) => node.id) });
+    return true;
+  }
+
+  async cutSelection(options = {}) {
+    if (!await this.copySelection(options)) return false;
+    const before = this.getGraph();
+    for (const id of [...this.#selectedNodes]) this.#graph.removeNode(id);
+    this.#selectedNodes.clear();
+    this.#render();
+    this.#graphChanged("node-cut");
+    this.#recordHistory("Cut nodes", before);
+    return true;
+  }
+
+  async paste(options = {}) {
+    if (!this.#clipboard) return null;
+    const payload = await this.#clipboard.read("application/x-guikit-node-graph", options);
+    if (!payload) return null;
+    const temporary = new GuiNodeGraph(payload);
+    const before = this.getGraph();
+    const inserted = [];
+    const portIds = new Map();
+    for (const node of temporary.nodes) {
+      let id = `${node.id}-copy`;
+      let sequence = 2;
+      while (this.#graph.getNode(id)) id = `${node.id}-copy-${sequence++}`;
+      const remap = (ports) => ports.map((port) => {
+        const next = `${id}:${port.id.split(":").at(-1)}`;
+        portIds.set(port.id, next);
+        return { ...port, id: next };
+      });
+      inserted.push(this.#graph.addNode({
+        ...node,
+        id,
+        title: options.keepTitles ? node.title : `${node.title} copy`,
+        x: node.x + finite(options.x, 32),
+        y: node.y + finite(options.y, 32),
+        inputs: remap(node.inputs),
+        outputs: remap(node.outputs),
+      }));
+    }
+    for (const link of temporary.links) {
+      this.#graph.connect(portIds.get(link.from), portIds.get(link.to), {
+        ...link,
+        id: undefined,
+      });
+    }
+    this.#selectedNodes = new Set(inserted.map((node) => node.id));
+    this.#render();
+    this.#graphChanged("node-paste", { nodes: this.selectedNodes });
+    this.#recordHistory("Paste nodes", before);
+    return inserted;
+  }
+
+  duplicateSelection(options = {}) {
+    if (!this.#selectedNodes.size) return null;
+    const before = this.getGraph();
+    const result = this.#graph.duplicate(this.#selectedNodes, options);
+    this.#selectedNodes = new Set(result.nodes.map((node) => node.id));
+    this.#render();
+    this.#graphChanged("node-duplicate", { nodes: this.selectedNodes });
+    this.#recordHistory("Duplicate nodes", before);
+    return result;
+  }
+
   get minZoom() {
     return Math.max(0.05, finite(this.getAttribute("min-zoom") ?? 0.25, 0.25));
   }
@@ -1143,11 +1718,31 @@ export class GuiNodeEditor extends GuiElement {
     toolbar.className = "toolbar";
     toolbar.setAttribute("role", "toolbar");
     toolbar.setAttribute("aria-label", "Node editor view controls");
+    this.#subgraphButton = this.#toolbarButton("←", "Exit subgraph", () => this.exitSubgraph());
+    this.#subgraphButton.hidden = true;
     toolbar.append(
+      this.#subgraphButton,
       this.#toolbarButton("−", "Zoom out", () => this.#zoomAroundCenter(0.85)),
       this.#toolbarButton("+", "Zoom in", () => this.#zoomAroundCenter(1.18)),
       this.#toolbarButton("⌗", "Fit nodes", () => this.zoomToFit()),
+      this.#toolbarButton("⇢", "Auto-layout nodes", () => this.autoLayout()),
+      this.#toolbarButton("✓", "Validate graph", () => this.validateGraph()),
     );
+    this.#searchInput = document.createElement("input");
+    this.#searchInput.className = "node-search";
+    this.#searchInput.type = "search";
+    this.#searchInput.placeholder = "Find nodes";
+    this.#searchInput.setAttribute("aria-label", "Find nodes");
+    this.#searchInput.addEventListener("pointerdown", (event) => event.stopPropagation());
+    this.#searchInput.addEventListener("keydown", (event) => {
+      event.stopPropagation();
+      if (event.key === "Enter") this.findNodes(this.#searchInput.value, { select: true });
+      if (event.key === "Escape") {
+        this.#searchInput.value = "";
+        this.#viewport.focus();
+      }
+    });
+    toolbar.append(this.#searchInput);
     this.#zoomLabel = document.createElement("span");
     this.#zoomLabel.className = "zoom-label";
     toolbar.append(this.#zoomLabel);
@@ -1155,9 +1750,40 @@ export class GuiNodeEditor extends GuiElement {
     const help = document.createElement("div");
     help.className = "help";
     help.textContent =
-      "Drag to pan · Wheel to zoom · Double-click empty space to create or a wire to delete";
+      "Drag to pan · Shift-drag to select · Wheel to zoom · Double-click empty space to create or a wire to delete";
 
-    this.#viewport.append(this.#world, toolbar, help);
+    this.#minimap = document.createElement("canvas");
+    this.#minimap.className = "minimap";
+    this.#minimap.width = 180;
+    this.#minimap.height = 110;
+    this.#minimap.setAttribute("aria-label", "Node graph minimap");
+    this.#minimap.addEventListener("pointerdown", (event) => {
+      event.stopPropagation();
+      const rect = this.#minimap.getBoundingClientRect();
+      this.#centerFromMinimap(
+        (event.clientX - rect.left) / rect.width,
+        (event.clientY - rect.top) / rect.height,
+      );
+    });
+    this.#selectionBox = document.createElement("div");
+    this.#selectionBox.className = "selection-box";
+    this.#selectionBox.hidden = true;
+    this.#guideX = document.createElement("div");
+    this.#guideX.className = "alignment-guide alignment-guide--x";
+    this.#guideX.hidden = true;
+    this.#guideY = document.createElement("div");
+    this.#guideY.className = "alignment-guide alignment-guide--y";
+    this.#guideY.hidden = true;
+
+    this.#viewport.append(
+      this.#world,
+      this.#selectionBox,
+      this.#guideX,
+      this.#guideY,
+      toolbar,
+      this.#minimap,
+      help,
+    );
     this.#settingsDialog = this.#createSettingsDialog();
     root.append(style, this.#viewport, this.#settingsDialog);
 
@@ -1500,6 +2126,13 @@ export class GuiNodeEditor extends GuiElement {
     this.#portElements.clear();
     this.#parameterElements.clear();
     this.#nodeLayer.replaceChildren();
+    if (this.#subgraphButton) {
+      this.#subgraphButton.hidden = this.#graphStack.length === 0;
+      this.#subgraphButton.title = this.#graphStack.length
+        ? `Exit ${this.#graphStack.at(-1).title}`
+        : "";
+    }
+    this.#renderGroups();
     for (const node of this.#graph.nodes) {
       const element = this.#createNodeElement(node);
       this.#nodeElements.set(node.id, element);
@@ -1508,7 +2141,9 @@ export class GuiNodeEditor extends GuiElement {
     this.#applyView();
     this.#syncSelection();
     this.#syncParameterReadOnly();
+    this.#syncExecution();
     this.#scheduleConnections();
+    this.#renderMinimap();
   }
 
   #createNodeElement(node) {
@@ -1516,6 +2151,10 @@ export class GuiNodeEditor extends GuiElement {
     element.className = "node";
     element.dataset.nodeId = node.id;
     element.dataset.nodeType = node.type;
+    element.dataset.collapsed = String(Boolean(node.collapsed));
+    element.dataset.execution = this.#execution.get(node.id)?.state ?? "idle";
+    element.dataset.breakpoint = String(this.#breakpoints.has(node.id));
+    element.dataset.subgraph = String(Boolean(node.subgraph));
     element.tabIndex = 0;
     element.setAttribute("aria-label", `${node.title} node`);
     element.style.width = `${node.width}px`;
@@ -1540,9 +2179,27 @@ export class GuiNodeEditor extends GuiElement {
       this.selectNode(node.id);
       this.#showNodeSettings(node.id, settings);
     });
+    const collapse = this.#settingsIconButton(
+      node.collapsed ? `Expand ${node.title}` : `Collapse ${node.title}`,
+      node.collapsed ? "M6 9l6 6 6-6" : "M6 15l6-6 6 6",
+    );
+    collapse.className = "node-collapse-trigger";
+    collapse.addEventListener("pointerdown", (event) => event.stopPropagation());
+    collapse.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.setNodeCollapsed(node.id, !node.collapsed);
+    });
     const actions = document.createElement("div");
     actions.className = "node-header-actions";
-    actions.append(type, settings);
+    actions.append(type);
+    if (node.subgraph) {
+      const nested = document.createElement("span");
+      nested.className = "node-subgraph-indicator";
+      nested.title = "Double-click to open subgraph";
+      nested.textContent = "↳";
+      actions.append(nested);
+    }
+    actions.append(collapse, settings);
     header.append(title, actions);
 
     const body = document.createElement("div");
@@ -1575,6 +2232,36 @@ export class GuiNodeEditor extends GuiElement {
     element.addEventListener("focus", () => this.selectNode(node.id));
     element.addEventListener("animationend", this.#scheduleConnections, { once: true });
     return element;
+  }
+
+  #renderGroups() {
+    const groups = new Map();
+    for (const node of this.#graph.nodes) {
+      if (!node.groupId) continue;
+      const entries = groups.get(node.groupId) ?? [];
+      entries.push(node);
+      groups.set(node.groupId, entries);
+    }
+    for (const [id, nodes] of groups) {
+      const frame = document.createElement("section");
+      frame.className = "node-group";
+      frame.dataset.groupId = id;
+      const padding = 28;
+      const left = Math.min(...nodes.map((node) => node.x)) - padding;
+      const top = Math.min(...nodes.map((node) => node.y)) - padding - 22;
+      const right = Math.max(...nodes.map((node) => node.x + node.width)) + padding;
+      const bottom = Math.max(...nodes.map((node) => {
+        const element = this.#nodeElements.get(node.id);
+        return node.y + (element?.offsetHeight ?? 180);
+      })) + padding;
+      frame.style.transform = `translate(${left}px, ${top}px)`;
+      frame.style.width = `${right - left}px`;
+      frame.style.height = `${bottom - top}px`;
+      const label = document.createElement("strong");
+      label.textContent = id;
+      frame.append(label);
+      this.#nodeLayer.append(frame);
+    }
   }
 
   #createPortElement(port, nodeId) {
@@ -1756,7 +2443,9 @@ export class GuiNodeEditor extends GuiElement {
       const from = this.#portCenter(link.from);
       const to = this.#portCenter(link.to);
       if (!from || !to) continue;
-      const pathData = this.#connectionPath(from, to, link.from, link.to);
+      const pathData = link.points?.length
+        ? routingPath([from, ...link.points.map(normalizeRoutingPoint), to], 10)
+        : this.#connectionPath(from, to, link.from, link.to);
       const visible = document.createElementNS("http://www.w3.org/2000/svg", "path");
       visible.classList.add("link");
       visible.dataset.linkId = link.id;
@@ -1792,6 +2481,7 @@ export class GuiNodeEditor extends GuiElement {
         this.#linkLayer.append(preview);
       }
     }
+    this.#renderMinimap();
   }
 
   #scheduleConnections = () => {
@@ -1889,6 +2579,7 @@ export class GuiNodeEditor extends GuiElement {
     this.#viewport.style.setProperty("--grid-y", `${this.#view.y % grid}px`);
     this.#zoomLabel.textContent = `${Math.round(this.#view.zoom * 100)}%`;
     this.#scheduleConnections();
+    this.#renderMinimap();
   }
 
   #syncSelection() {
@@ -1957,6 +2648,7 @@ export class GuiNodeEditor extends GuiElement {
           type: "node",
           pointerId: event.pointerId,
           nodeId: model.id,
+          historyBefore: this.getGraph(),
           startX: event.clientX,
           startY: event.clientY,
           nodeX: model.x,
@@ -1971,6 +2663,25 @@ export class GuiNodeEditor extends GuiElement {
 
     if (event.button === 0 || event.button === 1) {
       event.preventDefault();
+      if (event.shiftKey && event.button === 0) {
+        if (!event.ctrlKey && !event.metaKey) this.clearSelection();
+        const bounds = this.#viewport.getBoundingClientRect();
+        this.#interaction = {
+          type: "box",
+          pointerId: event.pointerId,
+          startX: event.clientX - bounds.left,
+          startY: event.clientY - bounds.top,
+          currentX: event.clientX - bounds.left,
+          currentY: event.clientY - bounds.top,
+          additive: event.ctrlKey || event.metaKey,
+          initial: new Set(this.#selectedNodes),
+        };
+        this.#selectionBox.hidden = false;
+        this.#viewport.setPointerCapture(event.pointerId);
+        this.dataset.interaction = "box";
+        this.#updateSelectionBox();
+        return;
+      }
       this.clearSelection();
       this.#interaction = {
         type: "pan",
@@ -2001,10 +2712,16 @@ export class GuiNodeEditor extends GuiElement {
         x = Math.round(x / this.snapSize) * this.snapSize;
         y = Math.round(y / this.snapSize) * this.snapSize;
       }
+      ({ x, y } = this.#applyAlignmentGuides(this.#interaction.nodeId, x, y));
       this.#graph.moveNode(this.#interaction.nodeId, x, y);
       const element = this.#nodeElements.get(this.#interaction.nodeId);
       element.style.transform = `translate(${x}px, ${y}px)`;
       this.#scheduleConnections();
+    } else if (this.#interaction.type === "box") {
+      const bounds = this.#viewport.getBoundingClientRect();
+      this.#interaction.currentX = event.clientX - bounds.left;
+      this.#interaction.currentY = event.clientY - bounds.top;
+      this.#updateSelectionBox();
     } else if (this.#interaction.type === "link") {
       this.#interaction.current = this.#clientToWorld(event.clientX, event.clientY);
       this.#renderConnections();
@@ -2018,6 +2735,7 @@ export class GuiNodeEditor extends GuiElement {
       this.#viewport.releasePointerCapture(event.pointerId);
     }
     delete this.dataset.interaction;
+    this.#hideAlignmentGuides();
 
     if (interaction.type === "node") {
       const element = this.#nodeElements.get(interaction.nodeId);
@@ -2025,6 +2743,10 @@ export class GuiNodeEditor extends GuiElement {
       const node = this.#graph.getNode(interaction.nodeId);
       dispatch(this, "gui:node-move", { node });
       this.#graphChanged("node-move", { node });
+      this.#recordHistory(`Move ${node.title}`, interaction.historyBefore);
+    } else if (interaction.type === "box") {
+      this.#selectionBox.hidden = true;
+      dispatch(this, "gui:node-select", { nodes: this.selectedNodes, link: null });
     } else if (interaction.type === "link") {
       const target = this.shadowRoot
         .elementFromPoint(event.clientX, event.clientY)
@@ -2063,6 +2785,12 @@ export class GuiNodeEditor extends GuiElement {
       }
       return;
     }
+    const nodeElement = event.target.closest(".node");
+    if (nodeElement && this.#graph.getSubgraph(nodeElement.dataset.nodeId)) {
+      event.preventDefault();
+      this.enterSubgraph(nodeElement.dataset.nodeId);
+      return;
+    }
     if (this.readOnly || event.target.closest(".node, .toolbar")) return;
     dispatch(this, "gui:node-create-request", {
       position: this.#clientToWorld(event.clientX, event.clientY),
@@ -2082,6 +2810,42 @@ export class GuiNodeEditor extends GuiElement {
       dispatch(this, "gui:node-select", { nodes: this.selectedNodes, link: null });
       return;
     }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "c") {
+      event.preventDefault();
+      void this.copySelection();
+      return;
+    }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "x" && !this.readOnly) {
+      event.preventDefault();
+      void this.cutSelection();
+      return;
+    }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "v" && !this.readOnly) {
+      event.preventDefault();
+      void this.paste();
+      return;
+    }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "d" && !this.readOnly) {
+      event.preventDefault();
+      this.duplicateSelection();
+      return;
+    }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "g" && !this.readOnly) {
+      event.preventDefault();
+      if (event.shiftKey) this.ungroupSelection();
+      else this.groupSelection();
+      return;
+    }
+    if (event.key === "/" && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      event.preventDefault();
+      this.#searchInput?.focus();
+      return;
+    }
+    if (event.key === "F9" && this.#selectedNodes.size === 1) {
+      event.preventDefault();
+      this.toggleBreakpoint(this.selectedNodes[0]);
+      return;
+    }
     if (this.readOnly) return;
     if (["Delete", "Backspace"].includes(event.key)) {
       event.preventDefault();
@@ -2094,6 +2858,7 @@ export class GuiNodeEditor extends GuiElement {
     if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
     if (!this.#selectedNodes.size) return;
     event.preventDefault();
+    const historyBefore = this.getGraph();
     const amount = (this.snapSize || 1) * (event.shiftKey ? 10 : 1);
     const delta = {
       ArrowLeft: [-amount, 0],
@@ -2109,7 +2874,165 @@ export class GuiNodeEditor extends GuiElement {
     }
     this.#scheduleConnections();
     this.#graphChanged("node-move", { nodes: this.selectedNodes });
+    this.#recordHistory("Move nodes", historyBefore);
   };
+
+  #updateSelectionBox() {
+    const interaction = this.#interaction;
+    if (!interaction || interaction.type !== "box" || !this.#selectionBox) return;
+    const left = Math.min(interaction.startX, interaction.currentX);
+    const top = Math.min(interaction.startY, interaction.currentY);
+    const right = Math.max(interaction.startX, interaction.currentX);
+    const bottom = Math.max(interaction.startY, interaction.currentY);
+    this.#selectionBox.style.left = `${left}px`;
+    this.#selectionBox.style.top = `${top}px`;
+    this.#selectionBox.style.width = `${right - left}px`;
+    this.#selectionBox.style.height = `${bottom - top}px`;
+    const viewport = this.#viewport.getBoundingClientRect();
+    const selected = interaction.additive ? new Set(interaction.initial) : new Set();
+    this.#nodeElements.forEach((element, id) => {
+      const rect = element.getBoundingClientRect();
+      const local = {
+        left: rect.left - viewport.left,
+        top: rect.top - viewport.top,
+        right: rect.right - viewport.left,
+        bottom: rect.bottom - viewport.top,
+      };
+      if (local.right >= left && local.left <= right && local.bottom >= top && local.top <= bottom) {
+        selected.add(id);
+      }
+    });
+    this.#selectedNodes = selected;
+    this.#selectedLink = null;
+    this.#syncSelection();
+  }
+
+  #applyAlignmentGuides(nodeId, x, y) {
+    const threshold = 6 / this.#view.zoom;
+    let alignedX = x;
+    let alignedY = y;
+    let guideX = null;
+    let guideY = null;
+    for (const node of this.#graph.nodes) {
+      if (node.id === nodeId) continue;
+      if (guideX == null && Math.abs(node.x - x) <= threshold) {
+        alignedX = node.x;
+        guideX = node.x;
+      }
+      if (guideY == null && Math.abs(node.y - y) <= threshold) {
+        alignedY = node.y;
+        guideY = node.y;
+      }
+    }
+    if (this.#guideX) {
+      this.#guideX.hidden = guideX == null;
+      if (guideX != null) this.#guideX.style.left = `${this.#view.x + guideX * this.#view.zoom}px`;
+    }
+    if (this.#guideY) {
+      this.#guideY.hidden = guideY == null;
+      if (guideY != null) this.#guideY.style.top = `${this.#view.y + guideY * this.#view.zoom}px`;
+    }
+    return { x: alignedX, y: alignedY };
+  }
+
+  #hideAlignmentGuides() {
+    if (this.#guideX) this.#guideX.hidden = true;
+    if (this.#guideY) this.#guideY.hidden = true;
+  }
+
+  #syncExecution() {
+    this.#nodeElements.forEach((element, id) => {
+      element.dataset.execution = this.#execution.get(id)?.state ?? "idle";
+      element.dataset.breakpoint = String(this.#breakpoints.has(id));
+    });
+  }
+
+  #renderMinimap() {
+    if (!this.#minimap) return;
+    const context = this.#minimap.getContext("2d");
+    if (!context) return;
+    const width = this.#minimap.width;
+    const height = this.#minimap.height;
+    context.clearRect(0, 0, width, height);
+    context.fillStyle = getComputedStyle(this).getPropertyValue("--gui-surface").trim() || "#111827";
+    context.fillRect(0, 0, width, height);
+    const nodes = this.#graph.nodes;
+    if (!nodes.length) return;
+    const padding = 8;
+    const left = Math.min(...nodes.map((node) => node.x));
+    const top = Math.min(...nodes.map((node) => node.y));
+    const right = Math.max(...nodes.map((node) => node.x + node.width));
+    const bottom = Math.max(...nodes.map((node) => (
+      node.y + (this.#nodeElements.get(node.id)?.offsetHeight ?? 160)
+    )));
+    const graphWidth = Math.max(1, right - left);
+    const graphHeight = Math.max(1, bottom - top);
+    const scale = Math.min((width - padding * 2) / graphWidth, (height - padding * 2) / graphHeight);
+    this.#minimap.dataset.left = String(left);
+    this.#minimap.dataset.top = String(top);
+    this.#minimap.dataset.width = String(graphWidth);
+    this.#minimap.dataset.height = String(graphHeight);
+    nodes.forEach((node) => {
+      const execution = this.#execution.get(node.id)?.state;
+      context.fillStyle = execution === "error"
+        ? "#ef4444"
+        : execution === "running"
+          ? "#22c55e"
+          : (node.color || "#64748b");
+      context.fillRect(
+        padding + (node.x - left) * scale,
+        padding + (node.y - top) * scale,
+        Math.max(3, node.width * scale),
+        Math.max(3, (this.#nodeElements.get(node.id)?.offsetHeight ?? 160) * scale),
+      );
+    });
+    const viewport = this.#viewport.getBoundingClientRect();
+    const viewLeft = -this.#view.x / this.#view.zoom;
+    const viewTop = -this.#view.y / this.#view.zoom;
+    context.strokeStyle = "#ffffff";
+    context.lineWidth = 1.5;
+    context.strokeRect(
+      padding + (viewLeft - left) * scale,
+      padding + (viewTop - top) * scale,
+      viewport.width / this.#view.zoom * scale,
+      viewport.height / this.#view.zoom * scale,
+    );
+  }
+
+  #centerFromMinimap(relativeX, relativeY) {
+    const left = Number(this.#minimap.dataset.left);
+    const top = Number(this.#minimap.dataset.top);
+    const width = Number(this.#minimap.dataset.width);
+    const height = Number(this.#minimap.dataset.height);
+    if (![left, top, width, height].every(Number.isFinite)) return;
+    const viewport = this.#viewport.getBoundingClientRect();
+    const worldX = left + relativeX * width;
+    const worldY = top + relativeY * height;
+    this.setView({
+      x: viewport.width / 2 - worldX * this.#view.zoom,
+      y: viewport.height / 2 - worldY * this.#view.zoom,
+    });
+  }
+
+  #recordHistory(label, before) {
+    if (!this.#history?.record || this.#restoringHistory) return;
+    const after = this.getGraph();
+    if (JSON.stringify(before) === JSON.stringify(after)) return;
+    const restore = (snapshot) => {
+      this.#restoringHistory = true;
+      try {
+        this.setGraph(snapshot);
+      } finally {
+        this.#restoringHistory = false;
+      }
+    };
+    this.#history.record({
+      label,
+      data: { before, after },
+      undo: () => restore(before),
+      redo: () => restore(after),
+    });
+  }
 
   #graphChanged(operation, detail = {}) {
     dispatch(this, "gui:graph-change", {
@@ -2122,8 +3045,8 @@ export class GuiNodeEditor extends GuiElement {
 
 export const nodeEditorModule = Object.freeze({
   id: "node-editor",
-  version: "0.3.0",
-  description: "Directional node graph editor with obstacle-aware links and serialization.",
+  version: "0.4.0",
+  description: "Typed visual graph editor with routing, editing tools, validation, and execution state.",
   dependencies: ["core"],
   components: ["gui-node-editor"],
   setup() {
@@ -2301,7 +3224,13 @@ const NODE_EDITOR_STYLES = `
     text-transform: uppercase;
   }
 
-  .node-settings-trigger {
+  .node-subgraph-indicator {
+    color: var(--node-color);
+    font-weight: 800;
+  }
+
+  .node-settings-trigger,
+  .node-collapse-trigger {
     display: grid;
     width: 1.7rem;
     height: 1.7rem;
@@ -2317,19 +3246,24 @@ const NODE_EDITOR_STYLES = `
   }
 
   .node-settings-trigger:hover,
-  .node-settings-trigger:focus-visible {
+  .node-settings-trigger:focus-visible,
+  .node-collapse-trigger:hover,
+  .node-collapse-trigger:focus-visible {
     background: color-mix(in srgb, var(--node-color) 14%, transparent);
     color: var(--node-color);
     opacity: 1;
   }
 
-  .node-settings-trigger:active { transform: scale(.92); }
-  .node-settings-trigger:focus-visible {
+  .node-settings-trigger:active,
+  .node-collapse-trigger:active { transform: scale(.92); }
+  .node-settings-trigger:focus-visible,
+  .node-collapse-trigger:focus-visible {
     outline: 2px solid var(--gui-focus, rgb(91 92 226 / .35));
     outline-offset: 1px;
   }
 
   .node-settings-trigger svg,
+  .node-collapse-trigger svg,
   .node-settings-close svg {
     width: 1rem;
     height: 1rem;
@@ -2346,6 +3280,47 @@ const NODE_EDITOR_STYLES = `
     gap: .65rem;
     min-height: 3rem;
     padding: .65rem 0;
+  }
+
+  .node[data-collapsed="true"] .node-body { display: none; }
+  .node[data-collapsed="true"] .node-header { border-bottom: 0; border-radius: .8rem; }
+  .node[data-node-type="comment"] {
+    --node-color: #f59e0b;
+    min-height: 6rem;
+    background: color-mix(in srgb, #f59e0b 12%, var(--gui-surface, white));
+  }
+  .node[data-node-type="comment"] .port-list { display: none; }
+  .node[data-execution="running"] {
+    box-shadow: 0 0 0 3px color-mix(in srgb, #22c55e 40%, transparent), 0 18px 42px rgb(18 23 38 / .2);
+  }
+  .node[data-execution="error"] { border-color: #ef4444; }
+  .node[data-execution="paused"] { border-color: #f59e0b; }
+  .node[data-breakpoint="true"]::before {
+    content: "";
+    position: absolute;
+    z-index: 2;
+    top: -.35rem;
+    left: -.35rem;
+    width: .7rem;
+    height: .7rem;
+    border: 2px solid var(--gui-surface, white);
+    border-radius: 50%;
+    background: #ef4444;
+  }
+
+  .node-group {
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    border: 1px dashed color-mix(in srgb, var(--gui-accent, #5b5ce2) 55%, transparent);
+    border-radius: 1rem;
+    background: color-mix(in srgb, var(--gui-accent, #5b5ce2) 5%, transparent);
+  }
+  .node-group strong {
+    display: block;
+    padding: .35rem .6rem;
+    color: var(--gui-text-muted, #666b78);
+    font: 700 .72rem/1 var(--gui-font, ui-sans-serif, system-ui);
   }
 
   .port-list {
@@ -2828,6 +3803,22 @@ const NODE_EDITOR_STYLES = `
   }
 
   .toolbar button:hover { background: var(--gui-accent-soft, #ededff); }
+  .toolbar button[hidden] { display: none; }
+  .node-search {
+    width: clamp(7rem, 16vw, 12rem);
+    height: 1.9rem;
+    margin-inline-start: .2rem;
+    padding: 0 .55rem;
+    border: 1px solid var(--gui-border, #dfe2ea);
+    border-radius: .45rem;
+    background: var(--gui-surface, white);
+    color: var(--gui-text, #17181c);
+    font: 600 .72rem/1 var(--gui-font, ui-sans-serif, system-ui);
+  }
+  .node-search:focus {
+    outline: 2px solid var(--gui-focus, rgb(91 92 226 / .35));
+    outline-offset: 1px;
+  }
   .zoom-label {
     min-width: 2.7rem;
     color: var(--gui-text-muted, #666b78);
@@ -2844,6 +3835,47 @@ const NODE_EDITOR_STYLES = `
     opacity: .72;
     pointer-events: none;
   }
+
+  .minimap {
+    position: absolute;
+    z-index: 9;
+    left: .75rem;
+    bottom: .75rem;
+    width: 11.25rem;
+    height: 6.875rem;
+    border: 1px solid var(--gui-border, #dfe2ea);
+    border-radius: .55rem;
+    background: var(--gui-surface, white);
+    box-shadow: var(--gui-shadow-sm, 0 1px 2px rgb(18 23 38 / .08));
+    cursor: crosshair;
+    opacity: .9;
+  }
+
+  .selection-box {
+    position: absolute;
+    z-index: 8;
+    border: 1px solid var(--gui-accent, #5b5ce2);
+    background: color-mix(in srgb, var(--gui-accent, #5b5ce2) 14%, transparent);
+    pointer-events: none;
+  }
+  .selection-box[hidden] { display: none; }
+
+  .alignment-guide {
+    position: absolute;
+    z-index: 8;
+    pointer-events: none;
+    background: color-mix(in srgb, var(--gui-accent, #5b5ce2) 78%, white);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--gui-accent, #5b5ce2) 20%, transparent);
+  }
+  .alignment-guide--x {
+    inset-block: 0;
+    width: 1px;
+  }
+  .alignment-guide--y {
+    inset-inline: 0;
+    height: 1px;
+  }
+  .alignment-guide[hidden] { display: none; }
 
   @keyframes node-arrive {
     from { opacity: 0; scale: .96; }
