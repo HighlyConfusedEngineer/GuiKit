@@ -230,7 +230,8 @@ supported. Each node also includes a settings icon for editing its name, type,
 description, accent, and JSON data. Cancel `gui:node-settings-request` to
 provide a custom domain-specific inspector instead. Set `flow-direction` to
 `horizontal` or `vertical`; ports and obstacle-aware rounded links follow the
-selected direction and route around intervening node surfaces.
+selected direction, route around node surfaces, and remain visible on a
+dedicated foreground connection layer.
 See [the node-editor guide](docs/NODE_EDITOR.md).
 
 ### Wizard

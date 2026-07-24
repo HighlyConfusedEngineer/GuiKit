@@ -175,7 +175,7 @@ export class GuiNodeEditor extends HTMLElement {
 
 export const nodeEditorModule: {
   readonly id: "node-editor";
-  readonly version: "0.2.0";
+  readonly version: "0.2.1";
   readonly description: string;
   readonly dependencies: readonly ["core"];
   readonly components: readonly ["gui-node-editor"];

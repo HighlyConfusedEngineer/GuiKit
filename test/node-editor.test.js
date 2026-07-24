@@ -42,7 +42,7 @@ test("node editor module exposes its model, component, and manifest", () => {
   assert.equal(typeof routeNodeConnection, "function");
   assert.equal(bundledRouteNodeConnection, routeNodeConnection);
   assert.equal(nodeEditorModule.id, "node-editor");
-  assert.equal(nodeEditorModule.version, "0.2.0");
+  assert.equal(nodeEditorModule.version, "0.2.1");
   assert.deepEqual(nodeEditorModule.components, ["gui-node-editor"]);
 });
 
@@ -75,6 +75,8 @@ test("node editor registers only after its browser resources initialize", async 
   assert.ok(automaticRegistration > styles);
   assert.match(source, /if \(!this\.#viewport\) return;/);
   assert.match(source, /static observedAttributes = \["readonly", "label", "flow-direction"\]/);
+  assert.match(source, /\.links \{\s+z-index: 2;/);
+  assert.match(source, /\.nodes \{\s+z-index: 1;/);
 });
 
 function segmentIntersectsRectangle(first, second, rectangle) {
@@ -130,6 +132,21 @@ test("vertical routes leave downward and avoid intervening nodes", () => {
   assert.equal(routeIntersectsRectangle(route, rectangle), false);
   assert.match(route.path, /^M /);
   assert.match(route.path, / Q /);
+});
+
+test("backward links route outside both endpoint node surfaces", () => {
+  const source = { left: 0, top: 40, right: 220, bottom: 220 };
+  const target = { left: 400, top: 300, right: 620, bottom: 460 };
+  const route = routeNodeConnection(
+    { x: 220, y: 140 },
+    { x: 400, y: 380 },
+    { obstacles: [source, target] },
+  );
+
+  assert.equal(route.routed, true);
+  assert.equal(routeIntersectsRectangle(route, source), false);
+  assert.equal(routeIntersectsRectangle(route, target), false);
+  assert.equal(route.points.some((point) => point.x > source.right), true);
 });
 
 test("graph connects compatible output and input ports", () => {

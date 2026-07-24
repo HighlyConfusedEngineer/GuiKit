@@ -163,10 +163,14 @@ or auto-layout node positions.
 ## Link routing
 
 Connections use rounded orthogonal routing. The editor measures every visible
-node, expands each intervening rectangle by a clearance margin, and finds the
-shortest available horizontal/vertical channel. Endpoint nodes are excluded so
-the link can leave its output and enter its input cleanly. This prevents links
-from being painted underneath unrelated nodes.
+node, expands its rectangle by a clearance margin, and finds the shortest
+available horizontal/vertical channel. Endpoint cards participate once their
+port stub reaches the exterior, which keeps backward and loop-like layouts from
+crossing their own nodes.
+
+The SVG connection layer is painted above node surfaces. Combined with obstacle
+routing, this ensures a wire cannot disappear beneath a card while ports remain
+clear connection anchors.
 
 Horizontal flow places inputs on the left and outputs on the right. Vertical
 flow places inputs at the top and outputs at the bottom. Drag previews use the

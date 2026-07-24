@@ -8,7 +8,7 @@ It supports:
 - draggable and keyboard-movable nodes;
 - typed input and output ports;
 - horizontal or vertical flow with direction-aware port placement;
-- rounded orthogonal links routed around intervening nodes;
+- foreground rounded orthogonal links routed around node surfaces;
 - click and keyboard selection;
 - Delete/Backspace removal;
 - pan, zoom, grid snapping, and fit-to-view;

@@ -10,6 +10,8 @@ All notable changes to GuiKit are documented here. The format follows
 
 - Horizontal/vertical node-editor flow and obstacle-aware rounded link routing
   so connections remain visible around intervening nodes.
+- Fixed the node-editor connection layer to paint above node cards and route
+  backward links around their endpoint surfaces.
 - Reusable `<gui-wizard>` and DOM-independent `GuiWizardModel` with linear or
   free navigation, native and asynchronous validation, optional steps,
   resumable state, cancelable lifecycle events, focus management, and

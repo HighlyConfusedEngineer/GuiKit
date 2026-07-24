@@ -1635,12 +1635,21 @@ export class GuiNodeEditor extends GuiElement {
   }
 
   #connectionPath(from, to, fromPortId = null, toPortId = null) {
-    const excludedNodeIds = new Set(
-      [fromPortId, toPortId]
-        .filter(Boolean)
-        .map((portId) => this.#graph.getPort(portId)?.nodeId)
-        .filter(Boolean),
-    );
+    const clearance = 18;
+    const stub = 26;
+    const direction = this.flowDirection;
+    const fromNodeId = fromPortId
+      ? this.#graph.getPort(fromPortId)?.nodeId
+      : null;
+    const toNodeId = toPortId
+      ? this.#graph.getPort(toPortId)?.nodeId
+      : null;
+    const fromExit = direction === "vertical"
+      ? { x: from.x, y: from.y + stub }
+      : { x: from.x + stub, y: from.y };
+    const toExit = direction === "vertical"
+      ? { x: to.x, y: to.y - stub }
+      : { x: to.x - stub, y: to.y };
     const routingMargin = 180;
     const corridor = {
       left: Math.min(from.x, to.x) - routingMargin,
@@ -1649,15 +1658,27 @@ export class GuiNodeEditor extends GuiElement {
       bottom: Math.max(from.y, to.y) + routingMargin,
     };
     const obstacles = this.#graph.nodes
-      .filter((node) => !excludedNodeIds.has(node.id))
       .map((node) => {
         const element = this.#nodeElements.get(node.id);
         return {
+          nodeId: node.id,
           left: node.x,
           top: node.y,
           right: node.x + (element?.offsetWidth ?? node.width),
           bottom: node.y + (element?.offsetHeight ?? 160),
         };
+      })
+      .filter((obstacle) => {
+        const exits = [];
+        if (obstacle.nodeId === fromNodeId) exits.push(fromExit);
+        if (obstacle.nodeId === toNodeId) exits.push(toExit);
+        if (!exits.length) return true;
+        return exits.every((point) => (
+          point.x <= obstacle.left - clearance
+          || point.x >= obstacle.right + clearance
+          || point.y <= obstacle.top - clearance
+          || point.y >= obstacle.bottom + clearance
+        ));
       })
       .filter((obstacle) => (
         obstacle.right >= corridor.left
@@ -1666,8 +1687,10 @@ export class GuiNodeEditor extends GuiElement {
         && obstacle.top <= corridor.bottom
       ));
     return routeNodeConnection(from, to, {
-      flowDirection: this.flowDirection,
+      flowDirection: direction,
       obstacles,
+      clearance,
+      stub,
     }).path;
   }
 
@@ -1910,7 +1933,7 @@ export class GuiNodeEditor extends GuiElement {
 
 export const nodeEditorModule = Object.freeze({
   id: "node-editor",
-  version: "0.2.0",
+  version: "0.2.1",
   description: "Directional node graph editor with obstacle-aware links and serialization.",
   dependencies: ["core"],
   components: ["gui-node-editor"],
@@ -1978,8 +2001,15 @@ const NODE_EDITOR_STYLES = `
     overflow: visible;
   }
 
-  .links { pointer-events: none; }
-  .nodes { pointer-events: none; }
+  .links {
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .nodes {
+    z-index: 1;
+    pointer-events: none;
+  }
 
   .link {
     fill: none;
@@ -2223,7 +2253,12 @@ const NODE_EDITOR_STYLES = `
   }
 
   :host([flow-direction="vertical"]) .port--input {
-    margin: -.75rem 0 0;
+    margin: 0;
+  }
+
+  :host([flow-direction="vertical"]) .port--input i {
+    position: absolute;
+    top: -.39rem;
   }
 
   :host([flow-direction="vertical"]) .port--output {
