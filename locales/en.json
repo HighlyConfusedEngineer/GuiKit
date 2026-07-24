@@ -79,13 +79,14 @@
   "nodeEditor": {
     "eyebrow": "Visual workflows",
     "title": "Connect ideas, data, and actions.",
-    "body": "Drag nodes and ports, pan the canvas, zoom, or double-click empty space to create a node.",
+    "body": "Drag nodes and ports, pan, zoom, double-click empty space to create, or double-click a wire to delete it.",
     "add": "Add node",
     "fit": "Fit graph",
     "reset": "Reset example",
     "export": "Inspect graph",
     "custom": "Custom node",
     "connected": "Nodes connected.",
+    "disconnected": "Wire removed.",
     "graphSummary": "Graph contains {nodes} nodes and {links} links."
   },
   "media": {

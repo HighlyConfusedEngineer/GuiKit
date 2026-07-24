@@ -187,7 +187,9 @@ import {
 
 Use `flow-direction="vertical"` (or `editor.flowDirection`) for top-to-bottom
 graphs. `routeNodeConnection()` provides the same obstacle-aware orthogonal
-router to alternate renderers. See [NODE_EDITOR.md](NODE_EDITOR.md) for schemas,
+router to alternate renderers. `setWireTypes()` maps validated port types to
+wire colors and stroke styles; `allowMultipleConnections` and `maxConnections`
+define node-level link policy. See [NODE_EDITOR.md](NODE_EDITOR.md) for schemas,
 interaction, routing, methods, events, and performance guidance.
 
 ## Wizard

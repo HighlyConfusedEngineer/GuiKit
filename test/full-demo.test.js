@@ -75,6 +75,9 @@ test("full demo switches node-editor flow direction and layout", () => {
   assert.match(html, /<option value="vertical">Vertical<\/option>/);
   assert.match(app, /nodeEditor\.flowDirection = direction/);
   assert.match(app, /\[node\.x, node\.y\] = \[node\.y, node\.x\]/);
+  assert.match(app, /nodeEditor\.setWireTypes/);
+  assert.match(app, /allowMultipleConnections/);
+  assert.match(app, /maxConnections/);
 });
 
 test("full demo exercises services, transports, and module extension", () => {

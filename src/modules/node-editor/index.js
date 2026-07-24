@@ -134,6 +134,15 @@ function normalizeParameter(parameter, nodeId, index) {
 function normalizeNode(node) {
   if (!node?.id) throw new TypeError("A node requires a non-empty id.");
   const id = String(node.id);
+  const allowMultipleConnections = node.allowMultipleConnections !== false;
+  const requestedMaxConnections = Number(node.maxConnections);
+  const maxConnections = node.maxConnections === undefined
+    || node.maxConnections === null
+    || node.maxConnections === ""
+    || requestedMaxConnections === Infinity
+    || !Number.isFinite(requestedMaxConnections)
+    ? undefined
+    : Math.max(0, Math.floor(requestedMaxConnections));
   const parameters = (node.parameters ?? [])
     .map((parameter, index) => normalizeParameter(parameter, id, index));
   const parameterIds = new Set();
@@ -151,8 +160,12 @@ function normalizeNode(node) {
     x: finite(node.x),
     y: finite(node.y),
     width: Math.max(160, finite(node.width, 220)),
-    inputs: (node.inputs ?? []).map((port, index) => normalizePort(port, "input", id, index)),
-    outputs: (node.outputs ?? []).map((port, index) => normalizePort(port, "output", id, index)),
+    allowMultipleConnections,
+    maxConnections,
+    inputs: (node.inputs ?? [])
+      .map((port, index) => normalizePort(port, "input", id, index)),
+    outputs: (node.outputs ?? [])
+      .map((port, index) => normalizePort(port, "output", id, index)),
     parameters,
   };
 }
@@ -307,6 +320,14 @@ export class GuiNodeGraph {
 
     const output = first.direction === "output" ? first : second;
     const input = first.direction === "input" ? first : second;
+    const outputNode = this.#nodes.get(output.nodeId);
+    const inputNode = this.#nodes.get(input.nodeId);
+    const outputLimit = outputNode?.allowMultipleConnections === false
+      ? Math.min(1, output.maxLinks)
+      : output.maxLinks;
+    const inputLimit = inputNode?.allowMultipleConnections === false
+      ? Math.min(1, input.maxLinks)
+      : input.maxLinks;
     if (
       output.type !== "any"
       && input.type !== "any"
@@ -322,18 +343,35 @@ export class GuiNodeGraph {
     );
     if (duplicate) return clone(duplicate);
 
-    const inputLinks = [...this.#links.values()].filter((link) => link.to === input.id);
-    if (inputLinks.length >= input.maxLinks) {
-      if (options.replaceInput === false || input.maxLinks === 0) {
+    const existingLinks = [...this.#links.values()];
+    const inputLinks = existingLinks.filter((link) => link.to === input.id);
+    const removedLinkIds = new Set();
+    if (inputLinks.length >= inputLimit) {
+      if (options.replaceInput === false || inputLimit === 0) {
         throw new Error(`Input "${input.id}" reached its link limit.`);
       }
-      const removeCount = inputLinks.length - input.maxLinks + 1;
-      inputLinks.slice(0, removeCount).forEach((link) => this.#links.delete(link.id));
+      const removeCount = inputLinks.length - inputLimit + 1;
+      inputLinks.slice(0, removeCount).forEach((link) => removedLinkIds.add(link.id));
     }
 
-    const outputLinks = [...this.#links.values()].filter((link) => link.from === output.id);
-    if (outputLinks.length >= output.maxLinks) {
+    const remainingLinks = existingLinks.filter((link) => !removedLinkIds.has(link.id));
+    const outputLinks = remainingLinks.filter((link) => link.from === output.id);
+    if (outputLinks.length >= outputLimit) {
       throw new Error(`Output "${output.id}" reached its link limit.`);
+    }
+
+    const endpointNodeIds = new Set([output.nodeId, input.nodeId]);
+    for (const nodeId of endpointNodeIds) {
+      const node = this.#nodes.get(nodeId);
+      if (node?.maxConnections === undefined) continue;
+      const connectionCount = remainingLinks.filter((link) => {
+        const fromNodeId = this.#ports.get(link.from)?.nodeId;
+        const toNodeId = this.#ports.get(link.to)?.nodeId;
+        return fromNodeId === nodeId || toNodeId === nodeId;
+      }).length;
+      if (connectionCount >= node.maxConnections) {
+        throw new Error(`Node "${nodeId}" reached its connection limit.`);
+      }
     }
 
     let generatedId;
@@ -349,8 +387,10 @@ export class GuiNodeGraph {
       id,
       from: output.id,
       to: input.id,
+      type: output.type === "any" ? input.type : output.type,
     };
     delete link.replaceInput;
+    removedLinkIds.forEach((linkId) => this.#links.delete(linkId));
     this.#links.set(id, link);
     return clone(link);
   }
@@ -686,6 +726,31 @@ export function routeNodeConnection(from, to, options = {}) {
   };
 }
 
+function normalizeWireType(type, definition = {}) {
+  const id = String(type ?? definition.id ?? "any");
+  const dash = Array.isArray(definition.dash)
+    ? definition.dash.map((value) => Math.max(0, finite(value))).join(" ")
+    : String(definition.dash ?? "").trim();
+  return {
+    id,
+    label: String(definition.label ?? id),
+    color: String(definition.color ?? "var(--gui-accent, #5b5ce2)"),
+    width: Math.min(12, Math.max(1, finite(definition.width, 3))),
+    opacity: Math.min(1, Math.max(0.15, finite(definition.opacity, 0.82))),
+    dash,
+  };
+}
+
+function wireTypeEntries(definitions) {
+  if (Array.isArray(definitions)) {
+    return definitions.map((definition) => [
+      String(definition?.id ?? definition?.type ?? "any"),
+      definition,
+    ]);
+  }
+  return Object.entries(definitions ?? {});
+}
+
 export class GuiNodeEditor extends GuiElement {
   static observedAttributes = ["readonly", "label", "flow-direction"];
 
@@ -710,6 +775,7 @@ export class GuiNodeEditor extends GuiElement {
   #settingsError;
   #settingsNodeId = null;
   #settingsTrigger = null;
+  #wireTypes = new Map();
 
   connectedCallback() {
     if (!this.shadowRoot) this.#createView();
@@ -767,6 +833,35 @@ export class GuiNodeEditor extends GuiElement {
 
   get graph() {
     return this.#graph;
+  }
+
+  get wireTypes() {
+    return [...this.#wireTypes.values()].map((wireType) => clone(wireType));
+  }
+
+  setWireTypes(definitions = {}) {
+    this.#wireTypes.clear();
+    wireTypeEntries(definitions).forEach(([type, definition]) => {
+      const wireType = normalizeWireType(type, definition);
+      this.#wireTypes.set(wireType.id, wireType);
+    });
+    this.#syncWireTypes();
+    return this.wireTypes;
+  }
+
+  registerWireType(type, definition = {}) {
+    const wireType = normalizeWireType(type, definition);
+    this.#wireTypes.set(wireType.id, wireType);
+    this.#syncWireTypes();
+    return clone(wireType);
+  }
+
+  getWireType(type) {
+    const id = String(type ?? "any");
+    return clone(
+      this.#wireTypes.get(id)
+      ?? normalizeWireType(id),
+    );
   }
 
   get selectedNodes() {
@@ -890,13 +985,21 @@ export class GuiNodeEditor extends GuiElement {
     }
   }
 
-  disconnect(id) {
+  disconnect(id, options = {}) {
     const link = this.#graph.getLink(id);
-    if (!link || !this.#graph.removeLink(id)) return false;
+    if (!link) return false;
+    const reason = String(options.reason ?? "api");
+    if (!dispatch(
+      this,
+      "gui:node-disconnect-request",
+      { link, reason },
+      true,
+    )) return false;
+    if (!this.#graph.removeLink(id)) return false;
     if (this.#selectedLink === String(id)) this.#selectedLink = null;
     this.#renderConnections();
-    dispatch(this, "gui:node-disconnect", { link });
-    this.#graphChanged("link-remove", { link });
+    dispatch(this, "gui:node-disconnect", { link, reason });
+    this.#graphChanged("link-remove", { link, reason });
     return true;
   }
 
@@ -1051,7 +1154,8 @@ export class GuiNodeEditor extends GuiElement {
 
     const help = document.createElement("div");
     help.className = "help";
-    help.textContent = "Drag to pan · Wheel to zoom · Double-click to create";
+    help.textContent =
+      "Drag to pan · Wheel to zoom · Double-click empty space to create or a wire to delete";
 
     this.#viewport.append(this.#world, toolbar, help);
     this.#settingsDialog = this.#createSettingsDialog();
@@ -1122,6 +1226,13 @@ export class GuiNodeEditor extends GuiElement {
     color.value = "#5b5ce2";
     const useTheme = document.createElement("input");
     useTheme.type = "checkbox";
+    const allowMultipleConnections = document.createElement("input");
+    allowMultipleConnections.type = "checkbox";
+    const maxConnections = document.createElement("input");
+    maxConnections.type = "number";
+    maxConnections.min = "0";
+    maxConnections.step = "1";
+    maxConnections.placeholder = "Unlimited";
     const data = document.createElement("textarea");
     data.rows = 7;
     data.spellcheck = false;
@@ -1142,6 +1253,21 @@ export class GuiNodeEditor extends GuiElement {
     useThemeLabel.append(useTheme, document.createTextNode("Use theme accent"));
     colorField.append(useThemeLabel);
 
+    const connectionPolicy = document.createElement("div");
+    connectionPolicy.className = "node-settings-connection-policy";
+    const allowMultipleLabel = document.createElement("label");
+    allowMultipleLabel.className = "node-settings-check";
+    allowMultipleLabel.append(
+      allowMultipleConnections,
+      document.createTextNode("Allow multiple links per port"),
+    );
+    const maxConnectionsLabel = document.createElement("label");
+    maxConnectionsLabel.className = "node-settings-connection-limit";
+    const maxConnectionsText = document.createElement("span");
+    maxConnectionsText.textContent = "Maximum total links";
+    maxConnectionsLabel.append(maxConnectionsText, maxConnections);
+    connectionPolicy.append(allowMultipleLabel, maxConnectionsLabel);
+
     this.#settingsError = document.createElement("p");
     this.#settingsError.className = "node-settings-error";
     this.#settingsError.setAttribute("role", "alert");
@@ -1151,6 +1277,7 @@ export class GuiNodeEditor extends GuiElement {
       identity,
       this.#settingsField("Description", description),
       this.#settingsField("Accent", colorField),
+      this.#settingsField("Connections", connectionPolicy),
       this.#settingsField("Node data (JSON)", data),
       this.#settingsError,
     );
@@ -1174,6 +1301,8 @@ export class GuiNodeEditor extends GuiElement {
       description,
       color,
       useTheme,
+      allowMultipleConnections,
+      maxConnections,
       data,
       nodeId,
       save,
@@ -1230,6 +1359,10 @@ export class GuiNodeEditor extends GuiElement {
     this.#settingsFields.description.value = node.description ?? "";
     this.#settingsFields.useTheme.checked = !node.color;
     this.#settingsFields.color.value = this.#normalizeSettingsColor(node.color);
+    this.#settingsFields.allowMultipleConnections.checked =
+      node.allowMultipleConnections;
+    this.#settingsFields.maxConnections.value =
+      node.maxConnections === undefined ? "" : String(node.maxConnections);
     this.#settingsFields.data.value = node.data === undefined
       ? "{}"
       : JSON.stringify(node.data, null, 2);
@@ -1280,13 +1413,25 @@ export class GuiNodeEditor extends GuiElement {
   #syncSettingsReadOnly() {
     if (!this.#settingsFields) return;
     const disabled = this.readOnly;
-    const { name, type, description, color, useTheme, data, save } =
+    const {
+      name,
+      type,
+      description,
+      color,
+      useTheme,
+      allowMultipleConnections,
+      maxConnections,
+      data,
+      save,
+    } =
       this.#settingsFields;
     name.disabled = disabled;
     type.disabled = disabled;
     description.disabled = disabled;
     useTheme.disabled = disabled;
     color.disabled = disabled || useTheme.checked;
+    allowMultipleConnections.disabled = disabled;
+    maxConnections.disabled = disabled;
     data.disabled = disabled;
     save.disabled = disabled;
     save.hidden = disabled;
@@ -1328,6 +1473,13 @@ export class GuiNodeEditor extends GuiElement {
       color: this.#settingsFields.useTheme.checked
         ? undefined
         : this.#settingsFields.color.value,
+      allowMultipleConnections:
+        this.#settingsFields.allowMultipleConnections.checked,
+      maxConnections: this.#settingsFields.maxConnections.value === ""
+        ? undefined
+        : Math.max(0, Math.floor(finite(
+            this.#settingsFields.maxConnections.value,
+          ))),
       data,
     };
     if (!dispatch(
@@ -1447,8 +1599,31 @@ export class GuiNodeEditor extends GuiElement {
     if (port.direction === "input") button.append(dot, label);
     else button.append(label, dot);
     row.append(button);
+    this.#applyPortWireType(button, port.type);
     this.#portElements.set(port.id, button);
     return row;
+  }
+
+  #applyPortWireType(element, type) {
+    const wireType = this.getWireType(type);
+    element.dataset.wireType = wireType.id;
+    element.style.setProperty("--port-color", wireType.color);
+  }
+
+  #applyWireType(element, type) {
+    const wireType = this.getWireType(type);
+    element.dataset.wireType = wireType.id;
+    element.style.setProperty("--wire-color", wireType.color);
+    element.style.setProperty("--wire-width", `${wireType.width}px`);
+    element.style.setProperty("--wire-opacity", String(wireType.opacity));
+    element.style.strokeDasharray = wireType.dash;
+  }
+
+  #syncWireTypes() {
+    this.#portElements.forEach((element, portId) => {
+      this.#applyPortWireType(element, this.#graph.getPort(portId)?.type);
+    });
+    this.#renderConnections();
   }
 
   #createParameterElement(parameter, nodeId) {
@@ -1587,9 +1762,11 @@ export class GuiNodeEditor extends GuiElement {
       visible.dataset.linkId = link.id;
       visible.setAttribute("d", pathData);
       visible.dataset.selected = String(link.id === this.#selectedLink);
+      this.#applyWireType(visible, link.type);
       const hit = document.createElementNS("http://www.w3.org/2000/svg", "path");
       hit.classList.add("link-hit");
       hit.dataset.linkId = link.id;
+      hit.dataset.wireType = visible.dataset.wireType;
       hit.setAttribute("d", pathData);
       this.#linkLayer.append(visible, hit);
     }
@@ -1611,6 +1788,7 @@ export class GuiNodeEditor extends GuiElement {
             port.direction === "input" ? port.id : null,
           ),
         );
+        this.#applyWireType(preview, port.type);
         this.#linkLayer.append(preview);
       }
     }
@@ -1876,7 +2054,16 @@ export class GuiNodeEditor extends GuiElement {
   };
 
   #onDoubleClick = (event) => {
-    if (this.readOnly || event.target.closest(".node, .toolbar, .link-hit")) return;
+    const link = event.target.closest(".link-hit");
+    if (link) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!this.readOnly) {
+        this.disconnect(link.dataset.linkId, { reason: "double-click" });
+      }
+      return;
+    }
+    if (this.readOnly || event.target.closest(".node, .toolbar")) return;
     dispatch(this, "gui:node-create-request", {
       position: this.#clientToWorld(event.clientX, event.clientY),
     });
@@ -1898,7 +2085,9 @@ export class GuiNodeEditor extends GuiElement {
     if (this.readOnly) return;
     if (["Delete", "Backspace"].includes(event.key)) {
       event.preventDefault();
-      if (this.#selectedLink) this.disconnect(this.#selectedLink);
+      if (this.#selectedLink) {
+        this.disconnect(this.#selectedLink, { reason: "keyboard" });
+      }
       for (const nodeId of [...this.#selectedNodes]) this.removeNode(nodeId);
       return;
     }
@@ -1933,7 +2122,7 @@ export class GuiNodeEditor extends GuiElement {
 
 export const nodeEditorModule = Object.freeze({
   id: "node-editor",
-  version: "0.2.1",
+  version: "0.3.0",
   description: "Directional node graph editor with obstacle-aware links and serialization.",
   dependencies: ["core"],
   components: ["gui-node-editor"],
@@ -2013,18 +2202,18 @@ const NODE_EDITOR_STYLES = `
 
   .link {
     fill: none;
-    stroke: var(--gui-accent, #5b5ce2);
+    stroke: var(--wire-color, var(--gui-accent, #5b5ce2));
     stroke-linecap: round;
-    stroke-width: 3;
-    opacity: .72;
+    stroke-width: var(--wire-width, 3px);
+    opacity: var(--wire-opacity, .82);
     pointer-events: none;
     transition: opacity 160ms, stroke-width 160ms;
   }
 
   .link[data-selected="true"] {
-    stroke-width: 5;
+    stroke-width: calc(var(--wire-width, 3px) + 2px);
     opacity: 1;
-    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--gui-accent, #5b5ce2) 45%, transparent));
+    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--wire-color, var(--gui-accent, #5b5ce2)) 45%, transparent));
   }
 
   .link--preview {
@@ -2193,7 +2382,7 @@ const NODE_EDITOR_STYLES = `
     width: .78rem;
     height: .78rem;
     flex: 0 0 .78rem;
-    border: 2px solid var(--node-color);
+    border: 2px solid var(--port-color, var(--node-color));
     border-radius: 50%;
     background: var(--gui-surface, white);
     box-shadow: 0 0 0 2px var(--gui-surface, white);
@@ -2201,7 +2390,7 @@ const NODE_EDITOR_STYLES = `
   }
 
   .port:hover i, .port:focus-visible i {
-    background: var(--node-color);
+    background: var(--port-color, var(--node-color));
     transform: scale(1.3);
   }
 
@@ -2487,6 +2676,7 @@ const NODE_EDITOR_STYLES = `
   }
 
   .node-settings-field input[type="text"],
+  .node-settings-field input[type="number"],
   .node-settings-field textarea {
     width: 100%;
     min-width: 0;
@@ -2538,6 +2728,25 @@ const NODE_EDITOR_STYLES = `
   }
 
   .node-settings-check input { accent-color: var(--gui-accent, #5b5ce2); }
+
+  .node-settings-connection-policy {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(9rem, .7fr);
+    align-items: end;
+    gap: .75rem;
+  }
+
+  .node-settings-connection-limit {
+    display: grid;
+    gap: .35rem;
+    color: var(--gui-text-muted, #666b78);
+    font: 600 .7rem/1.2 var(--gui-font, ui-sans-serif, system-ui);
+  }
+
+  .node-settings-connection-limit input {
+    width: 100%;
+  }
+
   .node-settings-field :disabled {
     cursor: not-allowed;
     opacity: .58;
@@ -2658,6 +2867,7 @@ const NODE_EDITOR_STYLES = `
   @media (max-width: 36rem) {
     .help { display: none; }
     .node-settings-grid { grid-template-columns: 1fr; }
+    .node-settings-connection-policy { grid-template-columns: 1fr; }
     .node-settings-dialog {
       width: calc(100vw - 1rem);
       max-height: calc(100vh - 1rem);

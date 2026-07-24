@@ -79,13 +79,14 @@
   "nodeEditor": {
     "eyebrow": "Visuelle Arbeitsabläufe",
     "title": "Ideen, Daten und Aktionen verbinden.",
-    "body": "Ziehe Knoten und Anschlüsse, verschiebe die Fläche, zoome oder doppelklicke auf freien Raum.",
+    "body": "Ziehe Knoten und Anschlüsse, verschiebe und zoome, doppelklicke zum Erstellen auf freien Raum oder zum Löschen auf eine Verbindung.",
     "add": "Knoten hinzufügen",
     "fit": "Graph einpassen",
     "reset": "Beispiel zurücksetzen",
     "export": "Graph prüfen",
     "custom": "Eigener Knoten",
     "connected": "Knoten verbunden.",
+    "disconnected": "Verbindung entfernt.",
     "graphSummary": "Der Graph enthält {nodes} Knoten und {links} Verbindungen."
   },
   "media": {

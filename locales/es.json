@@ -79,13 +79,14 @@
   "nodeEditor": {
     "eyebrow": "Flujos visuales",
     "title": "Conecta ideas, datos y acciones.",
-    "body": "Arrastra nodos y puertos, desplaza el lienzo, usa el zoom o haz doble clic para crear un nodo.",
+    "body": "Arrastra nodos y puertos, desplaza y amplía; haz doble clic en un espacio vacío para crear o en un cable para eliminar.",
     "add": "Añadir nodo",
     "fit": "Ajustar grafo",
     "reset": "Restablecer ejemplo",
     "export": "Inspeccionar grafo",
     "custom": "Nodo personalizado",
     "connected": "Nodos conectados.",
+    "disconnected": "Cable eliminado.",
     "graphSummary": "El grafo contiene {nodes} nodos y {links} enlaces."
   },
   "media": {

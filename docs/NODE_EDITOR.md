@@ -57,6 +57,8 @@ Nodes require a globally unique `id`. Ports also use globally unique ids.
   x: 320,
   y: 120,
   width: 220,
+  allowMultipleConnections: false,
+  maxConnections: 3,
   inputs: [
     { id: "filter:image", label: "Image", type: "image", maxLinks: 1 },
   ],
@@ -91,10 +93,22 @@ Port types must match unless either side uses `type: "any"`. Inputs accept one
 link by default; connecting a new output replaces the old input link. Set
 `maxLinks` to change the limit.
 
-Links are directed from an output to an input:
+Set `allowMultipleConnections: false` on a node to cap each of its ports at one
+link without rewriting the individual port definitions. Set `maxConnections`
+to a non-negative number to limit all incoming and outgoing links on that node
+in total. Both policies are checked transactionally before an existing input
+link is replaced.
+
+Links are directed from an output to an input. Their `type` is resolved from
+the compatible endpoint ports:
 
 ```js
-{ id: "edge-result", from: "filter:result", to: "preview:image" }
+{
+  id: "edge-result",
+  from: "filter:result",
+  to: "preview:image",
+  type: "digital",
+}
 ```
 
 Node `data` and link `data` should remain structured-clone-compatible so
@@ -143,6 +157,8 @@ Important methods:
 - `getNodeParameter(nodeId, parameterId)` returns a detached parameter definition.
 - `setNodeParameter(nodeId, parameterId, value)` validates and updates a value.
 - `connect(from, to, options)` and `disconnect(id)`.
+- `setWireTypes(definitions)`, `registerWireType(type, definition)`, and
+  `getWireType(type)`.
 - `selectNode(id, additive?)`, `selectLink(id)`, and `clearSelection()`.
 - `openNodeSettings(id)` opens the built-in settings dialog.
 - `closeNodeSettings()` closes the settings dialog.
@@ -199,13 +215,42 @@ The result contains `direction`, simplified `points`, the SVG `path`, and a
 `routed` flag. Router inputs use graph/world coordinates. Obstacles accept
 either `{ x, y, width, height }` or `{ left, top, right, bottom }`.
 
+## Typed wires
+
+Port `type` controls compatibility and the resolved link type. A wire palette
+controls presentation separately, so changing a color never weakens graph
+validation:
+
+```js
+editor.setWireTypes({
+  analog: {
+    label: "Analog signal",
+    color: "#ef4444",
+    width: 3.5,
+  },
+  digital: {
+    label: "Digital signal",
+    color: "#3b82f6",
+    width: 3,
+    dash: [8, 4],
+  },
+});
+```
+
+An `analog` output connects only to an `analog` or `any` input; a `digital`
+output connects only to a `digital` or `any` input. Wire definitions accept
+`label`, CSS `color`, `width`, `opacity`, and a string or numeric-array `dash`.
+Unknown types use the theme accent without requiring registration. Port anchors
+use the same configured color as their wire.
+
 ## Events
 
 | Event | Cancelable | Detail |
 | --- | --- | --- |
 | `gui:node-connect-request` | yes | `{ from, to, options }` |
 | `gui:node-connect` | no | `{ link }` |
-| `gui:node-disconnect` | no | `{ link }` |
+| `gui:node-disconnect-request` | yes | `{ link, reason }` |
+| `gui:node-disconnect` | no | `{ link, reason }` |
 | `gui:node-move` | no | `{ node }` |
 | `gui:node-select` | no | `{ nodes, link }` |
 | `gui:node-create-request` | no | `{ position }` |
@@ -227,6 +272,16 @@ editor.addEventListener("gui:node-connect-request", (event) => {
 });
 ```
 
+Wire removal can be protected in the same way:
+
+```js
+editor.addEventListener("gui:node-disconnect-request", (event) => {
+  if (event.detail.link.data?.locked) event.preventDefault();
+});
+```
+
+The reason is `double-click`, `keyboard`, or `api`.
+
 Double-clicking empty space emits a creation request rather than inventing a
 domain-specific node. The application decides which node type to add.
 
@@ -234,10 +289,11 @@ domain-specific node. The application decides which node type to add.
 
 Every node header includes an accessible settings icon. The built-in modal
 editor updates the node name, type, description, accent color, and serializable
-`data` value. Saving uses `updateNode()`, preserves ports and links, and emits
-the regular `gui:graph-change` event in addition to the settings events above.
-In read-only mode the dialog remains available for inspection while its fields
-and save action are disabled.
+`data` value. It also exposes the per-port multiple-link policy and optional
+total connection limit. Saving uses `updateNode()`, preserves every link still
+valid under the new policy, and emits the regular `gui:graph-change` event in
+addition to the settings events above. In read-only mode the dialog remains
+available for inspection while its fields and save action are disabled.
 
 Applications can replace the built-in dialog with a domain-specific settings
 surface by canceling `gui:node-settings-request`:
@@ -276,6 +332,7 @@ editor.addEventListener("gui:node-parameter-change", (event) => {
 - Edit the parameters exposed directly on a node without opening its dialog.
 - Use the settings icon in a node header to inspect or edit its configuration.
 - Drag one port to a compatible opposite-direction port to connect.
+- Double-click a wire to remove it.
 - Switch `flow-direction` when a workflow reads more naturally top-to-bottom.
 - Click a node or link to select it.
 - Ctrl/Cmd-click nodes for additive selection.

@@ -51,6 +51,8 @@ export interface GuiNodeDefinition {
   x?: number;
   y?: number;
   width?: number;
+  allowMultipleConnections?: boolean;
+  maxConnections?: number;
   inputs?: Array<string | GuiNodePort>;
   outputs?: Array<string | GuiNodePort>;
   parameters?: GuiNodeParameter[];
@@ -62,6 +64,7 @@ export interface GuiNodeLink {
   id: string;
   from: string;
   to: string;
+  type?: string;
   data?: unknown;
   [key: string]: unknown;
 }
@@ -104,6 +107,25 @@ export interface GuiNodeConnectionRoute {
   routed: boolean;
 }
 
+export interface GuiNodeWireTypeDefinition {
+  id?: string;
+  type?: string;
+  label?: string;
+  color?: string;
+  width?: number;
+  opacity?: number;
+  dash?: string | number[];
+}
+
+export interface GuiNodeWireType {
+  id: string;
+  label: string;
+  color: string;
+  width: number;
+  opacity: number;
+  dash: string;
+}
+
 export function routeNodeConnection(
   from: GuiNodeRoutingPoint,
   to: GuiNodeRoutingPoint,
@@ -137,6 +159,7 @@ export class GuiNodeEditor extends HTMLElement {
   readOnly: boolean;
   flowDirection: GuiNodeFlowDirection;
   readonly graph: GuiNodeGraph;
+  readonly wireTypes: GuiNodeWireType[];
   readonly selectedNodes: string[];
   readonly selectedLink: string | null;
   readonly minZoom: number;
@@ -162,7 +185,17 @@ export class GuiNodeEditor extends HTMLElement {
     to: string,
     options?: Partial<GuiNodeLink> & { replaceInput?: boolean },
   ): GuiNodeLink | null;
-  disconnect(id: string): boolean;
+  disconnect(id: string, options?: { reason?: string }): boolean;
+  setWireTypes(
+    definitions?:
+      | Record<string, GuiNodeWireTypeDefinition>
+      | GuiNodeWireTypeDefinition[],
+  ): GuiNodeWireType[];
+  registerWireType(
+    type: string,
+    definition?: GuiNodeWireTypeDefinition,
+  ): GuiNodeWireType;
+  getWireType(type: string): GuiNodeWireType;
   clear(): void;
   selectNode(id: string, additive?: boolean): boolean;
   selectLink(id: string): boolean;
@@ -175,7 +208,7 @@ export class GuiNodeEditor extends HTMLElement {
 
 export const nodeEditorModule: {
   readonly id: "node-editor";
-  readonly version: "0.2.1";
+  readonly version: "0.3.0";
   readonly description: string;
   readonly dependencies: readonly ["core"];
   readonly components: readonly ["gui-node-editor"];

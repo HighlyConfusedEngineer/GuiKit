@@ -325,7 +325,7 @@
                 <div>
                   <p class="gui-eyebrow" data-i18n="nodeEditor.eyebrow">Visual workflows</p>
                   <h2 class="gui-title" data-i18n="nodeEditor.title">Connect ideas, data, and actions.</h2>
-                  <p class="gui-muted" data-i18n="nodeEditor.body">Drag nodes and ports, pan the canvas, zoom, or double-click empty space to create a node.</p>
+                  <p class="gui-muted" data-i18n="nodeEditor.body">Drag nodes and ports, pan, zoom, double-click empty space to create, or double-click a wire to delete it.</p>
                 </div>
                 <button class="gui-button" type="button" data-gui-page-back data-i18n="actions.back">Back</button>
               </div>
@@ -599,6 +599,18 @@
       });
 
       const nodeEditor = document.querySelector("#workflow-editor");
+      nodeEditor.setWireTypes({
+        analog: {
+          label: "Analog signal",
+          color: "#ef4444",
+          width: 3.5,
+        },
+        digital: {
+          label: "Digital signal",
+          color: "#3b82f6",
+          width: 3,
+        },
+      });
       const exampleGraph = {
         nodes: [
           {
@@ -607,11 +619,12 @@
             type: "input",
             description: "Loads the next frame from a native or web source.",
             color: "#3285d8",
+            allowMultipleConnections: false,
             x: 0,
             y: 120,
             outputs: [
-              { id: "source:image", label: "Image", type: "image" },
-              { id: "source:time", label: "Timestamp", type: "number" },
+              { id: "source:image", label: "Image", type: "digital" },
+              { id: "source:time", label: "Timestamp", type: "digital" },
             ],
           },
           {
@@ -620,13 +633,14 @@
             type: "process",
             description: "Applies a configurable edge filter.",
             color: "#8b5cf6",
+            maxConnections: 3,
             x: 320,
             y: 64,
             inputs: [
-              { id: "filter:image", label: "Image", type: "image" },
-              { id: "filter:strength", label: "Strength", type: "number" },
+              { id: "filter:image", label: "Image", type: "digital" },
+              { id: "filter:strength", label: "Strength", type: "analog" },
             ],
-            outputs: [{ id: "filter:image-out", label: "Result", type: "image" }],
+            outputs: [{ id: "filter:image-out", label: "Result", type: "digital" }],
           },
           {
             id: "preview",
@@ -636,16 +650,17 @@
             color: "#0e9f87",
             x: 650,
             y: 40,
-            inputs: [{ id: "preview:image", label: "Image", type: "image" }],
+            inputs: [{ id: "preview:image", label: "Image", type: "digital" }],
           },
           {
             id: "threshold",
             title: "Threshold",
             type: "value",
             color: "#df7a18",
+            allowMultipleConnections: false,
             x: 40,
             y: 340,
-            outputs: [{ id: "threshold:value", label: "Value", type: "number" }],
+            outputs: [{ id: "threshold:value", label: "Value", type: "analog" }],
           },
         ],
         links: [
@@ -686,6 +701,9 @@
       });
       nodeEditor.addEventListener("gui:node-connect", () => {
         toast.success(i18n.t("nodeEditor.connected"));
+      });
+      nodeEditor.addEventListener("gui:node-disconnect", () => {
+        toast.info(i18n.t("nodeEditor.disconnected"));
       });
       nodeEditor.addEventListener("gui:node-error", (event) => {
         toast.error(event.detail.error.message);

@@ -231,7 +231,10 @@ description, accent, and JSON data. Cancel `gui:node-settings-request` to
 provide a custom domain-specific inspector instead. Set `flow-direction` to
 `horizontal` or `vertical`; ports and obstacle-aware rounded links follow the
 selected direction, route around node surfaces, and remain visible on a
-dedicated foreground connection layer.
+dedicated foreground connection layer. Port types can use independent wire
+palettes—for example red `analog` links and blue `digital` links—while the graph
+continues to reject incompatible types. Nodes can cap links per port or in
+total, and users can double-click a wire to remove it.
 See [the node-editor guide](docs/NODE_EDITOR.md).
 
 ### Wizard

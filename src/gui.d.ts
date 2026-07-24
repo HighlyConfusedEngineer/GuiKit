@@ -171,6 +171,8 @@ export {
   GuiNodeRoutingObstacle,
   GuiNodeRoutingOptions,
   GuiNodeRoutingPoint,
+  GuiNodeWireType,
+  GuiNodeWireTypeDefinition,
   nodeEditorModule,
   routeNodeConnection,
 } from "./modules/node-editor/index.js";

@@ -42,7 +42,7 @@ test("node editor module exposes its model, component, and manifest", () => {
   assert.equal(typeof routeNodeConnection, "function");
   assert.equal(bundledRouteNodeConnection, routeNodeConnection);
   assert.equal(nodeEditorModule.id, "node-editor");
-  assert.equal(nodeEditorModule.version, "0.2.1");
+  assert.equal(nodeEditorModule.version, "0.3.0");
   assert.deepEqual(nodeEditorModule.components, ["gui-node-editor"]);
 });
 
@@ -77,6 +77,10 @@ test("node editor registers only after its browser resources initialize", async 
   assert.match(source, /static observedAttributes = \["readonly", "label", "flow-direction"\]/);
   assert.match(source, /\.links \{\s+z-index: 2;/);
   assert.match(source, /\.nodes \{\s+z-index: 1;/);
+  assert.match(source, /gui:node-disconnect-request/);
+  assert.match(source, /reason: "double-click"/);
+  assert.match(source, /allowMultipleConnections/);
+  assert.match(source, /maxConnections/);
 });
 
 function segmentIntersectsRectangle(first, second, rectangle) {
@@ -155,7 +159,75 @@ test("graph connects compatible output and input ports", () => {
 
   assert.equal(link.from, "source:image");
   assert.equal(link.to, "filter:image");
+  assert.equal(link.type, "image");
   assert.equal(graph.links.length, 1);
+});
+
+test("node policies limit per-port and total connections", () => {
+  const graph = new GuiNodeGraph({
+    nodes: [
+      {
+        id: "single-output",
+        allowMultipleConnections: false,
+        outputs: [{ id: "single:out", type: "analog" }],
+      },
+      {
+        id: "limited",
+        maxConnections: 1,
+        inputs: [{ id: "limited:in", type: "analog" }],
+        outputs: [{ id: "limited:out", type: "analog" }],
+      },
+      { id: "first", inputs: [{ id: "first:in", type: "analog" }] },
+      { id: "second", inputs: [{ id: "second:in", type: "analog" }] },
+      { id: "source", outputs: [{ id: "source:out", type: "analog" }] },
+    ],
+  });
+
+  assert.equal(graph.getNode("single-output").allowMultipleConnections, false);
+  graph.connect("single:out", "first:in");
+  assert.throws(
+    () => graph.connect("single:out", "second:in"),
+    /Output "single:out" reached its link limit/,
+  );
+  graph.updateNode("single-output", { allowMultipleConnections: true });
+  graph.connect("single:out", "second:in");
+  assert.equal(
+    graph.links.filter((link) => link.from === "single:out").length,
+    2,
+  );
+
+  graph.connect("source:out", "limited:in");
+  assert.throws(
+    () => graph.connect("limited:out", "second:in"),
+    /Node "limited" reached its connection limit/,
+  );
+});
+
+test("wire types are configurable without changing graph compatibility", () => {
+  const editor = new GuiNodeEditor();
+  const registered = editor.registerWireType("analog", {
+    label: "Analog",
+    color: "#ef4444",
+    width: 4,
+    opacity: 0.9,
+  });
+
+  assert.equal(registered.color, "#ef4444");
+  assert.equal(editor.getWireType("analog").width, 4);
+  assert.equal(editor.getWireType("digital").id, "digital");
+  assert.deepEqual(
+    editor.setWireTypes({
+      digital: { color: "#3b82f6", dash: [8, 4] },
+    }),
+    [{
+      id: "digital",
+      label: "digital",
+      color: "#3b82f6",
+      width: 3,
+      opacity: 0.82,
+      dash: "8 4",
+    }],
+  );
 });
 
 test("graph rejects same-direction and incompatible links", () => {

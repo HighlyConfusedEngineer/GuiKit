@@ -824,6 +824,7 @@ const graphExample = {
       type: "source",
       description: "Produces live image frames.",
       color: "#3285d8",
+      allowMultipleConnections: false,
       x: 0,
       y: 130,
       outputs: [
@@ -867,6 +868,7 @@ const graphExample = {
       type: "processor",
       description: "Finds high-contrast boundaries.",
       color: "#8b5cf6",
+      maxConnections: 4,
       x: 330,
       y: 60,
       inputs: [
@@ -930,6 +932,7 @@ const graphExample = {
       title: "Strength",
       type: "value",
       color: "#d97706",
+      allowMultipleConnections: false,
       x: 60,
       y: 390,
       outputs: [{ id: "strength:value", label: "Value", type: "number" }],
@@ -956,6 +959,12 @@ const graphExample = {
 const nodeEditor = document.querySelector("#full-node-editor");
 const graphJson = document.querySelector("#graph-json");
 const nodeFlowDirection = document.querySelector("#node-flow-direction");
+nodeEditor.setWireTypes({
+  image: { label: "Image", color: "#8b5cf6", width: 3.25 },
+  number: { label: "Number", color: "#f59e0b", width: 3 },
+  analog: { label: "Analog signal", color: "#ef4444", width: 3.5 },
+  digital: { label: "Digital signal", color: "#3b82f6", width: 3 },
+});
 let addedNodes = 0;
 let currentNodeFlowDirection = "horizontal";
 

@@ -9,6 +9,9 @@ It supports:
 - typed input and output ports;
 - horizontal or vertical flow with direction-aware port placement;
 - foreground rounded orthogonal links routed around node surfaces;
+- configurable typed wire colors, widths, opacity, and dash patterns;
+- per-port and per-node connection limits;
+- cancelable double-click wire deletion;
 - click and keyboard selection;
 - Delete/Backspace removal;
 - pan, zoom, grid snapping, and fit-to-view;

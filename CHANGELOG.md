@@ -12,6 +12,8 @@ All notable changes to GuiKit are documented here. The format follows
   so connections remain visible around intervening nodes.
 - Fixed the node-editor connection layer to paint above node cards and route
   backward links around their endpoint surfaces.
+- Added typed wire palettes, resolved link types, cancelable double-click wire
+  deletion, and node-level per-port/total connection policies.
 - Reusable `<gui-wizard>` and DOM-independent `GuiWizardModel` with linear or
   free navigation, native and asynchronous validation, optional steps,
   resumable state, cancelable lifecycle events, focus management, and
