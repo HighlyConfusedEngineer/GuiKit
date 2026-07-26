@@ -4,7 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageId>GuiKit.WebView</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <Title>GuiKit WebView host assets and bridge</Title>
     <Description>Bundled GuiKit static assets and a framework-neutral WebView bridge helper.</Description>
     <PackageTags>guikit;webview;webview2;wpf;avalonia</PackageTags>

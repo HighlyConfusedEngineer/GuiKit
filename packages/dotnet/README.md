@@ -6,7 +6,7 @@ host that renders a webview. It copies the GuiKit static assets to
 taking a dependency on a specific webview control.
 
 ```xml
-<PackageReference Include="GuiKit.WebView" Version="0.1.0" />
+<PackageReference Include="GuiKit.WebView" Version="0.2.0" />
 ```
 
 For WebView2, map `GuiKitAssets.RequireRoot()` to a virtual host and pass

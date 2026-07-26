@@ -9,7 +9,7 @@ browser, a desktop webview, or both. The UI is written once with standard HTML,
 CSS, and JavaScript. Python, C#, or another host language supplies native
 capabilities through a small request/response bridge.
 
-The current `0.1` foundation includes:
+The current `0.2` foundation includes:
 
 - responsive desktop sidebar and mobile drawer;
 - optional persistent desktop sidebar collapsing;

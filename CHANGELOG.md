@@ -6,6 +6,8 @@ All notable changes to GuiKit are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-26
+
 ### Added
 
 - Publishable Python wheel and .NET NuGet host packages with bundled GUI assets,

@@ -1,6 +1,6 @@
 {
   "name": "@gui-template/core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A lightweight, cross-platform UI foundation for browsers and native webviews.",
   "repository": {
     "type": "git",
