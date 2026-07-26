@@ -82,19 +82,7 @@ jobs:
           npm run package:python
 
       - name: Build .NET NuGet package with bundled assets
-        shell: bash
-        run: |
-          set +e
-          output="$(dotnet pack packages/dotnet/GuiKit.WebView/GuiKit.WebView.csproj --configuration Release --output release/dotnet -p:PackageVersion=${{ steps.package.outputs.version }} 2>&1)"
-          status=$?
-          printf '%s\n' "$output"
-          if [[ $status -ne 0 ]]; then
-            escaped="${output//'%'/'%25'}"
-            escaped="${escaped//$'\r'/'%0D'}"
-            escaped="${escaped//$'\n'/'%0A'}"
-            echo "::error::$escaped"
-            exit "$status"
-          fi
+        run: dotnet pack packages/dotnet/GuiKit.WebView/GuiKit.WebView.csproj --configuration Release -p:PackageOutputPath=release/dotnet -p:PackageVersion=${{ steps.package.outputs.version }}
 
       - name: Build installable package
         id: archive
