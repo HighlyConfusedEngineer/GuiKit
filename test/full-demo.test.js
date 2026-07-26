@@ -41,7 +41,21 @@ test("full demo contains every GuiKit custom element", () => {
     "gui-diagram-editor",
     "gui-theme-editor",
     "gui-translation-editor",
+    "gui-collaboration-panel",
+    "gui-file-explorer",
+    "gui-analysis-panel",
+    "gui-automation-designer",
+    "gui-ai-panel",
+    "gui-plugin-manager",
+    "gui-accessibility-inspector",
+    "gui-test-recorder",
+    "gui-document-editor",
+    "gui-design-system-editor",
   ].forEach((tag) => assert.match(html, new RegExp(`<${tag}(?:\\s|>)`)));
+});
+
+test("full demo exercises application-platform adapters and surfaces", () => {
+  ["GuiCollaborationSession", "GuiMemoryFileAdapter", "GuiFileWorkspace", "GuiAutomationModel", "GuiAiSession", "pluginDemo.registry.register"].forEach((surface) => assert.match(app, new RegExp(surface.replaceAll(".", "\\."))));
 });
 
 test("full demo configures every editor surface", () => {

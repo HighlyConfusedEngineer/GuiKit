@@ -30,7 +30,7 @@ and keeps every frontend feature operational.
 | Components | Inputs, selects, switches, buttons, cards, badges, design tokens, all toast variants and actions |
 | Statusbar | Top/bottom and sticky/fixed placement, keyed live items, status, progress, actions, priorities, alignment, and custom slots |
 | Live charts | Three responsive series, 30,000 initial points, bounded buffers, append, batch append, clear and render events |
-| Editors | Rich text, code, JSON, property, image, query, timeline, diagram, theme-token, and translation editor surfaces |
+| Editors | Rich text, code, JSON, property, image, query, timeline, diagram, theme-token, translation, collaboration, files, analysis, automation, AI, plugin, accessibility, test, document, and design-system surfaces |
 | Node editor | Horizontal/vertical flow, obstacle-routed typed wire palettes, double-click deletion, per-port/node limits, drag, pan, zoom, selection, snapping, inline typed parameters, per-node settings, read-only mode, JSON import/export |
 | Wizard | Linear onboarding, native and asynchronous validation, optional steps, keyboard navigation, save/restore, reset, and completion |
 | Media | Direct `MediaStream`, custom media adapter, native URL loading, live controls, PiP and fullscreen capability detection |

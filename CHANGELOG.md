@@ -8,6 +8,12 @@ All notable changes to GuiKit are documented here. The format follows
 
 ### Added
 
+- Application-platform module with adapter-first collaboration/presence/comments,
+  file workspaces, table analysis/pivots/histograms, serializable automation,
+  provider-neutral streaming AI, permissioned plugin manifests, accessibility
+  inspection, interaction recording/mocks, document templates, and DTCG/Figma
+  design-token exchange. The full demo now includes every platform surface.
+
 - Complete editor module: rich text/Markdown, code, structured JSON, property
   inspection, image adjustments/annotations, read-only query composition,
   timelines/keyframes, diagrams, theme tokens, and translation catalogs.

@@ -35,3 +35,6 @@ Current reference module:
   and bounded performance-budget telemetry.
 - [`editors`](editors/) provides rich text, code, structured data, property,
   image, query, timeline, diagram, token, and translation editing surfaces.
+- [`platform`](platform/) supplies adapter-first collaboration, files,
+  analysis, automation, AI, plugins, accessibility, testing, documents, and
+  design-token primitives.

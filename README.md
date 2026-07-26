@@ -33,6 +33,9 @@ The current `0.1` foundation includes:
 - a component playground with event inspection and accessibility auditing;
 - a full editor suite: rich text, code, structured data, property inspection,
   image, query, timeline, diagram, theme-token, and translation editors;
+- an adapter-first application platform for collaboration, file workspaces,
+  analysis/reporting, automation, streaming AI, plugin manifests,
+  accessibility inspection, interaction testing, documents, and design tokens;
 - frame batching, bounded performance budgets, cancellable data prefetching,
   virtual-row recycling, and lazy optional feature imports;
 - light, dark, and system themes powered by CSS variables;
@@ -101,6 +104,27 @@ Records share one JSON-safe schema across frontend and backend runtimes.
 Sensitive fields are redacted before transport. See
 [Structured logging](docs/LOGGING.md) for Node file rotation, HTTP and native
 bridge sinks, tracing, shutdown flushing, and the live viewer.
+
+### Application platform
+
+The optional `@gui-template/core/platform` entry point supplies models and Web
+Components for application-grade tooling while keeping transports and vendors
+outside the core package:
+
+```js
+import { GuiFileWorkspace, GuiMemoryFileAdapter, GuiAutomationModel } from "@gui-template/core/platform";
+
+const workspace = new GuiFileWorkspace({ adapter: new GuiMemoryFileAdapter() });
+workspace.create("notes/brief.md", "# Brief");
+await workspace.save();
+
+const flow = new GuiAutomationModel({ steps: [{ type: "action", action: "publish" }] });
+await flow.run({}, async (step) => host.invoke(step.action));
+```
+
+See the [application-platform guide](docs/PLATFORM.md) for collaboration/CRDT
+bridging, host file adapters, AI safety, plugin boundaries, report templates,
+test recording, and DTCG/Figma token exchange.
 
 ## Use the library
 

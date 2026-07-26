@@ -295,6 +295,7 @@ export * from "./modules/workspace/index.js";
 export * from "./modules/devtools/index.js";
 export * from "./modules/performance/index.js";
 export * from "./modules/editors/index.js";
+export * from "./modules/platform/index.js";
 
 declare global {
   interface Window {
@@ -347,5 +348,15 @@ declare global {
     "gui-workspace": import("./modules/workspace/index.js").GuiWorkspace;
     "gui-component-playground": import("./modules/devtools/index.js").GuiComponentPlayground;
     "gui-diagnostics-panel": import("./modules/devtools/index.js").GuiDiagnosticsPanel;
+    "gui-collaboration-panel": import("./modules/platform/index.js").GuiCollaborationPanel;
+    "gui-file-explorer": import("./modules/platform/index.js").GuiFileExplorer;
+    "gui-analysis-panel": import("./modules/platform/index.js").GuiAnalysisPanel;
+    "gui-automation-designer": import("./modules/platform/index.js").GuiAutomationDesigner;
+    "gui-ai-panel": import("./modules/platform/index.js").GuiAiPanel;
+    "gui-plugin-manager": import("./modules/platform/index.js").GuiPluginManager;
+    "gui-accessibility-inspector": import("./modules/platform/index.js").GuiAccessibilityInspector;
+    "gui-test-recorder": import("./modules/platform/index.js").GuiTestRecorder;
+    "gui-document-editor": import("./modules/platform/index.js").GuiDocumentEditor;
+    "gui-design-system-editor": import("./modules/platform/index.js").GuiDesignSystemEditor;
   }
 }

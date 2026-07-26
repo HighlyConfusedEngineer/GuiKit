@@ -140,6 +140,33 @@ import {
   editorsModule,
   formatStructuredText,
 } from "./modules/editors/index.js";
+import {
+  GuiAccessibilityInspector,
+  GuiAiPanel,
+  GuiAiSession,
+  GuiAnalysisPanel,
+  GuiAutomationDesigner,
+  GuiAutomationModel,
+  GuiCollaborationPanel,
+  GuiCollaborationSession,
+  GuiDesignSystem,
+  GuiDesignSystemEditor,
+  GuiDocumentEditor,
+  GuiDocumentModel,
+  GuiFileExplorer,
+  GuiFileWorkspace,
+  GuiInteractionRecorder,
+  GuiMemoryFileAdapter,
+  GuiMockHostBridge,
+  GuiPluginManager,
+  GuiPluginRegistry,
+  GuiTestRecorder,
+  histogram,
+  inspectAccessibility,
+  pivotRows,
+  platformModule,
+  summarizeTable,
+} from "./modules/platform/index.js";
 
 export {
   GUI_LOG_LEVELS,
@@ -241,6 +268,16 @@ export {
   GuiImageEditor, GuiPropertyInspector, GuiQueryEditor, GuiRichTextEditor,
   GuiStructuredEditor, GuiThemeEditor, GuiTimelineEditor, GuiTimelineModel,
   GuiTranslationEditor, editorsModule, formatStructuredText,
+};
+
+export {
+  GuiAccessibilityInspector, GuiAiPanel, GuiAiSession, GuiAnalysisPanel,
+  GuiAutomationDesigner, GuiAutomationModel, GuiCollaborationPanel,
+  GuiCollaborationSession, GuiDesignSystem, GuiDesignSystemEditor,
+  GuiDocumentEditor, GuiDocumentModel, GuiFileExplorer, GuiFileWorkspace,
+  GuiInteractionRecorder, GuiMemoryFileAdapter, GuiMockHostBridge,
+  GuiPluginManager, GuiPluginRegistry, GuiTestRecorder, histogram,
+  inspectAccessibility, pivotRows, platformModule, summarizeTable,
 };
 
 const hasDOM = typeof window !== "undefined" && typeof document !== "undefined";
@@ -2079,6 +2116,7 @@ registerElement("gui-toast-stack", GuiToastStack);
   devtoolsModule,
   performanceModule,
   editorsModule,
+  platformModule,
 ].forEach((module) => {
   if (!guiModules.has(module.id)) defineGuiModule(module);
 });

@@ -2,6 +2,11 @@ import {
   GuiBatchSink,
   GuiBridgeLogSink,
   GuiDataBuffer,
+  GuiAiSession,
+  GuiAutomationModel,
+  GuiCollaborationSession,
+  GuiFileWorkspace,
+  GuiMemoryFileAdapter,
   GuiDiagramModel,
   GuiDataCollection,
   GuiFormModel,
@@ -1084,6 +1089,23 @@ document.querySelector("#editor-translations").catalogs = {
   de: { menu: { save: "Speichern" }, status: "Bereit" },
   es: { menu: { save: "Guardar", close: "Cerrar" }, status: "Listo" },
 };
+
+const collaborationDemo = document.querySelector("#platform-collaboration");
+collaborationDemo.session = new GuiCollaborationSession({ state: { document: { title: "Incident report" } } });
+collaborationDemo.session.setPresence({ name: "Alex", color: "#5b5ce2", cursor: { path: "document.title" } });
+collaborationDemo.session.receive({ clientId: "sam", type: "presence", presence: { clientId: "sam", name: "Sam", color: "#00a99d" } });
+const fileDemo = document.querySelector("#platform-files");
+fileDemo.workspace = new GuiFileWorkspace({ adapter: new GuiMemoryFileAdapter({ "reports/incident.md": "# Incident\nTelemetry nominal." }) });
+await fileDemo.workspace.open("reports/incident.md");
+const analysisDemo = document.querySelector("#platform-analysis");
+analysisDemo.rows = [{ signal: 18, latency: 7 }, { signal: 24, latency: 9 }, { signal: 20, latency: 6 }];
+const automationDemo = document.querySelector("#platform-automation");
+automationDemo.flow = new GuiAutomationModel({ name: "Escalate anomaly", steps: [{ id: "notify", type: "action", action: "notification" }, { id: "ticket", type: "action", action: "create-ticket", retries: 1 }] });
+const aiDemo = document.querySelector("#platform-ai");
+aiDemo.session = new GuiAiSession({ provider: { async complete(messages) { return { text: `Demo provider received: ${messages.at(-1).content}` }; } } });
+const pluginDemo = document.querySelector("#platform-plugins");
+pluginDemo.registry.register({ id: "demo.inspector", name: "Inspector tools", version: "1.0.0", contributions: { panels: ["inspector"] } });
+[collaborationDemo, fileDemo, analysisDemo, automationDemo, aiDemo, pluginDemo].forEach((surface) => surface.render());
 
 const chart = document.querySelector("#full-chart");
 const chartCount = document.querySelector("#chart-count");
