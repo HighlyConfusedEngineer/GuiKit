@@ -9,7 +9,11 @@
     <Description>Bundled GuiKit static assets and a framework-neutral WebView bridge helper.</Description>
     <PackageTags>guikit;webview;webview2;wpf;avalonia</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/HighlyConfusedEngineer/GuiKit</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
   <ItemGroup>
@@ -17,6 +21,7 @@
     <Content Include="..\..\..\src\**\*" Pack="true" PackagePath="contentFiles/any/any/GuiKit/src/%(RecursiveDir)" />
     <Content Include="..\..\..\locales\**\*" Pack="true" PackagePath="contentFiles/any/any/GuiKit/locales/%(RecursiveDir)" />
     <Content Include="..\..\..\examples\full-demo\**\*" Pack="true" PackagePath="contentFiles/any/any/GuiKit/examples/full-demo/%(RecursiveDir)" />
+    <Content Include="..\README.md" Pack="true" PackagePath="/" />
     <Content Include="buildTransitive\GuiKit.WebView.targets" Pack="true" PackagePath="buildTransitive/" />
   </ItemGroup>
 </Project>

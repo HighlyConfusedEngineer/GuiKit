@@ -1,0 +1,156 @@
+name: Publish registries
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag to publish, for example v0.2.1
+        required: true
+        type: string
+      npm:
+        description: Publish the npm package
+        required: true
+        default: false
+        type: boolean
+      pypi:
+        description: Publish the Python wheel with trusted publishing
+        required: true
+        default: false
+        type: boolean
+      nuget:
+        description: Publish the NuGet package
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Rebuild verified release artifacts
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Validate release version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          value="$(node --input-type=module -e "import packageJson from './package.json' with { type: 'json' }; console.log(packageJson.version)")"
+          [[ "${{ inputs.tag }}" == "v$value" ]]
+          echo "value=$value" >> "$GITHUB_OUTPUT"
+
+      - name: Run checks and build packages
+        run: |
+          npm run check
+          python -m pip install --disable-pip-version-check build
+          npm run package:python
+          dotnet pack packages/dotnet/GuiKit.WebView/GuiKit.WebView.csproj --configuration Release -p:PackageOutputPath=${{ github.workspace }}/release/dotnet -p:PackageVersion=${{ steps.version.outputs.value }}
+
+      - name: Assemble npm package and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$(npm pack --ignore-scripts --pack-destination release --json | node --input-type=module -e "let value=''; for await (const chunk of process.stdin) value += chunk; console.log(JSON.parse(value)[0].filename)")"
+          mv "release/$archive" "release/GuiKit-${{ steps.version.outputs.value }}.tgz"
+          sha256sum release/GuiKit-*.tgz release/python/*.whl release/dotnet/*.nupkg > release/SHA256SUMS.txt
+
+      - name: Upload verified artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish-${{ steps.version.outputs.value }}
+          path: release/
+          if-no-files-found: error
+
+  npm:
+    if: inputs.npm
+    needs: build
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Download verified artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: publish-${{ needs.build.outputs.version }}
+          path: release
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Publish npm package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish release/GuiKit-${{ needs.build.outputs.version }}.tgz --access public --provenance
+
+  pypi:
+    if: inputs.pypi
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/guikit-webview/
+    permissions:
+      id-token: write
+    steps:
+      - name: Download verified artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: publish-${{ needs.build.outputs.version }}
+          path: release
+
+      - name: Publish Python wheel
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: release/python/
+
+  nuget:
+    if: inputs.nuget
+    needs: build
+    runs-on: ubuntu-latest
+    environment: nuget
+    permissions:
+      contents: read
+    steps:
+      - name: Download verified artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: publish-${{ needs.build.outputs.version }}
+          path: release
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Publish NuGet package
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: dotnet nuget push release/dotnet/*.nupkg --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate

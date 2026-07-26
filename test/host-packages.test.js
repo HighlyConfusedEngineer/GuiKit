@@ -7,6 +7,8 @@ const pythonHost = await readFile(new URL("../packages/python/src/guikit_webview
 const project = await readFile(new URL("../packages/dotnet/GuiKit.WebView/GuiKit.WebView.csproj", import.meta.url), "utf8");
 const bridge = await readFile(new URL("../packages/dotnet/GuiKit.WebView/GuiKitBridge.cs", import.meta.url), "utf8");
 const release = await readFile(new URL("../.github/workflows/release.yml", import.meta.url), "utf8");
+const publish = await readFile(new URL("../.github/workflows/publish.yml", import.meta.url), "utf8");
+const packageJson = await readFile(new URL("../package.json", import.meta.url), "utf8");
 
 test("Python host package bundles assets behind an optional native launcher", () => {
   assert.match(pyproject, /name = "guikit-webview"/);
@@ -27,4 +29,15 @@ test("release pipeline publishes Python and NuGet artifacts", () => {
   assert.match(release, /GuiKit.WebView\.csproj/);
   assert.match(release, /release\/python\/\*\.whl/);
   assert.match(release, /release\/dotnet\/\*\.nupkg/);
+});
+
+test("production packages include registry metadata and protected publishing paths", () => {
+  assert.match(packageJson, /"node": ">=20"/);
+  assert.match(packageJson, /"provenance": true/);
+  assert.match(pyproject, /license = "MIT"/);
+  assert.match(project, /PackageReadmeFile>README\.md/);
+  assert.match(publish, /workflow_dispatch/);
+  assert.match(publish, /NPM_TOKEN/);
+  assert.match(publish, /gh-action-pypi-publish/);
+  assert.match(publish, /NUGET_API_KEY/);
 });

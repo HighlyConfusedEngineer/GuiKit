@@ -10,6 +10,13 @@
   "bugs": {
     "url": "https://github.com/HighlyConfusedEngineer/GuiKit/issues"
   },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "type": "module",
   "types": "./src/gui.d.ts",
   "exports": {

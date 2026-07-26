@@ -94,9 +94,22 @@ gh attestation verify .\GuiKit-0.2.0.tgz `
   --repo HighlyConfusedEngineer/GuiKit
 ```
 
-## npm publication
+## Registry publication
 
-Publishing to npm is intentionally separate from GitHub Releases. Before adding
-it, the maintainers must own the package scope, enable trusted publishing or a
-least-privilege automation token, and document package provenance and rollback
-expectations.
+`.github/workflows/publish.yml` is deliberately **manual**. It rebuilds the
+selected tag, reruns the complete checks, and only then publishes the selected
+registries. A GitHub Release never publishes to a package registry by itself.
+
+Before its first use, configure the following protected GitHub Environments and
+registry-side identities:
+
+| Target | GitHub Environment | Required configuration |
+| --- | --- | --- |
+| npm | `npm` | `NPM_TOKEN` secret with publish access to the package scope; enable provenance. |
+| PyPI | `pypi` | Register `publish.yml` as PyPI's trusted publisher for `guikit-webview`; no long-lived token is used. |
+| NuGet | `nuget` | `NUGET_API_KEY` secret restricted to `GuiKit.WebView`. |
+
+Protect each environment with required reviewers and restrict it to version
+tags. Run **Actions → Publish registries**, enter the immutable release tag,
+and explicitly select each target. Publish only a tag that already has a
+successful GitHub Release and has passed its checksum verification.

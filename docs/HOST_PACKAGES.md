@@ -36,5 +36,6 @@ npm run package:dotnet
 
 The NuGet package is created in `release/dotnet/`. The release workflow attaches
 both host packages, the npm archive, and one checksum manifest to every GitHub
-Release. Publishing to PyPI or nuget.org remains an explicit registry decision;
-release assets can be installed from a GitHub Release immediately.
+Release. Registry publication is an explicit, protected manual action; see the
+[release guide](RELEASING.md#registry-publication) for the required npm, PyPI,
+and NuGet configuration.
