@@ -1968,6 +1968,25 @@ async function configureBackendLogging() {
 }
 await configureBackendLogging();
 
+async function loadBuildInfo() {
+  const version = document.querySelector("#build-version");
+  const status = document.querySelector("#build-status-link");
+  try {
+    const response = await fetch("./build-info.json", { cache: "no-store" });
+    if (!response.ok) throw new Error("Build metadata unavailable");
+    const info = await response.json();
+    version.textContent = `v${info.version} · ${info.commit ?? "unknown"}`;
+    const passed = info.testStatus === "passed";
+    status.textContent = `${passed ? "✓ Checks passed" : "• Source checkout"}${info.builtAt ? ` · ${new Date(info.builtAt).toLocaleString()}` : ""}`;
+    status.href = info.workflowUrl ?? "https://github.com/HighlyConfusedEngineer/GuiKit/actions";
+    status.dataset.status = info.testStatus ?? "unknown";
+  } catch {
+    version.textContent = "v0.1.0 · local";
+    status.textContent = "Local demo · build metadata unavailable";
+  }
+}
+await loadBuildInfo();
+
 document.querySelector("#bridge-info").addEventListener("click", async () => {
   const result = await bridge.invoke("app.info");
   document.querySelector("#bridge-result").textContent = JSON.stringify(result, null, 2);

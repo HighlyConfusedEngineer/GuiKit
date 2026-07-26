@@ -1,0 +1,10 @@
+{
+  "version": "0.1.0",
+  "commit": "local",
+  "ref": "main",
+  "builtAt": null,
+  "testStatus": "source",
+  "testCommand": "npm run check",
+  "run": null,
+  "workflowUrl": "https://github.com/HighlyConfusedEngineer/GuiKit/actions"
+}

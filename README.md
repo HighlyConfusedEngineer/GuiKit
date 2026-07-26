@@ -69,6 +69,14 @@ npm run check
 The HTML can also be served by any static server or packaged directly with a
 native application.
 
+### GitHub Pages build status
+
+The included Pages workflow runs `npm run check`, generates public build
+metadata, and deploys the site. Enable **Settings → Pages → Build and
+deployment → GitHub Actions** once in the repository. The full-demo overview
+then shows the deployed version, commit, timestamp, and linked test status on
+both the landing dashboard and full demo.
+
 ### Full feature demo
 
 Run the complete browser-and-backend example:
