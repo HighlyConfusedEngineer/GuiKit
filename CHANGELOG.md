@@ -8,6 +8,9 @@ All notable changes to GuiKit are documented here. The format follows
 
 ### Added
 
+- Publishable Python wheel and .NET NuGet host packages with bundled GUI assets,
+  bridge helpers, CI package builds, release attachments, and checksums.
+
 - Swipe-page carousel and responsive dashboard components with accessibility,
   keyboard navigation, drag ordering, serializable layouts, and live full-demo
   controls.

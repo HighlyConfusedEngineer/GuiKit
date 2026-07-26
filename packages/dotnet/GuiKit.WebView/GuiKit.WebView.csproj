@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PackageId>GuiKit.WebView</PackageId>
+    <Version>0.1.0</Version>
+    <Title>GuiKit WebView host assets and bridge</Title>
+    <Description>Bundled GuiKit static assets and a framework-neutral WebView bridge helper.</Description>
+    <PackageTags>guikit;webview;webview2;wpf;avalonia</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/HighlyConfusedEngineer/GuiKit</RepositoryUrl>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="..\..\..\index.html" Pack="true" PackagePath="contentFiles/any/any/GuiKit/" />
+    <None Include="..\..\..\src\**\*" Pack="true" PackagePath="contentFiles/any/any/GuiKit/src/%(RecursiveDir)" />
+    <None Include="..\..\..\locales\**\*" Pack="true" PackagePath="contentFiles/any/any/GuiKit/locales/%(RecursiveDir)" />
+    <None Include="..\..\..\examples\full-demo\**\*" Pack="true" PackagePath="contentFiles/any/any/GuiKit/examples/full-demo/%(RecursiveDir)" />
+    <None Include="buildTransitive\GuiKit.WebView.targets" Pack="true" PackagePath="buildTransitive/" />
+  </ItemGroup>
+</Project>

@@ -43,6 +43,7 @@ The current `0.1` foundation includes:
 - light, dark, and system themes powered by CSS variables;
 - runtime localization with fallback and interpolation;
 - a promise-based host bridge for pywebview, WebView2, WebKit, and browser mocks;
+- packaged Python (`guikit-webview`) and .NET (`GuiKit.WebView`) host assets and bridge helpers;
 - no runtime npm dependencies and no framework requirement.
 
 ## Try the showcase
@@ -68,6 +69,13 @@ npm run check
 
 The HTML can also be served by any static server or packaged directly with a
 native application.
+
+### Python and .NET packages
+
+Release builds include a self-contained Python wheel and .NET NuGet package in
+addition to the npm archive. Build them locally with `npm run package:python`
+and `npm run package:dotnet`; see [host packages](docs/HOST_PACKAGES.md) for
+installation and WebView2/pywebview integration.
 
 ### GitHub Pages build status
 
