@@ -1,5 +1,9 @@
 # GuiKit
 
+[![CI](https://github.com/HighlyConfusedEngineer/GuiKit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/HighlyConfusedEngineer/GuiKit/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/HighlyConfusedEngineer/GuiKit?display_name=tag&sort=semver)](https://github.com/HighlyConfusedEngineer/GuiKit/releases/latest)
+[![License](https://img.shields.io/github/license/HighlyConfusedEngineer/GuiKit)](LICENSE)
+
 GuiKit is a lightweight GUI foundation for interfaces that need to run in a
 browser, a desktop webview, or both. The UI is written once with standard HTML,
 CSS, and JavaScript. Python, C#, or another host language supplies native
@@ -77,13 +81,11 @@ addition to the npm archive. Build them locally with `npm run package:python`
 and `npm run package:dotnet`; see [host packages](docs/HOST_PACKAGES.md) for
 installation and WebView2/pywebview integration.
 
-### GitHub Pages build status
+### GitHub README status
 
-The included Pages workflow runs `npm run check`, generates public build
-metadata, and deploys the site. Enable **Settings → Pages → Build and
-deployment → GitHub Actions** once in the repository. The full-demo overview
-then shows the deployed version, commit, timestamp, and linked test status on
-both the landing dashboard and full demo.
+The badges above are shown directly in the GitHub README: **CI** reflects the
+latest `main` test/build run, while **Latest release** shows the current tagged
+version. No GitHub Pages deployment is required.
 
 ### Full feature demo
 

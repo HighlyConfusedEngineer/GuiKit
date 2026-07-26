@@ -13,10 +13,6 @@ npm run demo:full
 
 Open `http://127.0.0.1:4174/examples/full-demo/`.
 
-When deployed through the GitHub Pages workflow, the overview also displays the
-published package version, commit, build time, and `npm run check` status. The
-status links to the exact Actions run. Local/static hosts show a clear fallback.
-
 The Node server adds an HTTP logging collector and a rotating JSONL file sink.
 Runtime records are written under `examples/full-demo/runtime/`, which is
 excluded from Git.
