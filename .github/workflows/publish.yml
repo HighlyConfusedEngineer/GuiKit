@@ -94,7 +94,7 @@ jobs:
       id-token: write
     steps:
       - name: Download verified artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: publish-${{ needs.build.outputs.version }}
           path: release
@@ -121,7 +121,7 @@ jobs:
       id-token: write
     steps:
       - name: Download verified artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: publish-${{ needs.build.outputs.version }}
           path: release
@@ -140,7 +140,7 @@ jobs:
       contents: read
     steps:
       - name: Download verified artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: publish-${{ needs.build.outputs.version }}
           path: release
