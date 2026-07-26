@@ -39,7 +39,7 @@ jobs:
           ref: ${{ inputs.tag }}
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
 
@@ -100,7 +100,7 @@ jobs:
           path: release
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
