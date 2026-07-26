@@ -296,6 +296,7 @@ export * from "./modules/devtools/index.js";
 export * from "./modules/performance/index.js";
 export * from "./modules/editors/index.js";
 export * from "./modules/platform/index.js";
+export * from "./modules/production/index.js";
 
 declare global {
   interface Window {
@@ -358,5 +359,10 @@ declare global {
     "gui-test-recorder": import("./modules/platform/index.js").GuiTestRecorder;
     "gui-document-editor": import("./modules/platform/index.js").GuiDocumentEditor;
     "gui-design-system-editor": import("./modules/platform/index.js").GuiDesignSystemEditor;
+    "gui-theme-studio": import("./modules/production/index.js").GuiThemeStudioEditor;
+    "gui-layout-designer": import("./modules/production/index.js").GuiLayoutDesigner;
+    "gui-connector-manager": import("./modules/production/index.js").GuiConnectorManager;
+    "gui-observability-dashboard": import("./modules/production/index.js").GuiObservabilityDashboard;
+    "gui-visual-regression-panel": import("./modules/production/index.js").GuiVisualRegressionPanel;
   }
 }

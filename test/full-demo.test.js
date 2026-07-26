@@ -51,11 +51,20 @@ test("full demo contains every GuiKit custom element", () => {
     "gui-test-recorder",
     "gui-document-editor",
     "gui-design-system-editor",
+    "gui-theme-studio",
+    "gui-layout-designer",
+    "gui-connector-manager",
+    "gui-observability-dashboard",
+    "gui-visual-regression-panel",
   ].forEach((tag) => assert.match(html, new RegExp(`<${tag}(?:\\s|>)`)));
 });
 
 test("full demo exercises application-platform adapters and surfaces", () => {
   ["GuiCollaborationSession", "GuiMemoryFileAdapter", "GuiFileWorkspace", "GuiAutomationModel", "GuiAiSession", "pluginDemo.registry.register"].forEach((surface) => assert.match(app, new RegExp(surface.replaceAll(".", "\\."))));
+});
+
+test("full demo configures production studio services", () => {
+  ["GuiThemeStudio", "createReplayConnector", "GuiObservabilityHub", "GuiPluginPolicy"].forEach((surface) => assert.match(app, new RegExp(surface.replaceAll(".", "\\."))));
 });
 
 test("full demo configures every editor surface", () => {

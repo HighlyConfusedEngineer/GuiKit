@@ -38,3 +38,6 @@ Current reference module:
 - [`platform`](platform/) supplies adapter-first collaboration, files,
   analysis, automation, AI, plugins, accessibility, testing, documents, and
   design-token primitives.
+- [`production`](production/) supplies delivery hardening: layouts/themes,
+  connectors, observability, offline sync, plugin policy, visual tests, and
+  performance/bundle budgets.

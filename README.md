@@ -126,6 +126,15 @@ See the [application-platform guide](docs/PLATFORM.md) for collaboration/CRDT
 bridging, host file adapters, AI safety, plugin boundaries, report templates,
 test recording, and DTCG/Figma token exchange.
 
+### Production hardening
+
+`@gui-template/core/production` provides the remaining delivery tooling:
+theme/contrast and responsive-layout studios, adapter-first connectors and
+credential references, offline sync, bounded observability, node execution
+debugging, FFT/correlation/export helpers, plugin policy, visual-regression
+matrices, lazy-element loading, and bundle-size budgets. Read the
+[production guide](docs/PRODUCTION.md) for host and CI integration.
+
 ## Use the library
 
 Import the stylesheet and module:

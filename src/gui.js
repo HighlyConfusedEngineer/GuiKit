@@ -167,8 +167,38 @@ import {
   platformModule,
   summarizeTable,
 } from "./modules/platform/index.js";
+import {
+  GuiAccessibilityLab,
+  GuiCachePolicy,
+  GuiConnectorManager,
+  GuiCredentialVault,
+  GuiDataConnectorRegistry,
+  GuiFlowDebugger,
+  GuiLayoutDesigner,
+  GuiNodeLibrary,
+  GuiObservabilityDashboard,
+  GuiObservabilityHub,
+  GuiOfflineSyncQueue,
+  GuiPluginPolicy,
+  GuiProductionOptimizer,
+  GuiResponsiveLayout,
+  GuiServiceWorkerBridge,
+  GuiThemeStudio,
+  GuiThemeStudioEditor,
+  GuiVisualRegressionPanel,
+  GuiVisualRegressionSuite,
+  contrastRatio,
+  correlation,
+  createReplayConnector,
+  exportChartSvg,
+  exportDelimited,
+  fftMagnitude,
+  normalizeAnalysisDataset,
+  productionModule,
+} from "./modules/production/index.js";
 
 export {
+  GuiAccessibilityLab, GuiCachePolicy,
   GUI_LOG_LEVELS,
   GUI_LOG_SCHEMA,
   GuiBatchSink,
@@ -278,6 +308,16 @@ export {
   GuiInteractionRecorder, GuiMemoryFileAdapter, GuiMockHostBridge,
   GuiPluginManager, GuiPluginRegistry, GuiTestRecorder, histogram,
   inspectAccessibility, pivotRows, platformModule, summarizeTable,
+};
+
+export {
+  GuiConnectorManager, GuiCredentialVault, GuiDataConnectorRegistry,
+  GuiFlowDebugger, GuiLayoutDesigner, GuiNodeLibrary,
+  GuiObservabilityDashboard, GuiObservabilityHub, GuiOfflineSyncQueue,
+  GuiPluginPolicy, GuiProductionOptimizer, GuiResponsiveLayout, GuiThemeStudio,
+  GuiServiceWorkerBridge, GuiThemeStudioEditor, GuiVisualRegressionPanel, GuiVisualRegressionSuite,
+  contrastRatio, correlation, createReplayConnector, exportChartSvg,
+  exportDelimited, fftMagnitude, normalizeAnalysisDataset, productionModule,
 };
 
 const hasDOM = typeof window !== "undefined" && typeof document !== "undefined";
@@ -2117,6 +2157,7 @@ registerElement("gui-toast-stack", GuiToastStack);
   performanceModule,
   editorsModule,
   platformModule,
+  productionModule,
 ].forEach((module) => {
   if (!guiModules.has(module.id)) defineGuiModule(module);
 });

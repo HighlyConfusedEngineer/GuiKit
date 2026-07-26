@@ -104,6 +104,11 @@
       "import": "./src/modules/platform/index.js",
       "default": "./src/modules/platform/index.js"
     },
+    "./production": {
+      "types": "./src/modules/production/index.d.ts",
+      "import": "./src/modules/production/index.js",
+      "default": "./src/modules/production/index.js"
+    },
     "./adapters": {
       "types": "./src/adapters/index.d.ts",
       "import": "./src/adapters/index.js",
@@ -133,7 +138,7 @@
   "scripts": {
     "dev": "node tools/dev-server.mjs",
     "demo:full": "node examples/full-demo/server.mjs",
-    "check": "node --check src/gui.js && node --check src/core/module-registry.js && node --check src/modules/node-editor/index.js && node --check src/modules/media-player/index.js && node --check src/modules/statusbar/index.js && node --check src/modules/wizard/index.js && node --check src/modules/logging/index.js && node --check src/modules/logging/node.js && node --check src/modules/commands/index.js && node --check src/modules/overlays/index.js && node --check src/modules/runtime/index.js && node --check src/modules/forms/index.js && node --check src/modules/data-views/index.js && node --check src/modules/workspace/index.js && node --check src/modules/devtools/index.js && node --check src/modules/performance/index.js && node --check src/modules/performance/analysis-worker.js && node --check src/modules/editors/index.js && node --check src/modules/platform/index.js && node --check src/adapters/index.js && node --check examples/full-demo/app.js && node --check examples/full-demo/server.mjs && node --check tools/create-module.mjs && node --test",
+    "check": "node --check src/gui.js && node --check src/core/module-registry.js && node --check src/modules/node-editor/index.js && node --check src/modules/media-player/index.js && node --check src/modules/statusbar/index.js && node --check src/modules/wizard/index.js && node --check src/modules/logging/index.js && node --check src/modules/logging/node.js && node --check src/modules/commands/index.js && node --check src/modules/overlays/index.js && node --check src/modules/runtime/index.js && node --check src/modules/forms/index.js && node --check src/modules/data-views/index.js && node --check src/modules/workspace/index.js && node --check src/modules/devtools/index.js && node --check src/modules/performance/index.js && node --check src/modules/performance/analysis-worker.js && node --check src/modules/editors/index.js && node --check src/modules/platform/index.js && node --check src/modules/production/index.js && node --check src/adapters/index.js && node --check examples/full-demo/app.js && node --check examples/full-demo/server.mjs && node --check tools/create-module.mjs && node --test",
     "test": "node --test",
     "prepack": "npm run check",
     "release:check": "npm pack --dry-run --ignore-scripts",

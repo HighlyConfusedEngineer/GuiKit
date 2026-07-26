@@ -8,6 +8,12 @@ All notable changes to GuiKit are documented here. The format follows
 
 ### Added
 
+- Production hardening module: theme/contrast and responsive-layout tooling,
+  adapter-first connectors/credential references, observability, node execution
+  debugging, FFT/correlation and chart export helpers, offline queues, plugin
+  policy, deterministic visual-regression matrices, lazy-element registration,
+  and bundle-size budget evaluation.
+
 - Application-platform module with adapter-first collaboration/presence/comments,
   file workspaces, table analysis/pivots/histograms, serializable automation,
   provider-neutral streaming AI, permissioned plugin manifests, accessibility

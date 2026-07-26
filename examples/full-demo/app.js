@@ -16,6 +16,10 @@ import {
   GuiTreeModel,
   GuiTimelineModel,
   GuiWorkspaceModel,
+  GuiObservabilityHub,
+  GuiPluginPolicy,
+  GuiThemeStudio,
+  createReplayConnector,
   auditAccessibility,
   bridge,
   capabilities,
@@ -1106,6 +1110,18 @@ aiDemo.session = new GuiAiSession({ provider: { async complete(messages) { retur
 const pluginDemo = document.querySelector("#platform-plugins");
 pluginDemo.registry.register({ id: "demo.inspector", name: "Inspector tools", version: "1.0.0", contributions: { panels: ["inspector"] } });
 [collaborationDemo, fileDemo, analysisDemo, automationDemo, aiDemo, pluginDemo].forEach((surface) => surface.render());
+
+const productionTheme = document.querySelector("#production-theme");
+productionTheme.studio = new GuiThemeStudio({ tokens: { "--gui-accent": "#5b5ce2", "--gui-surface": "#172030", "--gui-fg": "#edf2ff" } });
+productionTheme.studio.savePreset("night");
+const productionConnectors = document.querySelector("#production-connectors");
+productionConnectors.connectors.register(createReplayConnector("telemetry-replay", [{ cpu: 32 }, { cpu: 48 }]));
+const productionObservability = document.querySelector("#production-observability");
+productionObservability.hub = new GuiObservabilityHub({ alerts: [{ metric: "demo.latency", operator: "gt", value: 120 }] });
+productionObservability.hub.metric("demo.latency", 84, { route: "/api/telemetry" });
+const pluginPolicyDemo = new GuiPluginPolicy({ permissions: ["storage"] });
+pluginPolicyDemo.verify(pluginPolicyDemo.scaffold({ id: "demo.safe-plugin", name: "Safe plugin" }));
+[productionTheme, productionConnectors, productionObservability].forEach((surface) => surface.render());
 
 const chart = document.querySelector("#full-chart");
 const chartCount = document.querySelector("#chart-count");
