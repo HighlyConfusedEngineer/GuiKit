@@ -144,7 +144,7 @@
     "release:check": "npm pack --dry-run --ignore-scripts",
     "package:python:stage": "node tools/stage-python-package.mjs",
     "package:python": "npm run package:python:stage && python -m build --wheel --outdir release/python release/python-src",
-    "package:dotnet": "dotnet pack packages/dotnet/GuiKit.WebView/GuiKit.WebView.csproj --configuration Release -p:PackageOutputPath=release/dotnet",
+    "package:dotnet": "dotnet pack packages/dotnet/GuiKit.WebView/GuiKit.WebView.csproj --configuration Release -p:PackageOutputPath=../../../release/dotnet",
     "create:module": "node tools/create-module.mjs"
   },
   "keywords": [
