@@ -10,6 +10,8 @@ test("full demo contains every GuiKit custom element", () => {
   [
     "gui-sidebar",
     "gui-pages",
+    "gui-swipe-pages",
+    "gui-dashboard",
     "gui-tabs",
     "gui-live-chart",
     "gui-node-editor",
@@ -65,6 +67,11 @@ test("full demo exercises application-platform adapters and surfaces", () => {
 
 test("full demo configures production studio services", () => {
   ["GuiThemeStudio", "createReplayConnector", "GuiObservabilityHub", "GuiPluginPolicy"].forEach((surface) => assert.match(app, new RegExp(surface.replaceAll(".", "\\."))));
+});
+
+test("full demo demonstrates swipe pages and configurable dashboards", () => {
+  ["navigation-swipe-pages", "swipe-previous", "swipe-next", "swipe-loop", "navigation-dashboard", "dashboard-columns", "dashboard-span", "dashboard-save", "dashboard-restore"].forEach((id) => assert.match(html, new RegExp(`id="${id}"`)));
+  ["swipePages.next", "swipePages.previous", "swipePages.loop", "navigationDashboard.updateCard", "navigationDashboard.savePreset", "navigationDashboard.restorePreset"].forEach((surface) => assert.match(app, new RegExp(surface.replaceAll(".", "\\."))));
 });
 
 test("full demo exposes direct interactions for every platform and production contract", () => {

@@ -456,6 +456,44 @@
     pointer-events: none;
   }
 
+  gui-swipe-pages {
+    position: relative;
+    display: block;
+    min-height: 12rem;
+    overflow: hidden;
+    touch-action: pan-y;
+    outline: none;
+  }
+
+  gui-swipe-pages:focus-visible {
+    outline: 2px solid var(--gui-focus);
+    outline-offset: 3px;
+  }
+
+  gui-swipe-pages > [data-swipe-page] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    transition-property: transform;
+    transition-timing-function: var(--gui-ease);
+    will-change: transform;
+  }
+
+  gui-dashboard {
+    display: grid;
+    grid-template-columns: repeat(var(--gui-dashboard-columns, 12), minmax(0, 1fr));
+    gap: var(--gui-space-4);
+    align-items: start;
+  }
+
+  gui-dashboard > [data-dashboard-card] {
+    min-width: 0;
+    transition: transform var(--gui-duration) var(--gui-ease), box-shadow var(--gui-duration) var(--gui-ease);
+  }
+
+  gui-dashboard > [data-dashboard-card][draggable="true"] { cursor: grab; }
+  gui-dashboard > [data-dashboard-card][draggable="true"]:active { cursor: grabbing; transform: scale(0.985); }
+
   .gui-badge {
     display: inline-flex;
     align-items: center;

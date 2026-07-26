@@ -8,6 +8,10 @@ All notable changes to GuiKit are documented here. The format follows
 
 ### Added
 
+- Swipe-page carousel and responsive dashboard components with accessibility,
+  keyboard navigation, drag ordering, serializable layouts, and live full-demo
+  controls.
+
 - Full demo direct API laboratory: every application-platform and production
   feature now has a visible control and serialized live result, with safe
   in-memory adapters for credentials, offline storage, replay data, and visual

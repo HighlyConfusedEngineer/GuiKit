@@ -9,8 +9,10 @@ import {
   GuiCodeEditor,
   GuiDiagramEditor,
   GuiImageEditor,
+  GuiDashboard,
   GuiPages,
   GuiSidebar,
+  GuiSwipePages,
   GuiTabs,
   GuiWorkspace,
 } from "../src/gui.js";
@@ -18,6 +20,8 @@ import {
 test("navigation components are available as public exports", () => {
   assert.equal(typeof GuiTabs, "function");
   assert.equal(typeof GuiPages, "function");
+  assert.equal(typeof GuiSwipePages, "function");
+  assert.equal(typeof GuiDashboard, "function");
   assert.equal(typeof GuiSidebar, "function");
 });
 

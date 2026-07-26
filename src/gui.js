@@ -1987,6 +1987,178 @@ export class GuiPages extends GuiElement {
   }
 }
 
+/** Touch, trackpad, and keyboard page carousel with declarative child panels. */
+export class GuiSwipePages extends GuiElement {
+  static observedAttributes = ["active", "loop"];
+  #start = null;
+  #pointerId = null;
+
+  connectedCallback() {
+    this.tabIndex ||= 0;
+    this.setAttribute("role", "region");
+    this.setAttribute("aria-roledescription", "carousel");
+    this.#prepare();
+    this.addEventListener("pointerdown", this.#onPointerDown);
+    this.addEventListener("pointerup", this.#onPointerUp);
+    this.addEventListener("pointercancel", this.#onPointerCancel);
+    this.addEventListener("keydown", this.#onKeyDown);
+  }
+
+  disconnectedCallback() {
+    this.removeEventListener("pointerdown", this.#onPointerDown);
+    this.removeEventListener("pointerup", this.#onPointerUp);
+    this.removeEventListener("pointercancel", this.#onPointerCancel);
+    this.removeEventListener("keydown", this.#onKeyDown);
+  }
+
+  attributeChangedCallback(name, previous, current) {
+    if (name === "active" && this.isConnected && previous !== current) this.#render(previous);
+  }
+
+  get active() { return this.getAttribute("active"); }
+  set active(value) { if (value) this.setAttribute("active", String(value)); }
+  get index() { return this.#pages().findIndex((page) => page.dataset.swipePage === this.active); }
+  get loop() { return this.hasAttribute("loop"); }
+  set loop(value) { this.toggleAttribute("loop", Boolean(value)); }
+
+  select(name, options = {}) {
+    const pages = this.#pages();
+    const next = typeof name === "number" ? pages[name]?.dataset.swipePage : String(name);
+    if (!next || !pages.some((page) => page.dataset.swipePage === next) || next === this.active) return false;
+    const previous = this.active;
+    this.dataset.direction = options.direction ?? (pages.findIndex((page) => page.dataset.swipePage === next) > this.index ? "forward" : "back");
+    this.active = next;
+    emit(this, "gui:swipe-page-change", { active: next, previous, index: this.index, direction: this.dataset.direction });
+    return true;
+  }
+
+  next() { return this.#move(1); }
+  previous() { return this.#move(-1); }
+
+  #move(offset) {
+    const pages = this.#pages();
+    if (!pages.length) return false;
+    let target = this.index + offset;
+    if (this.loop) target = (target + pages.length) % pages.length;
+    if (target < 0 || target >= pages.length) return false;
+    return this.select(target, { direction: offset > 0 ? "forward" : "back" });
+  }
+
+  #pages() { return [...this.querySelectorAll(":scope > [data-swipe-page]")]; }
+
+  #prepare() {
+    const pages = this.#pages();
+    if (!this.active && pages[0]) this.active = pages[0].dataset.swipePage;
+    pages.forEach((page, index) => {
+      page.setAttribute("role", "group");
+      page.setAttribute("aria-roledescription", "slide");
+      page.setAttribute("aria-label", page.getAttribute("data-swipe-label") ?? `${index + 1} of ${pages.length}`);
+    });
+    this.#render(null, false);
+  }
+
+  #render(previous = null, animate = true) {
+    const pages = this.#pages();
+    const activeIndex = Math.max(0, this.index);
+    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    pages.forEach((page, index) => {
+      page.style.transform = `translateX(${(index - activeIndex) * 100}%)`;
+      page.setAttribute("aria-hidden", String(index !== activeIndex));
+      page.inert = index !== activeIndex;
+      page.style.transitionDuration = animate && previous && !reducedMotion ? "var(--gui-duration-slow, 320ms)" : "0ms";
+    });
+  }
+
+  #onPointerDown = (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    this.#start = { x: event.clientX, y: event.clientY };
+    this.#pointerId = event.pointerId;
+    this.setPointerCapture?.(event.pointerId);
+  };
+  #onPointerUp = (event) => {
+    if (event.pointerId !== this.#pointerId || !this.#start) return;
+    const deltaX = event.clientX - this.#start.x;
+    const deltaY = event.clientY - this.#start.y;
+    if (Math.abs(deltaX) >= 48 && Math.abs(deltaX) > Math.abs(deltaY)) deltaX < 0 ? this.next() : this.previous();
+    this.#onPointerCancel();
+  };
+  #onPointerCancel = () => { this.#start = null; this.#pointerId = null; };
+  #onKeyDown = (event) => {
+    if (event.key === "ArrowRight" || event.key === "PageDown") { event.preventDefault(); this.next(); }
+    if (event.key === "ArrowLeft" || event.key === "PageUp") { event.preventDefault(); this.previous(); }
+    if (event.key === "Home") { event.preventDefault(); this.select(0, { direction: "back" }); }
+    if (event.key === "End") { event.preventDefault(); this.select(this.#pages().length - 1, { direction: "forward" }); }
+  };
+}
+
+/** Responsive card dashboard with serializable spans, drag ordering, and presets. */
+export class GuiDashboard extends GuiElement {
+  static observedAttributes = ["columns"];
+  #layout = new Map();
+  #presets = new Map();
+  #dragged = null;
+
+  connectedCallback() {
+    this.setAttribute("role", "region");
+    this.#prepare();
+    this.addEventListener("dragstart", this.#onDragStart);
+    this.addEventListener("dragover", this.#onDragOver);
+    this.addEventListener("drop", this.#onDrop);
+  }
+  disconnectedCallback() {
+    this.removeEventListener("dragstart", this.#onDragStart);
+    this.removeEventListener("dragover", this.#onDragOver);
+    this.removeEventListener("drop", this.#onDrop);
+  }
+  attributeChangedCallback() { if (this.isConnected) this.#render(); }
+
+  get columns() { return Math.max(1, Number(this.getAttribute("columns")) || 12); }
+  set columns(value) { this.setAttribute("columns", String(Math.max(1, Number(value) || 12))); }
+  get layout() { return this.snapshot(); }
+  set layout(value) { this.setLayout(value); }
+
+  setLayout(layout = []) {
+    const entries = Array.isArray(layout) ? layout : layout.items ?? [];
+    entries.forEach((entry, index) => {
+      if (!entry?.id) return;
+      this.#layout.set(String(entry.id), { id: String(entry.id), span: 1, order: index, ...structuredClone(entry) });
+    });
+    this.#render();
+    emit(this, "gui:dashboard-change", { layout: this.snapshot() });
+  }
+  updateCard(id, patch = {}) {
+    const item = this.#layout.get(String(id));
+    if (!item) return false;
+    Object.assign(item, structuredClone(patch)); this.#render(); emit(this, "gui:dashboard-change", { layout: this.snapshot() }); return true;
+  }
+  savePreset(name) { this.#presets.set(String(name), this.snapshot()); return this.snapshot(); }
+  restorePreset(name) { const preset = this.#presets.get(String(name)); if (!preset) return false; this.setLayout(preset); return true; }
+  snapshot() { return [...this.#layout.values()].sort((left, right) => left.order - right.order).map((item) => structuredClone(item)); }
+
+  #cards() { return [...this.querySelectorAll(":scope > [data-dashboard-card]")]; }
+  #prepare() {
+    this.#cards().forEach((card, index) => {
+      const id = card.dataset.dashboardCard;
+      if (!id) return;
+      this.#layout.set(id, this.#layout.get(id) ?? { id, span: Number(card.dataset.span) || 1, order: index });
+      card.draggable = !card.hasAttribute("data-dashboard-fixed");
+      card.setAttribute("role", "article");
+    });
+    this.#render();
+  }
+  #render() {
+    this.style.setProperty("--gui-dashboard-columns", String(this.columns));
+    this.#cards().forEach((card, index) => {
+      const item = this.#layout.get(card.dataset.dashboardCard) ?? { span: 1, order: index };
+      card.style.gridColumn = `span ${Math.min(this.columns, Math.max(1, Number(item.span) || 1))}`;
+      card.style.order = String(Number(item.order) || 0);
+    });
+  }
+  #onDragStart = (event) => { const card = event.target.closest("[data-dashboard-card]"); if (!card || card.closest("gui-dashboard") !== this) return; this.#dragged = card.dataset.dashboardCard; event.dataTransfer?.setData("text/plain", this.#dragged); };
+  #onDragOver = (event) => { if (event.target.closest("[data-dashboard-card]")?.closest("gui-dashboard") === this) event.preventDefault(); };
+  #onDrop = (event) => { const target = event.target.closest("[data-dashboard-card]"); if (!target || !this.#dragged || target.dataset.dashboardCard === this.#dragged) return; event.preventDefault(); const source = this.#layout.get(this.#dragged); const destination = this.#layout.get(target.dataset.dashboardCard); [source.order, destination.order] = [destination.order, source.order]; this.#dragged = null; this.#render(); emit(this, "gui:dashboard-change", { layout: this.snapshot() }); };
+}
+
 function registerElement(name, constructor) {
   if (hasDOM && !customElements.get(name)) customElements.define(name, constructor);
 }
@@ -2112,6 +2284,8 @@ export function initializeGui(options = {}) {
 registerElement("gui-tabs", GuiTabs);
 registerElement("gui-sidebar", GuiSidebar);
 registerElement("gui-pages", GuiPages);
+registerElement("gui-swipe-pages", GuiSwipePages);
+registerElement("gui-dashboard", GuiDashboard);
 registerElement("gui-live-chart", GuiLiveChart);
 registerElement("gui-toast-stack", GuiToastStack);
 
@@ -2126,7 +2300,7 @@ registerElement("gui-toast-stack", GuiToastStack);
     version: "0.1.0",
     description: "Tabs, responsive sidebars, and sliding page navigation.",
     dependencies: ["core"],
-    components: ["gui-tabs", "gui-sidebar", "gui-pages"],
+    components: ["gui-tabs", "gui-sidebar", "gui-pages", "gui-swipe-pages", "gui-dashboard"],
   },
   {
     id: "live-chart",

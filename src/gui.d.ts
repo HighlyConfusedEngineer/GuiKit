@@ -167,6 +167,26 @@ export class GuiPages extends HTMLElement {
   back(): void;
 }
 
+export class GuiSwipePages extends HTMLElement {
+  active: string | null;
+  index: number;
+  loop: boolean;
+  select(name: string | number, options?: { direction?: "forward" | "back" }): boolean;
+  next(): boolean;
+  previous(): boolean;
+}
+
+export interface GuiDashboardCard { id: string; span?: number; order?: number; [key: string]: unknown; }
+export class GuiDashboard extends HTMLElement {
+  columns: number;
+  layout: GuiDashboardCard[];
+  setLayout(layout: GuiDashboardCard[] | { items: GuiDashboardCard[] }): void;
+  updateCard(id: string, patch?: Partial<GuiDashboardCard>): boolean;
+  savePreset(name: string): GuiDashboardCard[];
+  restorePreset(name: string): boolean;
+  snapshot(): GuiDashboardCard[];
+}
+
 export const i18n: GuiI18n;
 export const bridge: GuiBridge;
 export const toast: GuiToastManager;
@@ -332,6 +352,8 @@ declare global {
     "gui-tabs": GuiTabs;
     "gui-sidebar": GuiSidebar;
     "gui-pages": GuiPages;
+    "gui-swipe-pages": GuiSwipePages;
+    "gui-dashboard": GuiDashboard;
     "gui-live-chart": GuiLiveChart;
     "gui-toast-stack": GuiToastStack;
     "gui-log-viewer": import("./modules/logging/index.js").GuiLogViewer;

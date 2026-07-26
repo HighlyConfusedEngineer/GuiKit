@@ -27,6 +27,7 @@ and keeps every frontend feature operational.
 | --- | --- |
 | Overview | Cards, responsive grids, `GuiDataBuffer`, min/max decimation, live event stream |
 | Navigation | Collapsible sidebar, mobile drawer, tabs, nested tabs, sliding pages, history |
+| Page layouts | Swipeable touch/trackpad/keyboard pages plus a responsive drag-reorderable dashboard with spans and presets |
 | Components | Inputs, selects, switches, buttons, cards, badges, design tokens, all toast variants and actions |
 | Statusbar | Top/bottom and sticky/fixed placement, keyed live items, status, progress, actions, priorities, alignment, and custom slots |
 | Live charts | Three responsive series, 30,000 initial points, bounded buffers, append, batch append, clear and render events |

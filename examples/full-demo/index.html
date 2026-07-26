@@ -259,6 +259,29 @@
                   </article>
                 </section>
               </gui-tabs>
+
+              <div class="demo-two-column">
+                <article class="gui-card gui-stack">
+                  <div class="gui-cluster demo-space-between"><div><p class="gui-eyebrow">Swipeable pages</p><h3>Touch, trackpad, and keyboard carousel</h3></div><span class="gui-badge" id="swipe-page-state">1 / 3</span></div>
+                  <div class="gui-cluster"><button class="gui-button" id="swipe-previous" type="button">Previous</button><button class="gui-button gui-button--primary" id="swipe-next" type="button">Next</button><label class="demo-switch-row demo-compact-switch"><span>Loop</span><input id="swipe-loop" type="checkbox"></label></div>
+                  <gui-swipe-pages id="navigation-swipe-pages" active="brief" aria-label="Swipe page examples">
+                    <section data-swipe-page="brief" data-swipe-label="Brief, 1 of 3"><article class="gui-card"><p class="gui-eyebrow">Brief</p><h4>Horizontal page flow</h4><p class="gui-muted">Swipe left/right, use Arrow keys, Page Up/Down, Home, or End.</p></article></section>
+                    <section data-swipe-page="signals" data-swipe-label="Signals, 2 of 3"><article class="gui-card"><p class="gui-eyebrow">Signals</p><h4>Pointer-safe interaction</h4><p class="gui-muted">Vertical scrolling remains available while intentional horizontal movement switches pages.</p></article></section>
+                    <section data-swipe-page="review" data-swipe-label="Review, 3 of 3"><article class="gui-card"><p class="gui-eyebrow">Review</p><h4>Accessible carousel state</h4><p class="gui-muted">Inactive pages are inert and hidden from assistive navigation.</p></article></section>
+                  </gui-swipe-pages>
+                </article>
+
+                <article class="gui-card gui-stack">
+                  <div class="gui-cluster demo-space-between"><div><p class="gui-eyebrow">Dashboard</p><h3>Responsive cards and persisted layouts</h3></div><span class="gui-badge" id="dashboard-state">12 columns</span></div>
+                  <div class="gui-cluster"><label class="gui-field demo-inline-field"><span>Columns</span><select class="gui-select" id="dashboard-columns"><option value="12">12</option><option value="8">8</option><option value="4">4</option></select></label><button class="gui-button" id="dashboard-span" type="button">Toggle chart span</button><button class="gui-button" id="dashboard-save" type="button">Save preset</button><button class="gui-button" id="dashboard-restore" type="button">Restore preset</button></div>
+                  <gui-dashboard id="navigation-dashboard" columns="12" aria-label="Dashboard layout example">
+                    <article class="gui-card" data-dashboard-card="summary" data-span="4"><p class="gui-eyebrow">Summary</p><strong>98.4%</strong><p class="gui-muted">Service health</p></article>
+                    <article class="gui-card" data-dashboard-card="chart" data-span="8"><p class="gui-eyebrow">Telemetry</p><strong>Live chart card</strong><p class="gui-muted">Drag cards to reorder. Change spans and columns live.</p></article>
+                    <article class="gui-card" data-dashboard-card="alerts" data-span="6"><p class="gui-eyebrow">Alerts</p><strong>2 pending</strong></article>
+                    <article class="gui-card" data-dashboard-card="activity" data-span="6"><p class="gui-eyebrow">Activity</p><strong>42 events</strong></article>
+                  </gui-dashboard>
+                </article>
+              </div>
             </div>
           </section>
 

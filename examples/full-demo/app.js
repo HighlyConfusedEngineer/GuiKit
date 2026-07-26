@@ -455,6 +455,28 @@ const syncNavigation = (page) => {
 };
 demoPages.addEventListener("gui:page-change", (event) => syncNavigation(event.detail.active));
 
+const swipePages = document.querySelector("#navigation-swipe-pages");
+const swipeState = document.querySelector("#swipe-page-state");
+const updateSwipeState = () => { swipeState.textContent = `${swipePages.index + 1} / 3`; };
+document.querySelector("#swipe-next").addEventListener("click", () => swipePages.next());
+document.querySelector("#swipe-previous").addEventListener("click", () => swipePages.previous());
+document.querySelector("#swipe-loop").addEventListener("change", (input) => { swipePages.loop = input.target.checked; });
+swipePages.addEventListener("gui:swipe-page-change", (event) => { updateSwipeState(); recordEvent(event.type, event.detail); });
+updateSwipeState();
+
+const navigationDashboard = document.querySelector("#navigation-dashboard");
+const dashboardState = document.querySelector("#dashboard-state");
+const updateDashboardState = () => { dashboardState.textContent = `${navigationDashboard.columns} columns · ${navigationDashboard.snapshot().map((item) => item.id).join(" / ")}`; };
+document.querySelector("#dashboard-columns").addEventListener("change", (input) => { navigationDashboard.columns = Number(input.target.value); updateDashboardState(); });
+document.querySelector("#dashboard-span").addEventListener("click", () => {
+  const chart = navigationDashboard.snapshot().find((item) => item.id === "chart");
+  navigationDashboard.updateCard("chart", { span: chart.span === 8 ? 4 : 8 }); updateDashboardState();
+});
+document.querySelector("#dashboard-save").addEventListener("click", () => { navigationDashboard.savePreset("demo"); toast.success("Dashboard preset saved"); });
+document.querySelector("#dashboard-restore").addEventListener("click", () => { navigationDashboard.restorePreset("demo"); updateDashboardState(); });
+navigationDashboard.addEventListener("gui:dashboard-change", (event) => { updateDashboardState(); recordEvent(event.type, event.detail); });
+updateDashboardState();
+
 commands.addEventListener("gui:command-complete", (event) => recordEvent(event.type, event.detail));
 history.addEventListener("gui:history-change", (event) => recordEvent(event.type, event.detail));
 tasks.addEventListener("gui:tasks-change", (event) => recordEvent(event.type, event.detail));

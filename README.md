@@ -11,6 +11,8 @@ The current `0.1` foundation includes:
 - optional persistent desktop sidebar collapsing;
 - accessible, keyboard-navigable tab views;
 - interruption-safe animated tabs and sliding pages with back history;
+- touch/trackpad swipeable pages with keyboard controls and configurable,
+  drag-reorderable responsive dashboard cards;
 - analysis-grade live charts with multi-signal/dual-axis views, cursors,
   thresholds, annotations, pan/zoom, derived signals, and bounded rendering;
 - accessible toast notifications with actions and four severity levels;
