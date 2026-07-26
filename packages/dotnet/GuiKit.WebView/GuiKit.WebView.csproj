@@ -13,10 +13,10 @@
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="..\..\..\index.html" Pack="true" PackagePath="contentFiles/any/any/GuiKit/" />
-    <None Include="..\..\..\src\**\*" Pack="true" PackagePath="contentFiles/any/any/GuiKit/src/%(RecursiveDir)" />
-    <None Include="..\..\..\locales\**\*" Pack="true" PackagePath="contentFiles/any/any/GuiKit/locales/%(RecursiveDir)" />
-    <None Include="..\..\..\examples\full-demo\**\*" Pack="true" PackagePath="contentFiles/any/any/GuiKit/examples/full-demo/%(RecursiveDir)" />
-    <None Update="buildTransitive\GuiKit.WebView.targets" Pack="true" PackagePath="buildTransitive/" />
+    <Content Include="..\..\..\index.html" Pack="true" PackagePath="contentFiles/any/any/GuiKit/" />
+    <Content Include="..\..\..\src\**\*" Pack="true" PackagePath="contentFiles/any/any/GuiKit/src/%(RecursiveDir)" />
+    <Content Include="..\..\..\locales\**\*" Pack="true" PackagePath="contentFiles/any/any/GuiKit/locales/%(RecursiveDir)" />
+    <Content Include="..\..\..\examples\full-demo\**\*" Pack="true" PackagePath="contentFiles/any/any/GuiKit/examples/full-demo/%(RecursiveDir)" />
+    <Content Include="buildTransitive\GuiKit.WebView.targets" Pack="true" PackagePath="buildTransitive/" />
   </ItemGroup>
 </Project>
