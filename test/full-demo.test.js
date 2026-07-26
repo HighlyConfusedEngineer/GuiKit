@@ -31,7 +31,22 @@ test("full demo contains every GuiKit custom element", () => {
     "gui-workspace",
     "gui-component-playground",
     "gui-diagnostics-panel",
+    "gui-rich-text-editor",
+    "gui-code-editor",
+    "gui-structured-editor",
+    "gui-property-inspector",
+    "gui-image-editor",
+    "gui-query-editor",
+    "gui-timeline-editor",
+    "gui-diagram-editor",
+    "gui-theme-editor",
+    "gui-translation-editor",
   ].forEach((tag) => assert.match(html, new RegExp(`<${tag}(?:\\s|>)`)));
+});
+
+test("full demo configures every editor surface", () => {
+  ["editor-rich", "editor-code", "editor-structured", "editor-properties", "editor-image", "editor-query", "editor-timeline", "editor-diagram", "editor-theme", "editor-translations"].forEach((id) => assert.match(html, new RegExp(`id="${id}"`)));
+  ["GuiTimelineModel", "GuiDiagramModel", "editorProperties.schema", "editorQuery.parameters"].forEach((surface) => assert.match(app, new RegExp(surface.replace(".", "\\."))));
 });
 
 test("full demo navigation targets existing pages", () => {

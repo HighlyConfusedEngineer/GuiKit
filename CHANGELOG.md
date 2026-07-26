@@ -8,6 +8,9 @@ All notable changes to GuiKit are documented here. The format follows
 
 ### Added
 
+- Complete editor module: rich text/Markdown, code, structured JSON, property
+  inspection, image adjustments/annotations, read-only query composition,
+  timelines/keyframes, diagrams, theme tokens, and translation catalogs.
 - Analysis-grade live charts: multi-signal and dual-axis rendering, clickable
   legends, shared cursor/tooltip, pan/zoom, range selection, thresholds,
   annotations, area/step lines, derived signals, and DOM-independent analysis

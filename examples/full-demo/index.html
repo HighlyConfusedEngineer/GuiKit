@@ -76,6 +76,10 @@
             <span aria-hidden="true">▦</span>
             <span class="gui-sidebar-label" data-i18n="fullDemo.nav.framework">Framework</span>
           </button>
+          <button type="button" data-gui-page-open="editors">
+            <span aria-hidden="true">✎</span>
+            <span class="gui-sidebar-label" data-i18n="fullDemo.nav.editors">Editors</span>
+          </button>
           <button type="button" data-gui-page-open="settings">
             <span aria-hidden="true">☷</span>
             <span class="gui-sidebar-label" data-i18n="fullDemo.nav.settings">Settings</span>
@@ -820,6 +824,31 @@
                 </gui-component-playground>
                 <gui-diagnostics-panel id="framework-diagnostics"></gui-diagnostics-panel>
               </article>
+            </div>
+          </section>
+
+          <section data-page="editors">
+            <div class="gui-stack demo-page">
+              <header class="demo-section-heading">
+                <div>
+                  <p class="gui-eyebrow">Authoring surfaces</p>
+                  <h2>Composable editors for applications and tools</h2>
+                  <p class="gui-muted">Every editor is a standalone Web Component with serializable state and gui-prefixed events.</p>
+                </div>
+                <button class="gui-button" type="button" data-gui-page-back>Back</button>
+              </header>
+              <div class="demo-two-column">
+                <article class="gui-card gui-stack"><h3>Rich text and code</h3><gui-rich-text-editor id="editor-rich"></gui-rich-text-editor><gui-code-editor id="editor-code"></gui-code-editor></article>
+                <article class="gui-card gui-stack"><h3>Structured data and inspector</h3><gui-structured-editor id="editor-structured"></gui-structured-editor><gui-property-inspector id="editor-properties"></gui-property-inspector></article>
+              </div>
+              <div class="demo-two-column">
+                <article class="gui-card gui-stack"><h3>Query and timeline</h3><gui-query-editor id="editor-query"></gui-query-editor><gui-timeline-editor id="editor-timeline"></gui-timeline-editor></article>
+                <article class="gui-card gui-stack"><h3>Diagram and image</h3><gui-diagram-editor id="editor-diagram"></gui-diagram-editor><gui-image-editor id="editor-image"></gui-image-editor></article>
+              </div>
+              <div class="demo-two-column">
+                <article class="gui-card gui-stack"><h3>Theme tokens</h3><gui-theme-editor id="editor-theme"></gui-theme-editor></article>
+                <article class="gui-card gui-stack"><h3>Translations</h3><gui-translation-editor id="editor-translations"></gui-translation-editor></article>
+              </div>
             </div>
           </section>
 

@@ -6,6 +6,9 @@ import {
   GuiDataGrid,
   GuiDialog,
   GuiForm,
+  GuiCodeEditor,
+  GuiDiagramEditor,
+  GuiImageEditor,
   GuiPages,
   GuiSidebar,
   GuiTabs,
@@ -19,6 +22,6 @@ test("navigation components are available as public exports", () => {
 });
 
 test("application framework components are available as public exports", () => {
-  [GuiCommandRegistry, GuiDataGrid, GuiDialog, GuiForm, GuiWorkspace]
+  [GuiCommandRegistry, GuiDataGrid, GuiDialog, GuiForm, GuiWorkspace, GuiCodeEditor, GuiDiagramEditor, GuiImageEditor]
     .forEach((component) => assert.equal(typeof component, "function"));
 });

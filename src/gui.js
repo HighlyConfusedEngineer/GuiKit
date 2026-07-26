@@ -123,6 +123,23 @@ import {
   performanceModule,
   resourceGovernor,
 } from "./modules/performance/index.js";
+import {
+  GuiCodeEditor,
+  GuiDiagramEditor,
+  GuiDiagramModel,
+  GuiEditorHistory,
+  GuiImageEditor,
+  GuiPropertyInspector,
+  GuiQueryEditor,
+  GuiRichTextEditor,
+  GuiStructuredEditor,
+  GuiThemeEditor,
+  GuiTimelineEditor,
+  GuiTimelineModel,
+  GuiTranslationEditor,
+  editorsModule,
+  formatStructuredText,
+} from "./modules/editors/index.js";
 
 export {
   GUI_LOG_LEVELS,
@@ -217,6 +234,13 @@ export {
   lazyModules,
   wizardModule,
   workspaceModule,
+};
+
+export {
+  GuiCodeEditor, GuiDiagramEditor, GuiDiagramModel, GuiEditorHistory,
+  GuiImageEditor, GuiPropertyInspector, GuiQueryEditor, GuiRichTextEditor,
+  GuiStructuredEditor, GuiThemeEditor, GuiTimelineEditor, GuiTimelineModel,
+  GuiTranslationEditor, editorsModule, formatStructuredText,
 };
 
 const hasDOM = typeof window !== "undefined" && typeof document !== "undefined";
@@ -2054,6 +2078,7 @@ registerElement("gui-toast-stack", GuiToastStack);
   workspaceModule,
   devtoolsModule,
   performanceModule,
+  editorsModule,
 ].forEach((module) => {
   if (!guiModules.has(module.id)) defineGuiModule(module);
 });

@@ -31,6 +31,8 @@ The current `0.1` foundation includes:
 - guarded routing, background task progress, typed clipboard payloads,
   allowlisted capabilities, and bounded performance diagnostics;
 - a component playground with event inspection and accessibility auditing;
+- a full editor suite: rich text, code, structured data, property inspection,
+  image, query, timeline, diagram, theme-token, and translation editors;
 - frame batching, bounded performance budgets, cancellable data prefetching,
   virtual-row recycling, and lazy optional feature imports;
 - light, dark, and system themes powered by CSS variables;

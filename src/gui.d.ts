@@ -294,6 +294,7 @@ export * from "./modules/data-views/index.js";
 export * from "./modules/workspace/index.js";
 export * from "./modules/devtools/index.js";
 export * from "./modules/performance/index.js";
+export * from "./modules/editors/index.js";
 
 declare global {
   interface Window {

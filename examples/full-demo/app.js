@@ -2,12 +2,14 @@ import {
   GuiBatchSink,
   GuiBridgeLogSink,
   GuiDataBuffer,
+  GuiDiagramModel,
   GuiDataCollection,
   GuiFormModel,
   GuiHttpLogSink,
   GuiMemorySink,
   GuiPagedDataSource,
   GuiTreeModel,
+  GuiTimelineModel,
   GuiWorkspaceModel,
   auditAccessibility,
   bridge,
@@ -45,6 +47,7 @@ const fullDemoTranslations = {
       logging: "Logging",
       platform: "Platform",
       framework: "Framework",
+      editors: "Editors",
       settings: "Settings",
     },
     eyebrow: "Universal interface laboratory",
@@ -71,6 +74,7 @@ const fullDemoTranslations = {
       logging: "Protokolle",
       platform: "Plattform",
       framework: "Framework",
+      editors: "Editoren",
       settings: "Einstellungen",
     },
     eyebrow: "Universelles Interface-Labor",
@@ -97,6 +101,7 @@ const fullDemoTranslations = {
       logging: "Registros",
       platform: "Plataforma",
       framework: "Framework",
+      editors: "Editores",
       settings: "Ajustes",
     },
     eyebrow: "Laboratorio de interfaces universal",
@@ -1048,6 +1053,37 @@ document.querySelector("#settings-clear-cache").addEventListener("click", () => 
   });
   toast.success("Local preview cache cleared.", { title: "Storage" });
 });
+
+const editorCode = document.querySelector("#editor-code");
+editorCode.language = "json";
+editorCode.value = JSON.stringify({ pipeline: "telemetry", refreshMs: 1000, alerts: ["cpu", "network"] }, null, 2);
+const editorStructured = document.querySelector("#editor-structured");
+editorStructured.data = { workspace: { panels: ["editor", "preview"], persisted: true }, capabilities: ["filesystem", "clipboard"] };
+const editorProperties = document.querySelector("#editor-properties");
+editorProperties.schema = [
+  { name: "name", label: "Node name", group: "General", default: "Telemetry processor", description: "Shown in the visual graph." },
+  { name: "enabled", label: "Enabled", group: "General", type: "checkbox", default: true },
+  { name: "quality", label: "Quality", group: "Rendering", type: "range", min: 1, max: 100, default: 82 },
+  { name: "mode", label: "Mode", group: "Rendering", type: "select", options: ["balanced", "quality", "performance"], default: "balanced" },
+];
+editorProperties.value = { name: "Telemetry processor", enabled: true, quality: 82, mode: "balanced" };
+const editorQuery = document.querySelector("#editor-query");
+editorQuery.value = "SELECT timestamp, cpu, memory\nFROM telemetry\nWHERE timestamp > :from\nORDER BY timestamp DESC";
+editorQuery.parameters = [{ name: "from", label: "From", value: "2026-07-01" }];
+document.querySelector("#editor-timeline").model = new GuiTimelineModel([
+  { id: "camera", label: "Camera", keyframes: [{ id: "camera-1", time: 0, value: 0 }, { id: "camera-2", time: 2.4, value: 1 }] },
+  { id: "filter", label: "Filter", keyframes: [{ id: "filter-1", time: 1.1, value: .5 }, { id: "filter-2", time: 3.2, value: .9 }] },
+]);
+document.querySelector("#editor-diagram").model = new GuiDiagramModel({
+  shapes: [{ id: "source", label: "Source", x: 80, y: 120 }, { id: "review", label: "Review", type: "decision", x: 340, y: 120 }, { id: "publish", label: "Publish", x: 600, y: 120 }],
+  links: [{ id: "source-review", from: "source", to: "review" }, { id: "review-publish", from: "review", to: "publish" }],
+});
+document.querySelector("#editor-theme").tokens = { "--gui-accent": "#5b5ce2", "--gui-radius-md": "0.6rem", "--gui-font": "ui-sans-serif, system-ui" };
+document.querySelector("#editor-translations").catalogs = {
+  en: { menu: { save: "Save", close: "Close" }, status: "Ready" },
+  de: { menu: { save: "Speichern" }, status: "Bereit" },
+  es: { menu: { save: "Guardar", close: "Cerrar" }, status: "Listo" },
+};
 
 const chart = document.querySelector("#full-chart");
 const chartCount = document.querySelector("#chart-count");

@@ -101,6 +101,24 @@ DOM-independent helpers for analysis pipelines and worker-backed hosts.
 `chart.analyzeAsync(seriesId)` runs the same statistics calculation through
 the packaged worker where the host permits workers, with a local fallback.
 
+## Editors
+
+Import the editor family from `@gui-template/core/editors`. It includes
+`<gui-rich-text-editor>`, `<gui-code-editor>`, `<gui-structured-editor>`,
+`<gui-property-inspector>`, `<gui-image-editor>`, `<gui-query-editor>`,
+`<gui-timeline-editor>`, `<gui-diagram-editor>`, `<gui-theme-editor>`, and
+`<gui-translation-editor>`.
+
+The code editor supports formatting, line numbers, tab insertion, search
+requests, and bounded undo history. The structured editor provides JSON text
+and tree views. Rich text exposes HTML and a lightweight Markdown projection.
+Property, query, token, and translation editors use serializable object state
+and `gui:` change events.
+
+`GuiTimelineModel` and `GuiDiagramModel` are DOM-independent models for
+keyframes/tracks and shapes/links. They are suitable for validation,
+persistence, and host-side transforms.
+
 ## Toasts
 
 The exported `toast` singleton creates a stack on first use:
