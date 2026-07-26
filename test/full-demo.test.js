@@ -67,6 +67,18 @@ test("full demo configures production studio services", () => {
   ["GuiThemeStudio", "createReplayConnector", "GuiObservabilityHub", "GuiPluginPolicy"].forEach((surface) => assert.match(app, new RegExp(surface.replaceAll(".", "\\."))));
 });
 
+test("full demo exposes direct interactions for every platform and production contract", () => {
+  [
+    "collaboration", "files", "analysis", "automation", "ai", "documents", "tokens", "a11y", "testing",
+    "theme", "layout", "connector", "credentials", "observability", "nodes", "charts", "offline", "plugins", "visual", "optimize", "cache", "service-worker",
+  ].forEach((feature) => assert.match(html, new RegExp(`data-feature="${feature}"`), feature));
+  [
+    "summarizeTable", "pivotRows", "histogram", "flow.run", "session.send", "toPrintHtml", "toFigmaVariables",
+    "GuiCredentialVault", "GuiFlowDebugger", "fftMagnitude", "normalizeAnalysisDataset", "GuiOfflineSyncQueue",
+    "GuiVisualRegressionSuite", "GuiProductionOptimizer", "GuiCachePolicy", "GuiServiceWorkerBridge",
+  ].forEach((surface) => assert.match(app, new RegExp(surface.replaceAll(".", "\\.")), surface));
+});
+
 test("full demo configures every editor surface", () => {
   ["editor-rich", "editor-code", "editor-structured", "editor-properties", "editor-image", "editor-query", "editor-timeline", "editor-diagram", "editor-theme", "editor-translations"].forEach((id) => assert.match(html, new RegExp(`id="${id}"`)));
   ["GuiTimelineModel", "GuiDiagramModel", "editorProperties.schema", "editorQuery.parameters"].forEach((surface) => assert.match(app, new RegExp(surface.replace(".", "\\."))));

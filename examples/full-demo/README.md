@@ -31,6 +31,7 @@ and keeps every frontend feature operational.
 | Statusbar | Top/bottom and sticky/fixed placement, keyed live items, status, progress, actions, priorities, alignment, and custom slots |
 | Live charts | Three responsive series, 30,000 initial points, bounded buffers, append, batch append, clear and render events |
 | Editors | Rich text, code, JSON, property, image, query, timeline, diagram, theme-token, translation, collaboration, files, analysis, automation, AI, plugin, accessibility, test, document, design-system, production theme/layout, connectors, observability, and visual-regression surfaces |
+| Direct API laboratory | Buttons execute every platform and production contract with visible serialized output: files, collaboration, reports, AI, credentials, offline sync, node debugging, chart exports, accessibility, plugin policy, visual testing, cache strategy, service-worker capability, and bundle budgets |
 | Node editor | Horizontal/vertical flow, obstacle-routed typed wire palettes, double-click deletion, per-port/node limits, drag, pan, zoom, selection, snapping, inline typed parameters, per-node settings, read-only mode, JSON import/export |
 | Wizard | Linear onboarding, native and asynchronous validation, optional steps, keyboard navigation, save/restore, reset, and completion |
 | Media | Direct `MediaStream`, custom media adapter, native URL loading, live controls, PiP and fullscreen capability detection |

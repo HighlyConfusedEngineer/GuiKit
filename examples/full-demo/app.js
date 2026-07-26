@@ -7,6 +7,16 @@ import {
   GuiCollaborationSession,
   GuiFileWorkspace,
   GuiMemoryFileAdapter,
+  GuiAccessibilityLab,
+  GuiCachePolicy,
+  GuiDataConnectorRegistry,
+  GuiCredentialVault,
+  GuiFlowDebugger,
+  GuiNodeLibrary,
+  GuiOfflineSyncQueue,
+  GuiProductionOptimizer,
+  GuiServiceWorkerBridge,
+  GuiVisualRegressionSuite,
   GuiDiagramModel,
   GuiDataCollection,
   GuiFormModel,
@@ -19,7 +29,17 @@ import {
   GuiObservabilityHub,
   GuiPluginPolicy,
   GuiThemeStudio,
+  contrastRatio,
+  correlation,
   createReplayConnector,
+  exportChartSvg,
+  exportDelimited,
+  fftMagnitude,
+  histogram,
+  inspectAccessibility,
+  normalizeAnalysisDataset,
+  pivotRows,
+  summarizeTable,
   auditAccessibility,
   bridge,
   capabilities,
@@ -1122,6 +1142,81 @@ productionObservability.hub.metric("demo.latency", 84, { route: "/api/telemetry"
 const pluginPolicyDemo = new GuiPluginPolicy({ permissions: ["storage"] });
 pluginPolicyDemo.verify(pluginPolicyDemo.scaffold({ id: "demo.safe-plugin", name: "Safe plugin" }));
 [productionTheme, productionConnectors, productionObservability].forEach((surface) => surface.render());
+
+const featureResult = document.querySelector("#feature-lab-result");
+const credentialMemory = new Map();
+const featureVault = new GuiCredentialVault({
+  get: async (key) => credentialMemory.get(key),
+  set: async (key, value) => credentialMemory.set(key, value),
+  remove: async (key) => credentialMemory.delete(key),
+});
+const featureOfflineStorage = new Map();
+const featureOffline = new GuiOfflineSyncQueue({ storage: { get: async (key) => featureOfflineStorage.get(key), set: async (key, value) => featureOfflineStorage.set(key, value) } });
+const featureNodes = new GuiNodeLibrary([{ type: "telemetry.filter", title: "Telemetry filter", ports: [{ id: "signal", direction: "input" }, { id: "result", direction: "output" }] }]);
+const featureDebugger = new GuiFlowDebugger({ breakpoints: ["filter-1"] });
+const featureVisual = new GuiVisualRegressionSuite({ viewports: [375, 1280], themes: ["light", "dark"], locales: ["en", "de"] });
+featureVisual.baseline("demo", "baseline");
+const featureOptimizer = new GuiProductionOptimizer({ budgets: { "demo.js": 80_000 } });
+const featureCache = new GuiCachePolicy([{ match: "\\.json$", strategy: "stale-while-revalidate" }, { match: "\\.(js|css)$", strategy: "cache-first" }]);
+const featureAccessibility = new GuiAccessibilityLab({ reducedMotion: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches });
+const writeFeatureResult = (name, result) => {
+  featureResult.textContent = `${name}\n${JSON.stringify(result, null, 2)}`;
+  recordEvent(`feature:${name}`, result);
+};
+document.querySelectorAll("[data-feature]").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const feature = button.dataset.feature;
+    try {
+      if (feature === "collaboration") {
+        collaborationDemo.session.apply({ path: "document.title", value: `Incident ${Date.now()}` });
+        collaborationDemo.session.addComment({ text: "Reviewed from the direct API laboratory." });
+        collaborationDemo.render(); writeFeatureResult(feature, { state: collaborationDemo.session.state, comments: collaborationDemo.session.comments });
+      } else if (feature === "files") {
+        const path = fileDemo.workspace.activePath; fileDemo.workspace.update(path, "# Incident\nUpdated directly through GuiFileWorkspace."); await fileDemo.workspace.save(); await fileDemo.workspace.rename(path, "reports/incident-reviewed.md"); fileDemo.render(); writeFeatureResult(feature, { activePath: fileDemo.workspace.activePath, files: await fileDemo.workspace.refresh() });
+      } else if (feature === "analysis") {
+        const rows = analysisDemo.rows; writeFeatureResult(feature, { summary: summarizeTable(rows), pivot: pivotRows(rows.map((row, index) => ({ team: index % 2 ? "B" : "A", metric: "signal", value: row.signal })), { row: "team", column: "metric", value: "value" }), histogram: histogram(rows.map((row) => row.signal), { bins: 3 }) });
+      } else if (feature === "automation") {
+        writeFeatureResult(feature, await automationDemo.flow.run({ ready: true }, async (step) => demoLog.info("Automation action", { action: step.action })));
+      } else if (feature === "ai") {
+        writeFeatureResult(feature, await aiDemo.session.send("Summarize this framework demo.")); aiDemo.render();
+      } else if (feature === "documents") {
+        const report = document.querySelector("#platform-document").documentModel; report.setTemplate("<h1>{{title}}</h1><p>{{status}}</p>"); writeFeatureResult(feature, { html: report.render({ title: "Live report", status: "Ready" }), print: report.toPrintHtml({ title: "Live report", status: "Ready" }).slice(0, 120) });
+      } else if (feature === "tokens") {
+        const system = document.querySelector("#platform-design-system").designSystem; system.setToken("space.md", "12px", "dimension"); writeFeatureResult(feature, { tokens: system.exportTokens(), figmaVariables: system.toFigmaVariables() });
+      } else if (feature === "a11y") {
+        writeFeatureResult(feature, { staticAudit: inspectAccessibility(document.querySelector("[data-page=editors]")), focusPlan: featureAccessibility.focusPlan([{ id: "first", order: 1 }, { id: "second", order: 2 }]), motion: featureAccessibility.motion({ duration: 180 }), colorVision: featureAccessibility.colorVision("#5b5ce2", "deuteranopia") });
+      } else if (feature === "testing") {
+        const recorder = document.querySelector("#platform-tests").recorder; recorder.record({ type: "click", target: "feature-lab" }); let replayed = false; await recorder.replay(async () => ({ dispatchEvent: () => { replayed = true; } })); writeFeatureResult(feature, { entries: recorder.entries, replayed });
+      } else if (feature === "theme") {
+        productionTheme.studio.set("--gui-accent", "#00a99d"); writeFeatureResult(feature, { css: productionTheme.studio.exportCss(), contrast: contrastRatio("#ffffff", "#172030"), audit: productionTheme.studio.audit([{ foreground: "#ffffff", background: "--gui-surface" }]) }); productionTheme.render();
+      } else if (feature === "layout") {
+        productionTheme.studio.applyPreset("night"); const layout = document.querySelector("#production-layout").layout; layout.move("chart", { span: { compact: 12, medium: 8, wide: 8 } }); writeFeatureResult(feature, layout.resolve(window.innerWidth));
+      } else if (feature === "connector") {
+        writeFeatureResult(feature, await productionConnectors.connectors.load("telemetry-replay", { index: 1 }));
+      } else if (feature === "credentials") {
+        await featureVault.set("demo-api-token", "stored-by-host-adapter"); writeFeatureResult(feature, { reference: "demo-api-token", connected: await featureVault.test("demo-api-token", (value) => value === "stored-by-host-adapter") });
+      } else if (feature === "observability") {
+        const alerts = []; productionObservability.hub.addEventListener("alert", (event) => alerts.push(event.detail), { once: true }); productionObservability.hub.metric("demo.latency", 140, { route: "/api/telemetry" }); const trace = productionObservability.hub.trace("demo.refresh", { source: "feature-lab" }); trace.span("query").end({ rows: 3 }); productionObservability.render(); writeFeatureResult(feature, { alerts, snapshot: productionObservability.hub.snapshot() });
+      } else if (feature === "nodes") {
+        const node = featureNodes.create("telemetry.filter", { id: "filter-1" }); const frame = featureDebugger.step(node.id, { result: 42 }); featureDebugger.resume(); writeFeatureResult(feature, { node, frame, paused: featureDebugger.paused });
+      } else if (feature === "charts") {
+        const samples = [1, 0, -1, 0]; writeFeatureResult(feature, { fft: fftMagnitude(samples), correlation: correlation([1, 2, 3], [2, 4, 6]), csv: exportDelimited([{ signal: "cpu", value: 42 }]), svg: exportChartSvg([{ x: 0, y: 20 }, { x: 1, y: 44 }]), formats: ["scatter", "heatmap", "candlestick"].map((type) => normalizeAnalysisDataset(type, type === "candlestick" ? [{ open: 1, high: 3, low: 0, close: 2 }] : [{ x: 1, y: 2, value: 3 }])) });
+      } else if (feature === "offline") {
+        await featureOffline.enqueue({ type: "save", path: "reports/incident.md" }); const sent = []; await featureOffline.flush(async (operation) => sent.push(operation.type)); writeFeatureResult(feature, { sent, snapshot: featureOffline.snapshot({ name: "GuiKit demo" }) });
+      } else if (feature === "plugins") {
+        writeFeatureResult(feature, await pluginPolicyDemo.verify(pluginPolicyDemo.scaffold({ id: "demo.safe-plugin", name: "Safe plugin" })));
+      } else if (feature === "visual") {
+        const cases = featureVisual.matrix("settings"); writeFeatureResult(feature, { cases: cases.length, result: await featureVisual.compare("demo", "candidate", async () => ({ passed: true, changedPixels: 0 })) });
+      } else if (feature === "optimize") {
+        writeFeatureResult(feature, featureOptimizer.evaluateAssets({ "demo.js": 76_400, "styles.css": 18_000 }));
+      } else if (feature === "cache") {
+        writeFeatureResult(feature, { data: featureCache.resolve("/api/telemetry.json"), assets: featureCache.resolve("/app.js") });
+      } else if (feature === "service-worker") {
+        const bridge = new GuiServiceWorkerBridge(); writeFeatureResult(feature, { supported: Boolean(navigator.serviceWorker), registration: bridge.registration, note: "Registration remains host-controlled; no worker is installed by the demo." });
+      }
+    } catch (error) { writeFeatureResult(feature, { error: String(error?.message ?? error) }); }
+  });
+});
 
 const chart = document.querySelector("#full-chart");
 const chartCount = document.querySelector("#chart-count");

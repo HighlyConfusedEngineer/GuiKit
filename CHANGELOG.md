@@ -8,6 +8,11 @@ All notable changes to GuiKit are documented here. The format follows
 
 ### Added
 
+- Full demo direct API laboratory: every application-platform and production
+  feature now has a visible control and serialized live result, with safe
+  in-memory adapters for credentials, offline storage, replay data, and visual
+  testing.
+
 - Production hardening module: theme/contrast and responsive-layout tooling,
   adapter-first connectors/credential references, observability, node execution
   debugging, FFT/correlation and chart export helpers, offline queues, plugin
