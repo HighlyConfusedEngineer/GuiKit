@@ -134,6 +134,14 @@ destination authorization, resume persistence, checksums, and transport
 security; the framework only validates queue policy and reports progress. See
 [PRODUCTIVITY.md](PRODUCTIVITY.md) for schemas and integration examples.
 
+## TeX documents
+
+The optional `@gui-template/core/tex` entry point provides `GuiTexDocument`,
+`GuiTexTemplate`, `GuiTexBridgeCompiler`, `<gui-tex-editor>`, and
+`<gui-tex-pdf-preview>`. TeX compilation is always delegated to an explicit
+adapter; the default package never embeds or executes a TeX engine. See
+[TEX.md](TEX.md) for the bridge response schema and sandbox requirements.
+
 ## Toasts
 
 The exported `toast` singleton creates a stack on first use:

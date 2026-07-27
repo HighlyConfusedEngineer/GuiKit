@@ -161,6 +161,16 @@ import {
   productivityModule,
 } from "./modules/productivity/index.js";
 import {
+  GuiTexBridgeCompiler,
+  GuiTexDocument,
+  GuiTexEditor,
+  GuiTexPdfPreview,
+  GuiTexTemplate,
+  escapeTex,
+  texModule,
+  validateTex,
+} from "./modules/tex/index.js";
+import {
   GuiAccessibilityInspector,
   GuiAiPanel,
   GuiAiSession,
@@ -326,6 +336,11 @@ export {
   GuiNotificationCenterElement, GuiPropertyGrid, GuiPropertyGridModel,
   GuiScheduleModel, GuiScheduler, GuiShortcutEditor, GuiShortcutProfiles,
   GuiUploadQueue, analysisHistogram, heatmap, productivityModule,
+};
+
+export {
+  GuiTexBridgeCompiler, GuiTexDocument, GuiTexEditor, GuiTexPdfPreview,
+  GuiTexTemplate, escapeTex, texModule, validateTex,
 };
 
 export {
@@ -2359,6 +2374,7 @@ registerElement("gui-toast-stack", GuiToastStack);
   performanceModule,
   editorsModule,
   productivityModule,
+  texModule,
   platformModule,
   productionModule,
 ].forEach((module) => {

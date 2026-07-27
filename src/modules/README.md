@@ -41,6 +41,9 @@ Current reference module:
 - [`productivity`](productivity/) provides virtual comboboxes, scheduling,
   analysis displays, property grids, host-managed uploads, notification
   history, and shortcut profiles.
+- [`tex`](tex/) provides TeX source models, secure compiler adapters, template
+  automation, diagnostics, editing, and PDF preview without bundling a TeX
+  runtime.
 - [`production`](production/) supplies delivery hardening: layouts/themes,
   connectors, observability, offline sync, plugin policy, visual tests, and
   performance/bundle budgets.

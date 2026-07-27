@@ -13,6 +13,9 @@ All notable changes to GuiKit are documented here. The format follows
   analysis, property grids, host-adapted resumable upload queues, notification
   history, and serializable shortcut profiles. The full demo now exercises all
   seven surfaces.
+- Optional TeX document module with safe-mode source checks, templates,
+  host/bridge compiler adapters, editor diagnostics, automated PDF creation,
+  and PDF preview components.
 
 ## [0.2.0] - 2026-07-26
 

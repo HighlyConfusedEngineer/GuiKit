@@ -29,6 +29,8 @@ import {
   GuiObservabilityHub,
   GuiPluginPolicy,
   GuiThemeStudio,
+  GuiTexDocument,
+  GuiTexTemplate,
   GuiAnalysisSeries,
   GuiComboboxModel,
   GuiNotificationCenter,
@@ -1191,6 +1193,17 @@ const productivityShortcuts = document.querySelector("#productivity-shortcuts");
 productivityShortcuts.profiles = productivityProfiles;
 productivityShortcuts.registry = commands;
 
+const texCompilerDemo = {
+  async compile(source, options) {
+    return { status: "completed", pdfUrl: "about:blank", log: `Mock ${options.engine} compiler accepted ${source.length} characters.`, diagnostics: [] };
+  },
+};
+const texEditor = document.querySelector("#tex-editor");
+texEditor.documentModel = new GuiTexDocument("\\documentclass{article}\n\\begin{document}\n\\section*{GuiKit report}\nHello from {{name}}.\n\\end{document}", { engine: "pdflatex", safeMode: true });
+texEditor.compiler = texCompilerDemo;
+const texPreview = document.querySelector("#tex-preview");
+texEditor.addEventListener("gui:tex-editor-compile", (event) => { texPreview.result = event.detail.result; });
+
 const featureResult = document.querySelector("#feature-lab-result");
 const credentialMemory = new Map();
 const featureVault = new GuiCredentialVault({
@@ -1251,6 +1264,8 @@ document.querySelectorAll("[data-feature]").forEach((button) => {
         const samples = [1, 0, -1, 0]; writeFeatureResult(feature, { fft: fftMagnitude(samples), correlation: correlation([1, 2, 3], [2, 4, 6]), csv: exportDelimited([{ signal: "cpu", value: 42 }]), svg: exportChartSvg([{ x: 0, y: 20 }, { x: 1, y: 44 }]), formats: ["scatter", "heatmap", "candlestick"].map((type) => normalizeAnalysisDataset(type, type === "candlestick" ? [{ open: 1, high: 3, low: 0, close: 2 }] : [{ x: 1, y: 2, value: 3 }])) });
       } else if (feature === "productivity") {
         productivityCombo.model.setValue(["signal-1", "signal-8", "signal-13"]); productivitySchedule.upsert({ id: "incident", title: "Incident retrospective", start: "2026-07-25T11:00:00Z", end: "2026-07-25T12:00:00Z" }); productivityProperties.model.update("pipeline.threshold", 0.74); productivityCenter.push({ title: "Profile updated", message: "Productivity controls were exercised.", group: "workspace" }); productivityProfiles.activate("engineering"); productivityProfiles.apply(commands); writeFeatureResult(feature, { selectedSignals: productivityCombo.value, schedule: productivitySchedule.between(), properties: productivityProperties.value, notifications: productivityCenter.toJSON(), shortcuts: productivityProfiles.toJSON(), uploadQueue: productivityUpload.files });
+      } else if (feature === "tex") {
+        const template = new GuiTexTemplate(texEditor.source); const source = template.render({ name: "Ada Lovelace" }); texEditor.source = source; const result = await texEditor.compile(); writeFeatureResult(feature, { source, result: { status: result?.status, diagnostics: result?.diagnostics, log: result?.log }, serialized: texEditor.documentModel.toJSON() });
       } else if (feature === "offline") {
         await featureOffline.enqueue({ type: "save", path: "reports/incident.md" }); const sent = []; await featureOffline.flush(async (operation) => sent.push(operation.type)); writeFeatureResult(feature, { sent, snapshot: featureOffline.snapshot({ name: "GuiKit demo" }) });
       } else if (feature === "plugins") {

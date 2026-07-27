@@ -66,6 +66,8 @@ test("full demo contains every GuiKit custom element", () => {
     "gui-file-drop",
     "gui-notification-center",
     "gui-shortcut-editor",
+    "gui-tex-editor",
+    "gui-tex-pdf-preview",
   ].forEach((tag) => assert.match(html, new RegExp(`<${tag}(?:\\s|>)`)));
 });
 
@@ -85,7 +87,7 @@ test("full demo demonstrates swipe pages and configurable dashboards", () => {
 test("full demo exposes direct interactions for every platform and production contract", () => {
   [
     "collaboration", "files", "analysis", "automation", "ai", "documents", "tokens", "a11y", "testing",
-    "theme", "layout", "connector", "credentials", "observability", "nodes", "charts", "productivity", "offline", "plugins", "visual", "optimize", "cache", "service-worker",
+    "theme", "layout", "connector", "credentials", "observability", "nodes", "charts", "productivity", "tex", "offline", "plugins", "visual", "optimize", "cache", "service-worker",
   ].forEach((feature) => assert.match(html, new RegExp(`data-feature="${feature}"`), feature));
   [
     "summarizeTable", "pivotRows", "histogram", "flow.run", "session.send", "toPrintHtml", "toFigmaVariables",

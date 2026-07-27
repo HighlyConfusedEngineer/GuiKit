@@ -316,6 +316,7 @@ export * from "./modules/devtools/index.js";
 export * from "./modules/performance/index.js";
 export * from "./modules/editors/index.js";
 export * from "./modules/productivity/index.js";
+export * from "./modules/tex/index.js";
 export * from "./modules/platform/index.js";
 export * from "./modules/production/index.js";
 
@@ -395,5 +396,7 @@ declare global {
     "gui-file-drop": import("./modules/productivity/index.js").GuiFileDrop;
     "gui-notification-center": import("./modules/productivity/index.js").GuiNotificationCenterElement;
     "gui-shortcut-editor": import("./modules/productivity/index.js").GuiShortcutEditor;
+    "gui-tex-editor": import("./modules/tex/index.js").GuiTexEditor;
+    "gui-tex-pdf-preview": import("./modules/tex/index.js").GuiTexPdfPreview;
   }
 }
