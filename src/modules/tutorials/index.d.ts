@@ -1,0 +1,6 @@
+export interface GuiTutorialAdvanceOn { event: string; }
+export interface GuiTutorialStep { id: string; title: string; description: string; target?: string | null; placement?: "auto" | "top" | "bottom"; advanceOn?: GuiTutorialAdvanceOn | null; [key: string]: unknown; }
+export interface GuiTutorialState { active: boolean; index: number; current: GuiTutorialStep | null; steps: GuiTutorialStep[]; }
+export class GuiTutorialModel extends EventTarget { constructor(steps?: GuiTutorialStep[]); readonly steps: GuiTutorialStep[]; readonly active: boolean; readonly index: number; readonly current: GuiTutorialStep | null; load(steps?: GuiTutorialStep[]): this; start(step?: number | string): boolean; goTo(step: number | string): boolean; next(): boolean; previous(): boolean; stop(reason?: "dismissed" | "completed" | string): boolean; toJSON(): GuiTutorialState; }
+export class GuiTutorial extends HTMLElement { steps: GuiTutorialStep[]; model?: GuiTutorialModel; start(step?: number | string): boolean; }
+export const tutorialsModule: Readonly<{ id: "tutorials"; version: "0.2.0"; description: string; dependencies: readonly []; components: readonly ["gui-tutorial"]; setup(): { GuiTutorial: typeof GuiTutorial; GuiTutorialModel: typeof GuiTutorialModel }; }>;

@@ -573,6 +573,7 @@ is the reference implementation for larger features.
 - [Production readiness and operations](docs/PRODUCTION_READINESS.md)
 - [Productivity controls](docs/PRODUCTIVITY.md)
 - [TeX documents and PDF creation](docs/TEX.md)
+- [Interactive tutorials](docs/TUTORIALS.md)
 - [Developer workflow, generators, and inspector](docs/DEVELOPER_EXPERIENCE.md)
 - [Implementation recipes](docs/RECIPES.md)
 - [Framework roadmap](docs/ROADMAP.md)

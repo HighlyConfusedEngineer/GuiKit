@@ -32,6 +32,7 @@ import {
   GuiThemeStudio,
   GuiTexDocument,
   GuiTexTemplate,
+  GuiTutorialModel,
   GuiAnalysisSeries,
   GuiComboboxModel,
   GuiNotificationCenter,
@@ -713,6 +714,13 @@ frameworkPlayground.events = ["click"];
 document.querySelector("#framework-diagnostics").diagnostics = diagnostics;
 const developmentSession = new GuiDevelopmentSession({ modules: guiModules, diagnostics, logger, bridge, limit: 80 });
 document.querySelector("#framework-inspector").session = developmentSession;
+const demoTutorial = new GuiTutorialModel([
+  { id: "start", target: "#start-tutorial", title: "Guided discovery", description: "A tutorial can be launched from any page and guide people through the controls they can use right now." },
+  { id: "playground", target: "#framework-playground", title: "Component playground", description: "Try a component, change its properties, and audit common accessibility concerns without leaving the app." },
+  { id: "inspector", target: "#framework-inspector", title: "Development inspector", description: "Inspect bounded module, diagnostic, log, and bridge activity while building.", advanceOn: { event: "click" } },
+]);
+document.querySelector("#demo-tutorial").model = demoTutorial;
+document.querySelector("#start-tutorial").addEventListener("click", () => demoTutorial.start());
 diagnostics.record("demo.bootstrap", performance.now());
 auditAccessibility(document.querySelector("[data-page=framework]"));
 

@@ -119,6 +119,11 @@ import {
   appShellModule,
 } from "./modules/app-shell/index.js";
 import {
+  GuiTutorial,
+  GuiTutorialModel,
+  tutorialsModule,
+} from "./modules/tutorials/index.js";
+import {
   GuiFrameScheduler,
   GuiLazyModuleLoader,
   GuiPerformanceBudget,
@@ -257,6 +262,8 @@ export {
   GuiAppManifest,
   GuiAppShell,
   GuiAppShellModel,
+  GuiTutorial,
+  GuiTutorialModel,
   GuiDragDrop,
   GuiDialog,
   GuiContextMenu,
@@ -304,6 +311,7 @@ export {
   commands,
   commandsModule,
   appShellModule,
+  tutorialsModule,
   dataViewsModule,
   defineGuiModule,
   devtoolsModule,
@@ -2385,6 +2393,7 @@ registerElement("gui-toast-stack", GuiToastStack);
   dataViewsModule,
   workspaceModule,
   appShellModule,
+  tutorialsModule,
   devtoolsModule,
   performanceModule,
   editorsModule,

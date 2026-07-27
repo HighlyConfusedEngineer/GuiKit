@@ -35,6 +35,7 @@ test("full demo contains every GuiKit custom element", () => {
     "gui-diagnostics-panel",
     "gui-developer-inspector",
     "gui-app-shell",
+    "gui-tutorial",
     "gui-rich-text-editor",
     "gui-code-editor",
     "gui-structured-editor",
@@ -85,6 +86,13 @@ test("full demo exposes developer workflow inspection and a manifest shell", () 
   ["framework-inspector", "framework-app-shell", "GuiDevelopmentSession"].forEach((surface) => {
     assert.match(`${html}\n${app}`, new RegExp(surface));
   });
+});
+
+test("full demo provides an interactive contextual tutorial", () => {
+  assert.match(html, /id="start-tutorial"/);
+  assert.match(html, /id="demo-tutorial"/);
+  assert.match(app, /GuiTutorialModel/);
+  assert.match(app, /demoTutorial\.start/);
 });
 
 test("full demo demonstrates swipe pages and configurable dashboards", () => {

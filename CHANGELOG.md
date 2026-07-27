@@ -8,6 +8,8 @@ All notable changes to GuiKit are documented here. The format follows
 
 ### Added
 
+- Interactive tutorial module with serializable steps, spotlighted targets,
+  keyboard navigation, optional action-driven advancement, and a full demo.
 - Developer-experience tooling: starter application and extension scaffolds,
   project doctor, bridge-contract and design-token generators, manifest-driven
   app shell, development inspector, test helpers, and workflow recipes.
