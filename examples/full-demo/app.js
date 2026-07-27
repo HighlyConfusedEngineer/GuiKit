@@ -78,6 +78,7 @@ const fullDemoTranslations = {
   en: {
     nav: {
       overview: "Overview",
+      atlas: "Feature Atlas",
       navigation: "Navigation",
       components: "Components",
       charts: "Live charts",
@@ -157,6 +158,8 @@ const fullDemoTranslations = {
     },
   },
 };
+fullDemoTranslations.de.nav.atlas = "Feature-Atlas";
+fullDemoTranslations.es.nav.atlas = "Atlas de funciones";
 
 const storage = {
   get(key) {
@@ -452,6 +455,102 @@ featureStations.forEach(([icon, label, page]) => {
   button.append(mark, text);
   featureGrid.append(button);
 });
+
+// The Atlas is deliberately data-driven: every card points to the live demo
+// station where the public surface is configured and can be interacted with.
+const featureAtlas = [
+  ["Foundation", "Module registry", "Dependency-aware feature lifecycle and lazy loading.", "overview"],
+  ["Foundation", "Themes and design tokens", "Light, dark, system, and editable design tokens.", "components"],
+  ["Foundation", "Localization", "Runtime English, German, and Spanish catalog switching.", "platform"],
+  ["Foundation", "Native bridge", "Browser mock plus Python/C# compatible host transport.", "platform"],
+  ["Foundation", "Runtime diagnostics", "Bounded measurements for application services.", "framework"],
+  ["Foundation", "Developer inspector", "Live module, bridge, log, and diagnostic activity.", "framework"],
+  ["Navigation", "Responsive sidebar", "Collapsible desktop navigation and mobile drawer behavior.", "navigation"],
+  ["Navigation", "Tabs", "Accessible tabs with keyboard navigation.", "navigation"],
+  ["Navigation", "Sliding pages", "History-aware animated page transitions.", "navigation"],
+  ["Navigation", "Swipe pages", "Touch, trackpad, and keyboard carousel navigation.", "navigation"],
+  ["Navigation", "Dashboard layout", "Responsive, reorderable dashboard cards and presets.", "navigation"],
+  ["Navigation", "App shell manifest", "Portable page configuration for web and native hosts.", "framework"],
+  ["Interaction", "Toast notifications", "Queued success, warning, error, and action toasts.", "components"],
+  ["Interaction", "Command palette", "Discoverable commands, shortcuts, and undo history.", "framework"],
+  ["Interaction", "Dialog, popover, and menu", "Shared focus, dismissal, and overlay primitives.", "framework"],
+  ["Interaction", "Status bar", "Live, priority-aware operational information.", "components"],
+  ["Interaction", "Wizard", "Validated linear or non-linear onboarding flows.", "wizard"],
+  ["Interaction", "Interactive tutorials", "Spotlighted contextual guidance over live UI targets.", "framework"],
+  ["Data and analysis", "Live chart", "Bounded multi-series data, thresholds, annotations, and cursor analysis.", "charts"],
+  ["Data and analysis", "Derived signals", "Moving averages, derivatives, integrals, and differences.", "charts"],
+  ["Data and analysis", "Analysis chart", "Histogram, scatter, heatmap, spectrogram, and gauge displays.", "editors"],
+  ["Data and analysis", "Virtual list", "Large collections rendered in a bounded DOM window.", "framework"],
+  ["Data and analysis", "Data grid", "Sorting, filtering, server paging, editing, and selection.", "framework"],
+  ["Data and analysis", "Tree view", "Accessible expandable hierarchical data.", "framework"],
+  ["Data and analysis", "Schema forms", "Validated forms with conditional fields and editor registry.", "framework"],
+  ["Automation", "Node editor", "Typed ports, colored wires, routing, settings, and inline parameters.", "nodes"],
+  ["Automation", "Node execution", "Execution state, breakpoints, grouping, subgraphs, and validation.", "nodes"],
+  ["Automation", "Automation designer", "Serializable multi-step process definitions.", "editors"],
+  ["Automation", "Scheduler and date range", "Calendar scheduling and time-window selection.", "editors"],
+  ["Automation", "Task center", "Cancelable background work with progress and retry.", "framework"],
+  ["Media", "Media player", "File, live stream, custom adapter, captions, and PiP controls.", "media"],
+  ["Media", "Live webview playback", "Host-adaptable real-time media sources.", "media"],
+  ["Editors", "Rich text editor", "Structured document authoring surface.", "editors"],
+  ["Editors", "Code and query editors", "Language-aware code, query, and parameter editing.", "editors"],
+  ["Editors", "Structured data editor", "JSON/YAML-like validation and formatting.", "editors"],
+  ["Editors", "Property inspector", "Schema-based property inspection and editing.", "editors"],
+  ["Editors", "Image, timeline, and diagram editors", "Visual authoring for assets, time, and diagrams.", "editors"],
+  ["Editors", "Theme and translation editors", "Design tokens and localized content authoring.", "editors"],
+  ["Productivity", "Virtual combobox", "Async, multi-select, virtualized option discovery.", "editors"],
+  ["Productivity", "Property grid", "Structured configurable settings for tools and devices.", "editors"],
+  ["Productivity", "File drop and uploads", "Host-managed resumable upload queue.", "editors"],
+  ["Productivity", "Notification center", "Persistent notification history and actions.", "editors"],
+  ["Productivity", "Shortcut profiles", "Customizable keyboard shortcut editing.", "editors"],
+  ["Workspace", "Dockable workspace", "Serializable split panes, tabs, and layout presets.", "framework"],
+  ["Workspace", "Persistence and routing", "Versioned local state with route guards and parameters.", "framework"],
+  ["Workspace", "Clipboard and drag/drop", "Typed transfer payloads with capability boundaries.", "framework"],
+  ["Platform", "Structured logging", "Redaction, spans, sinks, viewer, and backend ingestion.", "logging"],
+  ["Platform", "Collaboration", "Presence, comments, and offline operation queues.", "editors"],
+  ["Platform", "Files and documents", "Adapter-driven files, workspaces, and document output.", "editors"],
+  ["Platform", "AI panel", "Provider-neutral streaming AI experience.", "editors"],
+  ["Platform", "Plugins", "Permissioned plugin registry and host-controlled calls.", "editors"],
+  ["Platform", "Accessibility lab", "Audits, inspection, and accessible component practices.", "editors"],
+  ["Production", "Theme studio and layouts", "Contrast-aware themes and responsive layout rules.", "editors"],
+  ["Production", "Data connectors", "Credential references and replayable connectors.", "editors"],
+  ["Production", "Observability", "Metrics, traces, node debugging, and operational dashboards.", "editors"],
+  ["Production", "Offline and service worker", "Explicit sync queues, caching, and host boundaries.", "editors"],
+  ["Production", "Visual regression", "Deterministic visual matrices and bundle budgets.", "editors"],
+  ["Documents", "TeX editor", "Safe-mode TeX authoring with diagnostics and templates.", "editors"],
+  ["Documents", "PDF preview", "Host-compiled PDF preview and browser-safe mock adapter.", "editors"],
+];
+
+const atlasGrid = document.querySelector("#atlas-grid");
+const atlasSearch = document.querySelector("#atlas-search");
+const atlasFilter = document.querySelector("#atlas-filter");
+const atlasCount = document.querySelector("#atlas-count");
+const atlasTotal = document.querySelector("#atlas-total");
+let atlasCategory = "All";
+const atlasCategories = ["All", ...new Set(featureAtlas.map(([category]) => category))];
+atlasCategories.forEach((category) => {
+  const button = document.createElement("button");
+  button.type = "button"; button.className = "gui-button"; button.dataset.category = category; button.textContent = category;
+  atlasFilter.append(button);
+});
+function renderFeatureAtlas() {
+  const query = atlasSearch.value.trim().toLowerCase();
+  const shown = featureAtlas.filter(([category, name, description]) => (atlasCategory === "All" || category === atlasCategory) && `${category} ${name} ${description}`.toLowerCase().includes(query));
+  atlasGrid.replaceChildren();
+  shown.forEach(([category, name, description, page]) => {
+    const card = document.createElement("button"); card.type = "button"; card.className = "demo-atlas-card"; card.dataset.guiPageOpen = page;
+    const categoryLabel = document.createElement("span"); categoryLabel.className = "demo-atlas-card__category"; categoryLabel.textContent = category;
+    const title = document.createElement("strong"); title.textContent = name;
+    const body = document.createElement("span"); body.textContent = description;
+    const link = document.createElement("em"); link.textContent = `Open ${page} station →`;
+    card.append(categoryLabel, title, body, link); atlasGrid.append(card);
+  });
+  atlasTotal.textContent = String(featureAtlas.length);
+  atlasCount.textContent = `${shown.length} of ${featureAtlas.length} features shown`;
+  atlasFilter.querySelectorAll("button").forEach((button) => button.classList.toggle("gui-button--primary", button.dataset.category === atlasCategory));
+}
+atlasSearch.addEventListener("input", renderFeatureAtlas);
+atlasFilter.addEventListener("click", (event) => { const button = event.target.closest("button[data-category]"); if (!button) return; atlasCategory = button.dataset.category; renderFeatureAtlas(); });
+renderFeatureAtlas();
 
 const demoPages = document.querySelector("#demo-pages");
 const syncNavigation = (page) => {

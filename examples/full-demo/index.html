@@ -40,6 +40,10 @@
             <span aria-hidden="true">⌂</span>
             <span class="gui-sidebar-label" data-i18n="fullDemo.nav.overview">Overview</span>
           </button>
+          <button type="button" data-gui-page-open="atlas">
+            <span aria-hidden="true">Atlas</span>
+            <span class="gui-sidebar-label" data-i18n="fullDemo.nav.atlas">Feature Atlas</span>
+          </button>
           <button type="button" data-gui-page-open="navigation">
             <span aria-hidden="true">⇥</span>
             <span class="gui-sidebar-label" data-i18n="fullDemo.nav.navigation">Navigation</span>
@@ -139,6 +143,7 @@
                   </p>
                   <div class="gui-cluster">
                     <button class="gui-button gui-button--primary" type="button" data-gui-page-open="components" data-i18n="fullDemo.overview.explore">Explore components</button>
+                    <button class="gui-button" type="button" data-gui-page-open="atlas">Browse every feature</button>
                     <button class="gui-button" type="button" data-gui-page-open="platform" data-i18n="fullDemo.overview.runtime">Inspect runtime</button>
                   </div>
                 </div>
@@ -200,6 +205,26 @@
                 <div class="demo-buffer-track" id="buffer-track" aria-label="Decimated sample values"></div>
                 <p class="gui-muted" id="buffer-summary"></p>
               </article>
+            </div>
+          </section>
+
+          <section data-page="atlas">
+            <div class="gui-stack demo-page demo-atlas-page">
+              <header class="demo-atlas-hero">
+                <div>
+                  <p class="gui-eyebrow">GUIKIT SHOWCASE STUDIO</p>
+                  <h2>Every feature, organized around what you are building.</h2>
+                  <p class="gui-muted">Search the complete feature map, then open the live station that demonstrates the public surface in a working application context.</p>
+                </div>
+                <div class="demo-atlas-summary"><strong id="atlas-total">0</strong><span>live feature stations</span><small>Every card opens a runnable implementation.</small></div>
+              </header>
+              <article class="gui-card gui-stack demo-atlas-controls">
+                <label class="gui-field demo-atlas-search"><span>Find a feature</span><input class="gui-input" id="atlas-search" type="search" placeholder="Charts, TeX, command palette, uploads…"></label>
+                <div class="demo-atlas-filter" id="atlas-filter" aria-label="Feature categories"></div>
+                <p class="gui-muted" id="atlas-count" aria-live="polite"></p>
+              </article>
+              <div class="demo-atlas-grid" id="atlas-grid"></div>
+              <article class="gui-card demo-atlas-note"><strong>How to use this studio</strong><span>Use the Atlas as the framework’s visual index. It is connected to real demo pages rather than static documentation cards.</span></article>
             </div>
           </section>
 

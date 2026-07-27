@@ -25,6 +25,7 @@ and keeps every frontend feature operational.
 
 | Station | Features exercised |
 | --- | --- |
+| Feature Atlas | Searchable, category-filtered visual index of every GuiKit public feature; every card routes to its working station. |
 | Overview | Cards, responsive grids, `GuiDataBuffer`, min/max decimation, live event stream |
 | Navigation | Collapsible sidebar, mobile drawer, tabs, nested tabs, sliding pages, history |
 | Page layouts | Swipeable touch/trackpad/keyboard pages plus a responsive drag-reorderable dashboard with spans and presets |

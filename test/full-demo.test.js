@@ -95,6 +95,12 @@ test("full demo provides an interactive contextual tutorial", () => {
   assert.match(app, /demoTutorial\.start/);
 });
 
+test("full demo has a searchable Feature Atlas that maps all domains to live stations", () => {
+  assert.match(html, /data-page="atlas"/);
+  ["atlas-search", "atlas-filter", "atlas-grid", "atlas-total"].forEach((id) => assert.match(html, new RegExp(`id="${id}"`)));
+  ["const featureAtlas", "renderFeatureAtlas", "Foundation", "Navigation", "Data and analysis", "Automation", "Media", "Editors", "Productivity", "Workspace", "Platform", "Production", "Documents"].forEach((surface) => assert.match(app, new RegExp(surface.replaceAll(".", "\\."))));
+});
+
 test("full demo demonstrates swipe pages and configurable dashboards", () => {
   ["navigation-swipe-pages", "swipe-previous", "swipe-next", "swipe-loop", "navigation-dashboard", "dashboard-columns", "dashboard-span", "dashboard-save", "dashboard-restore"].forEach((id) => assert.match(html, new RegExp(`id="${id}"`)));
   ["swipePages.next", "swipePages.previous", "swipePages.loop", "navigationDashboard.updateCard", "navigationDashboard.savePreset", "navigationDashboard.restorePreset"].forEach((surface) => assert.match(app, new RegExp(surface.replaceAll(".", "\\."))));

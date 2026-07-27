@@ -8,6 +8,8 @@ All notable changes to GuiKit are documented here. The format follows
 
 ### Added
 
+- Full Demo Feature Atlas: a searchable, category-filtered Showcase Studio
+  that maps every public feature to its interactive implementation station.
 - PulseOps, a cohesive industrial telemetry reference application with live
   multi-signal analysis, alarms, signal-flow editing, onboarding, settings,
   structured event history, and host-replaceable TeX shift reporting.

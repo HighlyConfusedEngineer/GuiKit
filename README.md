@@ -560,6 +560,9 @@ is the reference implementation for larger features.
 - [PulseOps telemetry console](examples/telemetry-console/README.md) is a
   cohesive industrial-monitoring workflow: live signals, alarms, visual signal
   flow, operator tutorial, configuration, and TeX shift reporting.
+- [Full Demo / Showcase Studio](examples/full-demo/README.md) is the complete,
+  searchable visual index of GuiKit features, with every card linked to a live
+  implementation station.
 
 ## Documentation
 
