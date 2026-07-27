@@ -38,6 +38,9 @@ Current reference module:
 - [`platform`](platform/) supplies adapter-first collaboration, files,
   analysis, automation, AI, plugins, accessibility, testing, documents, and
   design-token primitives.
+- [`productivity`](productivity/) provides virtual comboboxes, scheduling,
+  analysis displays, property grids, host-managed uploads, notification
+  history, and shortcut profiles.
 - [`production`](production/) supplies delivery hardening: layouts/themes,
   connectors, observability, offline sync, plugin policy, visual tests, and
   performance/bundle budgets.

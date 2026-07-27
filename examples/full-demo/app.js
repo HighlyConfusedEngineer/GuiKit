@@ -29,6 +29,13 @@ import {
   GuiObservabilityHub,
   GuiPluginPolicy,
   GuiThemeStudio,
+  GuiAnalysisSeries,
+  GuiComboboxModel,
+  GuiNotificationCenter,
+  GuiPropertyGridModel,
+  GuiScheduleModel,
+  GuiShortcutProfiles,
+  GuiUploadQueue,
   contrastRatio,
   correlation,
   createReplayConnector,
@@ -1165,6 +1172,25 @@ const pluginPolicyDemo = new GuiPluginPolicy({ permissions: ["storage"] });
 pluginPolicyDemo.verify(pluginPolicyDemo.scaffold({ id: "demo.safe-plugin", name: "Safe plugin" }));
 [productionTheme, productionConnectors, productionObservability].forEach((surface) => surface.render());
 
+const productivityCombo = document.querySelector("#productivity-combobox");
+productivityCombo.model = new GuiComboboxModel({ multiple: true, options: Array.from({ length: 250 }, (_, index) => ({ value: `signal-${index + 1}`, label: `Signal ${index + 1}`, description: index % 4 === 0 ? "Pinned analysis stream" : "Live telemetry stream" })), value: ["signal-1", "signal-5"] });
+const productivitySchedule = new GuiScheduleModel({ range: { start: "2026-07-20", end: "2026-07-26", timeZone: "Europe/Berlin" }, events: [{ id: "review", title: "Design review", start: "2026-07-21T09:00:00Z", end: "2026-07-21T10:00:00Z" }, { id: "deploy", title: "Production window", start: "2026-07-24T16:00:00Z", end: "2026-07-24T18:00:00Z" }] });
+document.querySelector("#productivity-range").model = productivitySchedule;
+document.querySelector("#productivity-scheduler").model = productivitySchedule;
+const productivityAnalysis = document.querySelector("#productivity-analysis");
+productivityAnalysis.series = new GuiAnalysisSeries();
+productivityAnalysis.setData("telemetry", Array.from({ length: 1200 }, (_, index) => ({ x: index, y: 45 + Math.sin(index / 19) * 20 + (index % 17) })), { label: "Telemetry", color: "#20c997" });
+const productivityProperties = document.querySelector("#productivity-properties");
+productivityProperties.model = new GuiPropertyGridModel({ title: "Inspection camera", enabled: true, exposure: 14, pipeline: { mode: "edge", threshold: 0.68 } }, [{ path: "title", label: "Title", type: "text" }, { path: "enabled", label: "Enabled", type: "boolean" }, { path: "exposure", label: "Exposure", type: "number", min: 1, max: 60 }, { path: "pipeline.mode", label: "Pipeline", options: ["edge", "blur", "raw"] }, { path: "pipeline.threshold", label: "Threshold", type: "number", min: 0, max: 1 }]);
+const productivityUpload = document.querySelector("#productivity-upload");
+productivityUpload.queue = new GuiUploadQueue({ accept: ["application/json", ".csv"], maxSize: 5_000_000 });
+const productivityCenter = new GuiNotificationCenter([{ title: "Analysis completed", message: "Spectrum and heatmap are ready.", level: "success", group: "analysis" }, { title: "Shortcut profile", message: "Engineering profile is active.", group: "workspace", read: true }]);
+document.querySelector("#productivity-notifications").center = productivityCenter;
+const productivityProfiles = new GuiShortcutProfiles({ default: { "gui.command-palette": "Ctrl+K", "gui.undo": "Ctrl+Z" }, engineering: { "gui.command-palette": "Ctrl+P", "gui.undo": "Ctrl+Z" } });
+const productivityShortcuts = document.querySelector("#productivity-shortcuts");
+productivityShortcuts.profiles = productivityProfiles;
+productivityShortcuts.registry = commands;
+
 const featureResult = document.querySelector("#feature-lab-result");
 const credentialMemory = new Map();
 const featureVault = new GuiCredentialVault({
@@ -1223,6 +1249,8 @@ document.querySelectorAll("[data-feature]").forEach((button) => {
         const node = featureNodes.create("telemetry.filter", { id: "filter-1" }); const frame = featureDebugger.step(node.id, { result: 42 }); featureDebugger.resume(); writeFeatureResult(feature, { node, frame, paused: featureDebugger.paused });
       } else if (feature === "charts") {
         const samples = [1, 0, -1, 0]; writeFeatureResult(feature, { fft: fftMagnitude(samples), correlation: correlation([1, 2, 3], [2, 4, 6]), csv: exportDelimited([{ signal: "cpu", value: 42 }]), svg: exportChartSvg([{ x: 0, y: 20 }, { x: 1, y: 44 }]), formats: ["scatter", "heatmap", "candlestick"].map((type) => normalizeAnalysisDataset(type, type === "candlestick" ? [{ open: 1, high: 3, low: 0, close: 2 }] : [{ x: 1, y: 2, value: 3 }])) });
+      } else if (feature === "productivity") {
+        productivityCombo.model.setValue(["signal-1", "signal-8", "signal-13"]); productivitySchedule.upsert({ id: "incident", title: "Incident retrospective", start: "2026-07-25T11:00:00Z", end: "2026-07-25T12:00:00Z" }); productivityProperties.model.update("pipeline.threshold", 0.74); productivityCenter.push({ title: "Profile updated", message: "Productivity controls were exercised.", group: "workspace" }); productivityProfiles.activate("engineering"); productivityProfiles.apply(commands); writeFeatureResult(feature, { selectedSignals: productivityCombo.value, schedule: productivitySchedule.between(), properties: productivityProperties.value, notifications: productivityCenter.toJSON(), shortcuts: productivityProfiles.toJSON(), uploadQueue: productivityUpload.files });
       } else if (feature === "offline") {
         await featureOffline.enqueue({ type: "save", path: "reports/incident.md" }); const sent = []; await featureOffline.flush(async (operation) => sent.push(operation.type)); writeFeatureResult(feature, { sent, snapshot: featureOffline.snapshot({ name: "GuiKit demo" }) });
       } else if (feature === "plugins") {

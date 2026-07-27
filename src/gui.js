@@ -141,6 +141,26 @@ import {
   formatStructuredText,
 } from "./modules/editors/index.js";
 import {
+  GuiAnalysisChart,
+  GuiAnalysisSeries,
+  GuiCombobox,
+  GuiComboboxModel,
+  GuiDateRangePicker,
+  GuiFileDrop,
+  GuiNotificationCenter,
+  GuiNotificationCenterElement,
+  GuiPropertyGrid,
+  GuiPropertyGridModel,
+  GuiScheduleModel,
+  GuiScheduler,
+  GuiShortcutEditor,
+  GuiShortcutProfiles,
+  GuiUploadQueue,
+  analysisHistogram,
+  heatmap,
+  productivityModule,
+} from "./modules/productivity/index.js";
+import {
   GuiAccessibilityInspector,
   GuiAiPanel,
   GuiAiSession,
@@ -298,6 +318,14 @@ export {
   GuiImageEditor, GuiPropertyInspector, GuiQueryEditor, GuiRichTextEditor,
   GuiStructuredEditor, GuiThemeEditor, GuiTimelineEditor, GuiTimelineModel,
   GuiTranslationEditor, editorsModule, formatStructuredText,
+};
+
+export {
+  GuiAnalysisChart, GuiAnalysisSeries, GuiCombobox, GuiComboboxModel,
+  GuiDateRangePicker, GuiFileDrop, GuiNotificationCenter,
+  GuiNotificationCenterElement, GuiPropertyGrid, GuiPropertyGridModel,
+  GuiScheduleModel, GuiScheduler, GuiShortcutEditor, GuiShortcutProfiles,
+  GuiUploadQueue, analysisHistogram, heatmap, productivityModule,
 };
 
 export {
@@ -2330,6 +2358,7 @@ registerElement("gui-toast-stack", GuiToastStack);
   devtoolsModule,
   performanceModule,
   editorsModule,
+  productivityModule,
   platformModule,
   productionModule,
 ].forEach((module) => {

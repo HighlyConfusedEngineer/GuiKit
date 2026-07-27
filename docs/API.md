@@ -119,6 +119,21 @@ and `gui:` change events.
 keyframes/tracks and shapes/links. They are suitable for validation,
 persistence, and host-side transforms.
 
+## Productivity controls
+
+Import the optional family from `@gui-template/core/productivity`. It exposes
+`GuiComboboxModel`, `GuiScheduleModel`, `GuiAnalysisSeries`,
+`GuiPropertyGridModel`, `GuiUploadQueue`, `GuiNotificationCenter`, and
+`GuiShortcutProfiles`, plus their custom elements. The collection covers
+virtualized option selection, date ranges and agendas, histogram/scatter/
+heatmap/spectrogram/gauge analysis, typed property inspection, host-adapted
+file transfers, durable notification history, and named keyboard profiles.
+
+Models emit `gui:` events and can be used without a DOM. Upload adapters own
+destination authorization, resume persistence, checksums, and transport
+security; the framework only validates queue policy and reports progress. See
+[PRODUCTIVITY.md](PRODUCTIVITY.md) for schemas and integration examples.
+
 ## Toasts
 
 The exported `toast` singleton creates a stack on first use:

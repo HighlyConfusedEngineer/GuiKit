@@ -315,6 +315,7 @@ export * from "./modules/workspace/index.js";
 export * from "./modules/devtools/index.js";
 export * from "./modules/performance/index.js";
 export * from "./modules/editors/index.js";
+export * from "./modules/productivity/index.js";
 export * from "./modules/platform/index.js";
 export * from "./modules/production/index.js";
 
@@ -386,5 +387,13 @@ declare global {
     "gui-connector-manager": import("./modules/production/index.js").GuiConnectorManager;
     "gui-observability-dashboard": import("./modules/production/index.js").GuiObservabilityDashboard;
     "gui-visual-regression-panel": import("./modules/production/index.js").GuiVisualRegressionPanel;
+    "gui-combobox": import("./modules/productivity/index.js").GuiCombobox;
+    "gui-date-range-picker": import("./modules/productivity/index.js").GuiDateRangePicker;
+    "gui-scheduler": import("./modules/productivity/index.js").GuiScheduler;
+    "gui-analysis-chart": import("./modules/productivity/index.js").GuiAnalysisChart;
+    "gui-property-grid": import("./modules/productivity/index.js").GuiPropertyGrid;
+    "gui-file-drop": import("./modules/productivity/index.js").GuiFileDrop;
+    "gui-notification-center": import("./modules/productivity/index.js").GuiNotificationCenterElement;
+    "gui-shortcut-editor": import("./modules/productivity/index.js").GuiShortcutEditor;
   }
 }

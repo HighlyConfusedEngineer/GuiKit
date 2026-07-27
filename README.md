@@ -48,6 +48,8 @@ The current `0.2` foundation includes:
 - runtime localization with fallback and interpolation;
 - a promise-based host bridge for pywebview, WebView2, WebKit, and browser mocks;
 - packaged Python (`guikit-webview`) and .NET (`GuiKit.WebView`) host assets and bridge helpers;
+- virtual comboboxes, scheduling, advanced analysis views, property grids,
+  host-managed uploads, notification history, and shortcut profiles;
 - no runtime npm dependencies and no framework requirement.
 
 ## Try the showcase
@@ -567,6 +569,7 @@ is the reference implementation for larger features.
 - [Module authoring](docs/MODULES.md)
 - [Release process](docs/RELEASING.md)
 - [Production readiness and operations](docs/PRODUCTION_READINESS.md)
+- [Productivity controls](docs/PRODUCTIVITY.md)
 - [Framework roadmap](docs/ROADMAP.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)

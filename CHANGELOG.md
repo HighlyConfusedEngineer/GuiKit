@@ -6,6 +6,14 @@ All notable changes to GuiKit are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Optional productivity module with a virtualized asynchronous combobox,
+  date-range/schedule views, histogram/scatter/heatmap/spectrogram/gauge
+  analysis, property grids, host-adapted resumable upload queues, notification
+  history, and serializable shortcut profiles. The full demo now exercises all
+  seven surfaces.
+
 ## [0.2.0] - 2026-07-26
 
 ### Added
