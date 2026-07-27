@@ -313,6 +313,7 @@ export * from "./modules/forms/index.js";
 export * from "./modules/data-views/index.js";
 export * from "./modules/workspace/index.js";
 export * from "./modules/devtools/index.js";
+export * from "./modules/app-shell/index.js";
 export * from "./modules/performance/index.js";
 export * from "./modules/editors/index.js";
 export * from "./modules/productivity/index.js";
@@ -373,6 +374,8 @@ declare global {
     "gui-workspace": import("./modules/workspace/index.js").GuiWorkspace;
     "gui-component-playground": import("./modules/devtools/index.js").GuiComponentPlayground;
     "gui-diagnostics-panel": import("./modules/devtools/index.js").GuiDiagnosticsPanel;
+    "gui-developer-inspector": import("./modules/devtools/index.js").GuiDeveloperInspector;
+    "gui-app-shell": import("./modules/app-shell/index.js").GuiAppShell;
     "gui-collaboration-panel": import("./modules/platform/index.js").GuiCollaborationPanel;
     "gui-file-explorer": import("./modules/platform/index.js").GuiFileExplorer;
     "gui-analysis-panel": import("./modules/platform/index.js").GuiAnalysisPanel;

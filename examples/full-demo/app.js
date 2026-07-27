@@ -18,6 +18,7 @@ import {
   GuiServiceWorkerBridge,
   GuiVisualRegressionSuite,
   GuiDiagramModel,
+  GuiDevelopmentSession,
   GuiDataCollection,
   GuiFormModel,
   GuiHttpLogSink,
@@ -710,6 +711,8 @@ frameworkPlayground.controls = [
 ];
 frameworkPlayground.events = ["click"];
 document.querySelector("#framework-diagnostics").diagnostics = diagnostics;
+const developmentSession = new GuiDevelopmentSession({ modules: guiModules, diagnostics, logger, bridge, limit: 80 });
+document.querySelector("#framework-inspector").session = developmentSession;
 diagnostics.record("demo.bootstrap", performance.now());
 auditAccessibility(document.querySelector("[data-page=framework]"));
 

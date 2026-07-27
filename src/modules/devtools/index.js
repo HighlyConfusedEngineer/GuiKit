@@ -4,6 +4,12 @@ const hasDOM = typeof document !== "undefined" && typeof customElements !== "und
 function clone(value) {
   return value === undefined ? undefined : structuredClone(value);
 }
+function developmentEvent(type, detail) {
+  if (typeof CustomEvent !== "undefined") return new CustomEvent(type, { detail });
+  const event = new Event(type);
+  Object.defineProperty(event, "detail", { value: detail });
+  return event;
+}
 
 function accessibleName(element) {
   const labelledBy = element.getAttribute("aria-labelledby");
@@ -276,22 +282,79 @@ export class GuiDiagnosticsPanel extends GuiElement {
   }
 }
 
+export class GuiDevelopmentSession extends EventTarget {
+  #records = [];
+  #limit;
+  #sources = [];
+  constructor({ limit = 200, modules, diagnostics, logger, bridge } = {}) {
+    super();
+    this.#limit = Math.max(1, limit);
+    if (modules) this.record("modules", "registered", modules.list?.() ?? modules);
+    if (diagnostics) this.attach(diagnostics, "gui:diagnostic", "diagnostic");
+    if (logger) this.attach(logger, "gui:log", "log");
+    if (bridge) this.observeBridge(bridge);
+  }
+  get records() { return clone(this.#records); }
+  record(kind, name, detail) {
+    const record = { kind, name, detail: clone(detail), timestamp: new Date().toISOString() };
+    this.#records.push(record);
+    if (this.#records.length > this.#limit) this.#records.shift();
+    this.dispatchEvent(developmentEvent("gui:development-record", record));
+    return record;
+  }
+  attach(source, eventName, kind = eventName) {
+    if (!source?.addEventListener) return () => {};
+    const listener = (event) => this.record(kind, eventName, event.detail);
+    source.addEventListener(eventName, listener);
+    const detach = () => source.removeEventListener(eventName, listener);
+    this.#sources.push(detach);
+    return detach;
+  }
+  observeBridge(bridge) {
+    if (!bridge?.invoke || bridge.__guiKitObserved) return bridge;
+    const invoke = bridge.invoke.bind(bridge);
+    const session = this;
+    Object.defineProperty(bridge, "__guiKitObserved", { value: true, configurable: true });
+    bridge.invoke = async function observedInvoke(method, payload) {
+      session.record("bridge", "request", { method, payload });
+      try { const result = await invoke(method, payload); session.record("bridge", "response", { method, result }); return result; }
+      catch (error) { session.record("bridge", "error", { method, message: error?.message ?? String(error) }); throw error; }
+    };
+    return bridge;
+  }
+  dispose() { this.#sources.splice(0).forEach((detach) => detach()); }
+}
+
+export class GuiDeveloperInspector extends GuiElement {
+  #root;
+  #session;
+  #listener = () => this.render();
+  constructor() { super(); if (this.attachShadow) this.#root = this.attachShadow({ mode: "open" }); }
+  set session(value) { this.#session?.removeEventListener?.("gui:development-record", this.#listener); this.#session = value; this.#session?.addEventListener?.("gui:development-record", this.#listener); this.render(); }
+  get session() { return this.#session; }
+  disconnectedCallback() { this.#session?.removeEventListener?.("gui:development-record", this.#listener); }
+  render() {
+    if (!this.#root) return;
+    const records = this.#session?.records ?? [];
+    this.#root.innerHTML = `<style>:host{display:block;max-height:20rem;overflow:auto;padding:.7rem;color:var(--gui-text,#e5e7eb);background:var(--gui-surface,#111827);border:1px solid var(--gui-border,#334155);border-radius:.5rem;font:.75rem/1.4 ui-monospace,monospace}h2{margin:0 0 .5rem;font:600 .9rem system-ui}.record{padding:.35rem 0;border-top:1px solid #ffffff12}.kind{color:var(--gui-accent,#38bdf8)}</style><h2>GuiKit development inspector</h2>${records.length ? records.slice().reverse().map((record) => `<div class="record"><span class="kind">${record.kind}</span> ${record.name} <span>${JSON.stringify(record.detail ?? {})}</span></div>`).join("") : "<div>No recorded development activity.</div>"}`;
+  }
+}
+
 export const devtoolsModule = Object.freeze({
   id: "devtools",
   version: "0.1.0",
-  description: "Component playground, event viewer, diagnostics panel, and accessibility audit.",
+  description: "Component playground, event viewer, development inspector, diagnostics panel, and accessibility audit.",
   dependencies: [],
-  components: ["gui-component-playground", "gui-diagnostics-panel"],
+  components: ["gui-component-playground", "gui-diagnostics-panel", "gui-developer-inspector"],
   setup() {
     if (hasDOM) {
       if (!customElements.get("gui-component-playground")) {
         customElements.define("gui-component-playground", GuiComponentPlayground);
       }
-      if (!customElements.get("gui-diagnostics-panel")) {
-        customElements.define("gui-diagnostics-panel", GuiDiagnosticsPanel);
-      }
+      if (!customElements.get("gui-diagnostics-panel")) customElements.define("gui-diagnostics-panel", GuiDiagnosticsPanel);
+      if (!customElements.get("gui-developer-inspector")) customElements.define("gui-developer-inspector", GuiDeveloperInspector);
     }
-    return { auditAccessibility };
+    return { auditAccessibility, GuiDevelopmentSession };
   },
 });
 
@@ -302,4 +365,5 @@ if (hasDOM) {
   if (!customElements.get("gui-diagnostics-panel")) {
     customElements.define("gui-diagnostics-panel", GuiDiagnosticsPanel);
   }
+  if (!customElements.get("gui-developer-inspector")) customElements.define("gui-developer-inspector", GuiDeveloperInspector);
 }

@@ -31,6 +31,8 @@ Current reference module:
   models and renderers.
 - [`workspace`](workspace/) implements serializable docking layouts.
 - [`devtools`](devtools/) provides the component laboratory and audit surfaces.
+- [`app-shell`](app-shell/) provides a serializable application manifest and
+  responsive navigation shell for starter projects and native hosts.
 - [`performance`](performance/) supplies frame batching, lazy feature loading,
   and bounded performance-budget telemetry.
 - [`editors`](editors/) provides rich text, code, structured data, property,

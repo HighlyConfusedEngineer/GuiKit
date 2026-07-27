@@ -18,6 +18,10 @@
     "provenance": true
   },
   "type": "module",
+  "bin": {
+    "create-guikit-app": "./tools/create-app.mjs",
+    "guikit": "./tools/guikit.mjs"
+  },
   "types": "./src/gui.d.ts",
   "exports": {
     ".": {
@@ -96,6 +100,16 @@
       "import": "./src/modules/devtools/index.js",
       "default": "./src/modules/devtools/index.js"
     },
+    "./app-shell": {
+      "types": "./src/modules/app-shell/index.d.ts",
+      "import": "./src/modules/app-shell/index.js",
+      "default": "./src/modules/app-shell/index.js"
+    },
+    "./testing": {
+      "types": "./src/testing/index.d.ts",
+      "import": "./src/testing/index.js",
+      "default": "./src/testing/index.js"
+    },
     "./performance": {
       "types": "./src/modules/performance/index.d.ts",
       "import": "./src/modules/performance/index.js",
@@ -143,7 +157,7 @@
     "examples/full-demo/README.md",
     "examples/full-demo/server.mjs",
     "examples/python/app.py",
-    "tools/create-module.mjs",
+    "tools",
     "index.html",
     "CHANGELOG.md",
     "CODE_OF_CONDUCT.md",
@@ -155,14 +169,17 @@
   "scripts": {
     "dev": "node tools/dev-server.mjs",
     "demo:full": "node examples/full-demo/server.mjs",
-    "check": "node --check src/gui.js && node --check src/core/module-registry.js && node --check src/modules/node-editor/index.js && node --check src/modules/media-player/index.js && node --check src/modules/statusbar/index.js && node --check src/modules/wizard/index.js && node --check src/modules/logging/index.js && node --check src/modules/logging/node.js && node --check src/modules/commands/index.js && node --check src/modules/overlays/index.js && node --check src/modules/runtime/index.js && node --check src/modules/forms/index.js && node --check src/modules/data-views/index.js && node --check src/modules/workspace/index.js && node --check src/modules/devtools/index.js && node --check src/modules/performance/index.js && node --check src/modules/performance/analysis-worker.js && node --check src/modules/editors/index.js && node --check src/modules/productivity/index.js && node --check src/modules/tex/index.js && node --check src/modules/platform/index.js && node --check src/modules/production/index.js && node --check src/adapters/index.js && node --check examples/full-demo/app.js && node --check examples/full-demo/server.mjs && node --check tools/create-module.mjs && node --check tools/stage-python-package.mjs && python -m py_compile examples/python/app.py packages/python/src/guikit_webview/__init__.py packages/python/src/guikit_webview/host.py && node --test",
+    "check": "node --check src/gui.js && node --check src/core/module-registry.js && node --check src/modules/node-editor/index.js && node --check src/modules/media-player/index.js && node --check src/modules/statusbar/index.js && node --check src/modules/wizard/index.js && node --check src/modules/logging/index.js && node --check src/modules/logging/node.js && node --check src/modules/commands/index.js && node --check src/modules/overlays/index.js && node --check src/modules/runtime/index.js && node --check src/modules/forms/index.js && node --check src/modules/data-views/index.js && node --check src/modules/workspace/index.js && node --check src/modules/devtools/index.js && node --check src/modules/app-shell/index.js && node --check src/testing/index.js && node --check src/modules/performance/index.js && node --check src/modules/performance/analysis-worker.js && node --check src/modules/editors/index.js && node --check src/modules/productivity/index.js && node --check src/modules/tex/index.js && node --check src/modules/platform/index.js && node --check src/modules/production/index.js && node --check src/adapters/index.js && node --check examples/full-demo/app.js && node --check examples/full-demo/server.mjs && node --check tools/create-module.mjs && node --check tools/create-app.mjs && node --check tools/guikit.mjs && node --check tools/doctor.mjs && node --check tools/generate-bridge.mjs && node --check tools/tokens.mjs && node --check tools/create-extension.mjs && node --check tools/stage-python-package.mjs && python -m py_compile examples/python/app.py packages/python/src/guikit_webview/__init__.py packages/python/src/guikit_webview/host.py && node --test",
     "test": "node --test",
     "prepack": "npm run check",
     "release:check": "npm pack --dry-run --ignore-scripts",
     "package:python:stage": "node tools/stage-python-package.mjs",
     "package:python": "npm run package:python:stage && python -m build --wheel --outdir release/python release/python-src",
     "package:dotnet": "dotnet pack packages/dotnet/GuiKit.WebView/GuiKit.WebView.csproj --configuration Release -p:PackageOutputPath=../../../release/dotnet",
-    "create:module": "node tools/create-module.mjs"
+    "create:module": "node tools/create-module.mjs",
+    "doctor": "node tools/guikit.mjs doctor",
+    "bridge:generate": "node tools/guikit.mjs bridge guikit.bridge.json",
+    "tokens:generate": "node tools/guikit.mjs tokens guikit.tokens.json"
   },
   "keywords": [
     "gui",

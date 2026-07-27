@@ -8,6 +8,12 @@ All notable changes to GuiKit are documented here. The format follows
 
 ### Added
 
+- Developer-experience tooling: starter application and extension scaffolds,
+  project doctor, bridge-contract and design-token generators, manifest-driven
+  app shell, development inspector, test helpers, and workflow recipes.
+
+### Added
+
 - Optional productivity module with a virtualized asynchronous combobox,
   date-range/schedule views, histogram/scatter/heatmap/spectrogram/gauge
   analysis, property grids, host-adapted resumable upload queues, notification

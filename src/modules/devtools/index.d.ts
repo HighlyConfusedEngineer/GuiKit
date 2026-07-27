@@ -32,11 +32,22 @@ export class GuiDiagnosticsPanel extends HTMLElement {
   render(): void;
 }
 
+export interface GuiDevelopmentRecord { kind: string; name: string; detail: unknown; timestamp: string; }
+export class GuiDevelopmentSession extends EventTarget {
+  constructor(options?: { limit?: number; modules?: unknown; diagnostics?: EventTarget; logger?: EventTarget; bridge?: { invoke?: Function } });
+  readonly records: GuiDevelopmentRecord[];
+  record(kind: string, name: string, detail?: unknown): GuiDevelopmentRecord;
+  attach(source: EventTarget, eventName: string, kind?: string): () => void;
+  observeBridge<T extends { invoke?: Function }>(bridge: T): T;
+  dispose(): void;
+}
+export class GuiDeveloperInspector extends HTMLElement { session?: GuiDevelopmentSession; render(): void; }
+
 export const devtoolsModule: Readonly<{
   id: "devtools";
   version: "0.1.0";
   description: string;
   dependencies: readonly string[];
-  components: readonly ["gui-component-playground", "gui-diagnostics-panel"];
-  setup(): { auditAccessibility: typeof auditAccessibility };
+  components: readonly ["gui-component-playground", "gui-diagnostics-panel", "gui-developer-inspector"];
+  setup(): { auditAccessibility: typeof auditAccessibility; GuiDevelopmentSession: typeof GuiDevelopmentSession };
 }>;

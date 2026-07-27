@@ -106,10 +106,18 @@ import {
 } from "./modules/workspace/index.js";
 import {
   GuiComponentPlayground,
+  GuiDeveloperInspector,
+  GuiDevelopmentSession,
   GuiDiagnosticsPanel,
   auditAccessibility,
   devtoolsModule,
 } from "./modules/devtools/index.js";
+import {
+  GuiAppManifest,
+  GuiAppShell,
+  GuiAppShellModel,
+  appShellModule,
+} from "./modules/app-shell/index.js";
 import {
   GuiFrameScheduler,
   GuiLazyModuleLoader,
@@ -238,12 +246,17 @@ export {
   GuiCommandPalette,
   GuiCommandRegistry,
   GuiComponentPlayground,
+  GuiDeveloperInspector,
+  GuiDevelopmentSession,
   GuiConsoleSink,
   GuiDataCollection,
   GuiDataGrid,
   GuiPagedDataSource,
   GuiDiagnostics,
   GuiDiagnosticsPanel,
+  GuiAppManifest,
+  GuiAppShell,
+  GuiAppShellModel,
   GuiDragDrop,
   GuiDialog,
   GuiContextMenu,
@@ -290,6 +303,7 @@ export {
   clipboard,
   commands,
   commandsModule,
+  appShellModule,
   dataViewsModule,
   defineGuiModule,
   devtoolsModule,
@@ -2370,6 +2384,7 @@ registerElement("gui-toast-stack", GuiToastStack);
   formsModule,
   dataViewsModule,
   workspaceModule,
+  appShellModule,
   devtoolsModule,
   performanceModule,
   editorsModule,
