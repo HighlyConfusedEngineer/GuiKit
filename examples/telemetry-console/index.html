@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="GuiKit reference application: a live telemetry operations console.">
+    <title>PulseOps — GuiKit reference application</title>
+    <link rel="stylesheet" href="../../src/gui.css">
+    <link rel="stylesheet" href="./telemetry.css">
+  </head>
+  <body>
+    <div class="telemetry-app">
+      <gui-sidebar id="telemetry-sidebar" class="telemetry-sidebar" open collapsible aria-label="PulseOps navigation">
+        <div class="brand"><span class="brand-mark">P</span><span><strong>PulseOps</strong><small>Operations console</small></span></div>
+        <nav class="nav-list" aria-label="Console views">
+          <button type="button" class="nav-item active" data-gui-page-open="overview"><span>◉</span><span>Live overview</span></button>
+          <button type="button" class="nav-item" data-gui-page-open="signals"><span>⌁</span><span>Signal flow</span></button>
+          <button type="button" class="nav-item" data-gui-page-open="reports"><span>▤</span><span>Shift report</span></button>
+          <button type="button" class="nav-item" data-gui-page-open="settings"><span>⚙</span><span>Station settings</span></button>
+        </nav>
+        <div class="site-card"><span class="status-dot"></span><div><strong>Plant North / Line 03</strong><small>12 devices connected</small></div></div>
+      </gui-sidebar>
+
+      <main class="telemetry-main">
+        <header class="telemetry-topbar">
+          <div class="topbar-left"><button type="button" class="icon-button" aria-label="Toggle navigation" data-gui-sidebar-toggle="telemetry-sidebar">☰</button><div><p class="eyebrow">PRODUCTION / LIVE</p><h1 id="view-title">Live overview</h1></div></div>
+          <div class="topbar-actions"><span class="connection"><span class="status-dot"></span> Edge gateway online</span><button id="start-tour" class="gui-button" type="button">Guide me</button><button id="pause-stream" class="gui-button gui-button--primary" type="button">Pause stream</button></div>
+        </header>
+
+        <gui-pages id="console-pages" class="telemetry-pages">
+          <section data-page="overview">
+            <div class="page-shell">
+              <section class="hero-panel">
+                <div><p class="eyebrow">LIVE OPERATIONS</p><h2>Keep Line 03 inside its operating envelope.</h2><p>Monitor vibration, throughput, and thermal behavior in real time. Alerts are correlated locally before escalation.</p></div>
+                <div class="hero-actions"><button id="acknowledge-alerts" class="gui-button" type="button">Acknowledge alarms</button><button id="create-report" class="gui-button gui-button--primary" type="button">Create shift report</button></div>
+              </section>
+              <section class="metric-grid" aria-label="Live station metrics">
+                <article class="metric-card"><span>Line throughput</span><strong id="throughput-value">0</strong><small>units / min <b id="throughput-trend">+0.0%</b></small></article>
+                <article class="metric-card"><span>Motor temperature</span><strong id="temperature-value">0</strong><small>°C <b class="warm" id="temperature-state">Nominal</b></small></article>
+                <article class="metric-card"><span>Vibration RMS</span><strong id="vibration-value">0</strong><small>mm/s <b id="vibration-state">Stable</b></small></article>
+                <article class="metric-card"><span>Open alarms</span><strong id="alarm-count">0</strong><small><b class="danger" id="alarm-state">No escalation</b></small></article>
+              </section>
+
+              <section class="content-grid">
+                <article class="panel chart-panel">
+                  <header class="panel-header"><div><p class="eyebrow">MULTI-SIGNAL ANALYSIS</p><h3>Condition monitoring</h3></div><div class="chart-actions"><button id="chart-cursor" class="gui-button" type="button">Pin cursor</button><button id="chart-reset" class="gui-button" type="button">Reset view</button></div></header>
+                  <gui-live-chart id="telemetry-chart" max-points="24000" window-points="5000" label="Live motor condition telemetry"></gui-live-chart>
+                  <p class="panel-note">Scroll to zoom, drag to pan, Shift-drag to select a range, and click to inspect a synchronized cursor.</p>
+                </article>
+                <aside class="panel alarm-panel"><header class="panel-header"><div><p class="eyebrow">ATTENTION QUEUE</p><h3>Alarms and recommendations</h3></div><span id="alarm-badge" class="severity-badge">0 open</span></header><ol id="alarm-list" class="alarm-list"></ol><button id="inject-alarm" class="gui-button panel-button" type="button">Simulate vibration alarm</button></aside>
+              </section>
+
+              <section class="panel event-panel"><header class="panel-header"><div><p class="eyebrow">AUDITABLE EVENT STREAM</p><h3>Operator activity</h3></div><span id="event-rate" class="muted">0 events/min</span></header><div class="event-table-wrap"><table><thead><tr><th>Time</th><th>Source</th><th>Event</th><th>Context</th></tr></thead><tbody id="event-list"></tbody></table></div></section>
+            </div>
+          </section>
+
+          <section data-page="signals">
+            <div class="page-shell">
+              <header class="page-heading"><div><p class="eyebrow">VISUAL AUTOMATION</p><h2>Signal processing flow</h2><p>Typed connections describe how raw device signals become alarms and historian records.</p></div><div class="hero-actions"><button id="flow-layout" class="gui-button" type="button">Auto-layout</button><button id="flow-validate" class="gui-button gui-button--primary" type="button">Validate flow</button></div></header>
+              <gui-node-editor id="signal-flow" class="signal-flow" snap="16" grid-size="24" label="Line 03 condition monitoring flow"></gui-node-editor>
+              <section class="flow-legend"><span><i class="analog"></i>Analog sensor</span><span><i class="digital"></i>Digital state</span><span><i class="alert-wire"></i>Alarm event</span><span>Double-click a wire to delete it. Select a node’s sliders to tune it live.</span></section>
+            </div>
+          </section>
+
+          <section data-page="reports">
+            <div class="page-shell report-layout">
+              <header class="page-heading"><div><p class="eyebrow">HANDOVER / COMPLIANCE</p><h2>Generate a shift report</h2><p>A real application flow: parameterized report content is compiled by a host-owned TeX adapter.</p></div><button id="compile-report" class="gui-button gui-button--primary" type="button">Compile current report</button></header>
+              <div class="report-grid"><article class="panel"><gui-tex-editor id="report-editor"></gui-tex-editor></article><article class="panel"><gui-tex-pdf-preview id="report-preview"></gui-tex-pdf-preview></article></div>
+              <aside class="report-callout"><strong>Host boundary preserved</strong><span>The example compiler is a browser mock. In production, register <code>tex.compile</code> in the Python or C# host and compile inside a sandbox.</span></aside>
+            </div>
+          </section>
+
+          <section data-page="settings">
+            <div class="page-shell settings-layout"><header class="page-heading"><div><p class="eyebrow">STATION CONFIGURATION</p><h2>Monitoring policy</h2><p>Changes are staged locally and captured in the event stream.</p></div></header><form id="station-settings" class="panel settings-form"><label><span>Station name</span><input class="gui-input" name="station" value="Plant North / Line 03"></label><label><span>Vibration warning threshold</span><input class="gui-input" name="threshold" type="range" min="3" max="12" step="0.1" value="7.2"><output id="threshold-output">7.2 mm/s</output></label><label class="switch-line"><input name="maintenance" type="checkbox" checked><span>Automatically create maintenance recommendation</span></label><label><span>Alarm routing</span><select class="gui-input" name="routing"><option>On-call maintenance</option><option>Control room only</option><option>Maintenance + supervisor</option></select></label><div><button class="gui-button gui-button--primary" type="submit">Save policy</button></div></form></div>
+          </section>
+        </gui-pages>
+        <gui-statusbar id="telemetry-status" position="bottom"></gui-statusbar>
+      </main>
+    </div>
+    <gui-tutorial id="telemetry-tour"></gui-tutorial>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

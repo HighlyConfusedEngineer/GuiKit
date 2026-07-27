@@ -555,6 +555,12 @@ The [module authoring guide](docs/MODULES.md) defines lifecycle, API, event,
 styling, accessibility, testing, and documentation conventions. The node editor
 is the reference implementation for larger features.
 
+## Reference applications
+
+- [PulseOps telemetry console](examples/telemetry-console/README.md) is a
+  cohesive industrial-monitoring workflow: live signals, alarms, visual signal
+  flow, operator tutorial, configuration, and TeX shift reporting.
+
 ## Documentation
 
 - [API reference](docs/API.md)

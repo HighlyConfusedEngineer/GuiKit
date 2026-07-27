@@ -8,6 +8,9 @@ All notable changes to GuiKit are documented here. The format follows
 
 ### Added
 
+- PulseOps, a cohesive industrial telemetry reference application with live
+  multi-signal analysis, alarms, signal-flow editing, onboarding, settings,
+  structured event history, and host-replaceable TeX shift reporting.
 - Interactive tutorial module with serializable steps, spotlighted targets,
   keyboard navigation, optional action-driven advancement, and a full demo.
 - Developer-experience tooling: starter application and extension scaffolds,
