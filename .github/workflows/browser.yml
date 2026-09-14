@@ -13,5 +13,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm exec --yes --package=@playwright/test playwright install --with-deps chromium
-      - run: npm exec --yes --package=@playwright/test playwright test
+      - run: npm install --no-save @playwright/test
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
