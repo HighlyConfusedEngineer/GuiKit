@@ -29,7 +29,6 @@ test("grid preserves editing, keyboard selection, scrolling, and model listeners
   await page.goto(baseUrl);
   await page.evaluate(async () => {
     await import("/src/modules/data-views/index.js");
-    const model = new window.GuiDataCollection?.() ?? null;
     const grid = document.createElement("gui-data-grid");
     grid.style.height = "160px";
     grid.columns = [{ field: "name", editable: true }, { field: "value" }];
@@ -42,7 +41,7 @@ test("grid preserves editing, keyboard selection, scrolling, and model listeners
   await page.keyboard.press("ArrowDown");
   await expect(grid.locator("css=>>> .row[aria-selected=true]")).toHaveCount(1);
   await viewport.evaluate((element) => { element.scrollTop = 1_500; element.dispatchEvent(new Event("scroll")); });
-  await expect(grid.locator("css=>>> .row")).toHaveCount(lessThan(30));
+  await expect.poll(() => grid.locator("css=>>> .row").count()).toBeLessThan(30);
   const cell = grid.locator("css=>>> .row .cell[contenteditable=true]").first();
   await cell.click();
   await page.keyboard.press("Control+A");
@@ -53,7 +52,3 @@ test("grid preserves editing, keyboard selection, scrolling, and model listeners
   await grid.evaluate((element) => element.model.update(0, { name: "reattached" }));
   await expect(grid.locator("css=>>> .cell")).toContainText("reattached");
 });
-
-function lessThan(limit) {
-  return { asymmetricMatch: (value) => value < limit, toString: () => `< ${limit}` };
-}
