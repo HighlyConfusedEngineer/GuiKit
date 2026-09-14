@@ -8,7 +8,7 @@ let baseUrl;
 
 test.beforeAll(async () => {
   server = createServer(async (request, response) => {
-    const path = normalize(join(process.cwd(), request.url === "/" ? "test/browser/fixture.html" : request.url));
+    const path = normalize(join(process.cwd(), request.url === "/" ? "browser-tests/fixture.html" : request.url));
     if (!path.startsWith(process.cwd())) return response.writeHead(403).end();
     try {
       const body = await readFile(path);
