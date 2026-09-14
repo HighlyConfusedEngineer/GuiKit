@@ -23,6 +23,7 @@ export class GuiDataCollection extends GuiEventTarget {
   #sort = [];
   #filters = new Map();
   #selection = new Set();
+  #byKey = new Map();
 
   constructor(rows = [], options = {}) {
     super();
@@ -41,16 +42,19 @@ export class GuiDataCollection extends GuiEventTarget {
       ...clone(row),
       [this.#key]: row?.[this.#key] ?? `row-${index}`,
     }));
+    this.#reindex();
     this.#apply("rows");
   }
 
   append(rows) {
     const records = Array.isArray(rows) ? rows : [rows];
     const offset = this.#source.length;
-    this.#source.push(...records.map((row, index) => ({
+    const appended = records.map((row, index) => ({
       ...clone(row),
       [this.#key]: row?.[this.#key] ?? `row-${offset + index}`,
-    })));
+    }));
+    this.#source.push(...appended);
+    appended.forEach((row) => this.#byKey.set(row[this.#key], row));
     this.#apply("append");
   }
 
@@ -82,7 +86,7 @@ export class GuiDataCollection extends GuiEventTarget {
   }
 
   select(key, options = {}) {
-    const row = this.#source.find((candidate) => Object.is(candidate[this.#key], key));
+    const row = this.#byKey.get(key);
     if (!row) return false;
     const next = options.additive ? new Set(this.#selection) : new Set();
     if (options.toggle && next.has(key)) next.delete(key);
@@ -101,11 +105,20 @@ export class GuiDataCollection extends GuiEventTarget {
   }
 
   update(key, patch) {
-    const row = this.#source.find((candidate) => Object.is(candidate[this.#key], key));
-    if (!row) return false;
-    Object.assign(row, clone(patch), { [this.#key]: key });
-    this.#apply("update");
-    return true;
+    return this.updateMany([{ key, patch }]) > 0;
+  }
+
+  updateMany(updates) {
+    let changed = 0;
+    for (const entry of updates ?? []) {
+      const key = entry?.key;
+      const row = this.#byKey.get(key);
+      if (!row) continue;
+      Object.assign(row, clone(entry.patch), { [this.#key]: key });
+      changed += 1;
+    }
+    if (changed) this.#apply("update");
+    return changed;
   }
 
   groups(field) {
@@ -162,9 +175,13 @@ export class GuiDataCollection extends GuiEventTarget {
       });
     }
     this.#selection = new Set([...this.#selection].filter((key) => (
-      this.#source.some((row) => Object.is(row[this.#key], key))
+      this.#byKey.has(key)
     )));
     this.#notify(operation);
+  }
+
+  #reindex() {
+    this.#byKey = new Map(this.#source.map((row) => [row[this.#key], row]));
   }
 
   #notify(operation) {
@@ -292,7 +309,15 @@ export class GuiTreeModel extends GuiEventTarget {
   }
 
   find(key) {
-    return clone(this.flatten({ includeCollapsed: true }).find((item) => Object.is(item.key, key))?.node);
+    const walk = (nodes) => {
+      for (const node of nodes ?? []) {
+        if (Object.is(node[this.#key], key)) return node;
+        const found = walk(node[this.#children]);
+        if (found) return found;
+      }
+      return undefined;
+    };
+    return clone(walk(this.#roots));
   }
 
   flatten(options = {}) {
@@ -302,9 +327,12 @@ export class GuiTreeModel extends GuiEventTarget {
         const key = node[this.#key];
         const children = node[this.#children] ?? [];
         const expanded = this.#expanded.has(key);
+        // Flattened rows must not deep-clone every descendant for each node.
+        const itemNode = { ...node };
+        delete itemNode[this.#children];
         result.push({
           key,
-          node: clone(node),
+          node: itemNode,
           level,
           parentKey,
           expanded,
@@ -460,6 +488,7 @@ export class GuiDataGrid extends GuiElement {
   #dataSource = null;
   #page = 0;
   #loadController = null;
+  #loadRequest = 0;
   #renderScheduled = false;
 
   constructor() {
@@ -521,6 +550,7 @@ export class GuiDataGrid extends GuiElement {
   async loadPage(index, options = {}) {
     if (!this.#dataSource?.page) throw new Error("No paged data source is configured.");
     this.#loadController?.abort();
+    const requestId = ++this.#loadRequest;
     const controller = new AbortController();
     this.#loadController = controller;
     const abort = () => controller.abort(options.signal?.reason);
@@ -536,6 +566,7 @@ export class GuiDataGrid extends GuiElement {
       options.signal?.removeEventListener?.("abort", abort);
       if (this.#loadController === controller) this.#loadController = null;
     }
+    if (requestId !== this.#loadRequest || controller.signal.aborted) return result;
     this.#page = result.page;
     this.rows = result.rows;
     this.#dataSource.prefetch?.([result.page - 1, result.page + 1], { sort: this.#model?.sort ?? [] });
@@ -554,6 +585,7 @@ export class GuiDataGrid extends GuiElement {
 
   connectedCallback() {
     if (!this.#model) this.model = new GuiDataCollection();
+    this.#model.addEventListener?.("gui:data-change", this.#modelListener);
     this.render();
   }
   disconnectedCallback() {
@@ -746,6 +778,7 @@ export class GuiTreeView extends GuiElement {
 
   connectedCallback() {
     if (!this.#model) this.model = new GuiTreeModel();
+    this.#model.addEventListener?.("gui:tree-change", this.#listener);
     this.render();
   }
   disconnectedCallback() { this.#model?.removeEventListener?.("gui:tree-change", this.#listener); }
