@@ -3188,7 +3188,8 @@ const NODE_EDITOR_STYLES = `
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: .75rem;
+    gap: .6rem;
+    min-width: 0;
     min-height: 2.75rem;
     padding: .65rem .8rem;
     border-bottom: 1px solid var(--gui-border, #dfe2ea);
@@ -3201,7 +3202,10 @@ const NODE_EDITOR_STYLES = `
   }
 
   .node-header strong {
+    min-width: 0;
+    flex: 1 1 auto;
     overflow: hidden;
+    color: var(--gui-text, #17181c);
     font: 750 .86rem/1.2 var(--gui-font, ui-sans-serif, system-ui);
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -3209,19 +3213,25 @@ const NODE_EDITOR_STYLES = `
 
   .node-header-actions {
     display: flex;
-    flex: 0 0 auto;
+    min-width: 0;
+    max-width: 48%;
+    flex: 0 1 auto;
     align-items: center;
     gap: .3rem;
   }
 
   .node-header .node-type {
     padding: .16rem .38rem;
+    min-width: 0;
+    overflow: hidden;
     border-radius: 999px;
     background: color-mix(in srgb, var(--node-color) 13%, transparent);
     color: var(--node-color);
     font: 750 .62rem/1.2 var(--gui-font, ui-sans-serif, system-ui);
     letter-spacing: .04em;
+    text-overflow: ellipsis;
     text-transform: uppercase;
+    white-space: nowrap;
   }
 
   .node-subgraph-indicator {
