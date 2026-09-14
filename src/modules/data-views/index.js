@@ -490,6 +490,8 @@ export class GuiDataGrid extends GuiElement {
   #loadController = null;
   #loadRequest = 0;
   #renderScheduled = false;
+  #renderedRows = new Map();
+  #headerSignature = "";
 
   constructor() {
     super();
@@ -605,9 +607,44 @@ export class GuiDataGrid extends GuiElement {
     const template = this.#columns.map((column) => (
       typeof column.width === "number" ? `${column.width}px` : column.width
     )).join(" ");
-    this.#header.style.gridTemplateColumns = template;
-    this.#header.replaceChildren();
     const activeSort = this.#model.sort[0];
+    const headerSignature = JSON.stringify({
+      columns: this.#columns.map(({ field, label, width, pinned, sortable }) => ({ field, label, width, pinned, sortable })),
+      sort: activeSort,
+    });
+    if (headerSignature !== this.#headerSignature) {
+      this.#headerSignature = headerSignature;
+      this.#header.style.gridTemplateColumns = template;
+      this.#header.replaceChildren();
+      let pinnedStart = 0;
+      let pinnedEnd = 0;
+      const pinnedEndOffsets = new Map();
+      for (const column of [...this.#columns].reverse()) {
+        if (column.pinned !== "end") continue;
+        pinnedEndOffsets.set(column.field, pinnedEnd);
+        pinnedEnd += typeof column.width === "number" ? column.width : 128;
+      }
+      for (const column of this.#columns) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.sort = column.field;
+        button.disabled = !column.sortable;
+        button.role = "columnheader";
+        button.textContent = `${column.label}${activeSort?.field === column.field ? (activeSort.direction === "asc" ? " ↑" : " ↓") : ""}`;
+        button.setAttribute("aria-sort", activeSort?.field === column.field
+          ? (activeSort.direction === "asc" ? "ascending" : "descending")
+          : "none");
+        if (column.pinned === "start") {
+          button.classList.add("pinned");
+          button.style.left = `${pinnedStart}px`;
+          pinnedStart += typeof column.width === "number" ? column.width : 128;
+        } else if (column.pinned === "end") {
+          button.classList.add("pinned");
+          button.style.right = `${pinnedEndOffsets.get(column.field)}px`;
+        }
+        this.#header.append(button);
+      }
+    }
     let pinnedStart = 0;
     let pinnedEnd = 0;
     const pinnedEndOffsets = new Map();
@@ -616,47 +653,30 @@ export class GuiDataGrid extends GuiElement {
       pinnedEndOffsets.set(column.field, pinnedEnd);
       pinnedEnd += typeof column.width === "number" ? column.width : 128;
     }
-    for (const column of this.#columns) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.dataset.sort = column.field;
-      button.disabled = !column.sortable;
-      button.role = "columnheader";
-      button.textContent = `${column.label}${activeSort?.field === column.field ? (activeSort.direction === "asc" ? " ↑" : " ↓") : ""}`;
-      button.setAttribute("aria-sort", activeSort?.field === column.field
-        ? (activeSort.direction === "asc" ? "ascending" : "descending")
-        : "none");
-      if (column.pinned === "start") {
-        button.classList.add("pinned");
-        button.style.left = `${pinnedStart}px`;
-        pinnedStart += typeof column.width === "number" ? column.width : 128;
-      } else if (column.pinned === "end") {
-        button.classList.add("pinned");
-        button.style.right = `${pinnedEndOffsets.get(column.field)}px`;
-      }
-      this.#header.append(button);
-    }
     const height = this.#viewport.clientHeight || 300;
     const start = Math.max(0, Math.floor(this.#viewport.scrollTop / this.#rowHeight) - 4);
     const end = Math.min(this.#model.length, start + Math.ceil(height / this.#rowHeight) + 8);
     this.#space.style.height = `${this.#model.length * this.#rowHeight}px`;
     this.#space.style.width = `max(100%, ${this.#columns.length * 128}px)`;
-    this.#rowsLayer.replaceChildren();
+    const nextRows = new Map();
+    const selectedKeys = new Set(this.#model.selectedKeys);
     for (let index = start; index < end; index += 1) {
       const rowData = this.#model.at(index);
-      const row = document.createElement("div");
+      const key = String(this.#model.keyAt(index));
+      const row = this.#renderedRows.get(key) ?? document.createElement("div");
       row.className = "row";
       row.role = "row";
       row.dataset.index = index;
-      row.dataset.key = String(this.#model.keyAt(index));
+      row.dataset.key = key;
       row.style.top = `${index * this.#rowHeight}px`;
       row.style.height = `${this.#rowHeight}px`;
       row.style.gridTemplateColumns = template;
       row.setAttribute("aria-rowindex", String(index + 1));
-      row.setAttribute("aria-selected", String(this.#model.selectedKeys.includes(this.#model.keyAt(index))));
+      row.setAttribute("aria-selected", String(selectedKeys.has(this.#model.keyAt(index))));
+      const cells = new Map([...row.children].map((cell) => [cell.dataset.field, cell]));
       let cellPinnedStart = 0;
       for (const column of this.#columns) {
-        const cell = document.createElement("div");
+        const cell = cells.get(column.field) ?? document.createElement("div");
         cell.className = "cell";
         cell.role = "gridcell";
         cell.dataset.field = column.field;
@@ -664,21 +684,32 @@ export class GuiDataGrid extends GuiElement {
         const renderer = typeof column.renderer === "function"
           ? column.renderer
           : this.#renderers.get(column.renderer);
-        const content = renderer?.(rowData[column.field], clone(rowData), { row: index, column });
-        if (content instanceof Node) cell.append(content);
-        else cell.textContent = content == null ? String(rowData[column.field] ?? "") : String(content);
+        const value = rowData[column.field];
+        const renderKey = JSON.stringify(value);
+        if (cell.dataset.renderKey !== renderKey && this.#root.activeElement !== cell) {
+          const content = renderer?.(value, clone(rowData), { row: index, column });
+          cell.replaceChildren();
+          if (content instanceof Node) cell.append(content);
+          else cell.textContent = content == null ? String(value ?? "") : String(content);
+          cell.dataset.renderKey = renderKey;
+        }
+        cell.classList.toggle("pinned", Boolean(column.pinned));
+        cell.style.left = "";
+        cell.style.right = "";
         if (column.pinned === "start") {
-          cell.classList.add("pinned");
           cell.style.left = `${cellPinnedStart}px`;
           cellPinnedStart += typeof column.width === "number" ? column.width : 128;
         } else if (column.pinned === "end") {
-          cell.classList.add("pinned");
           cell.style.right = `${pinnedEndOffsets.get(column.field)}px`;
         }
         row.append(cell);
+        cells.delete(column.field);
       }
-      this.#rowsLayer.append(row);
+      cells.forEach((cell) => cell.remove());
+      nextRows.set(key, row);
     }
+    this.#renderedRows = nextRows;
+    this.#rowsLayer.replaceChildren(...nextRows.values());
     this.#viewport.setAttribute("aria-rowcount", String(this.#model.length));
     this.#viewport.setAttribute("aria-colcount", String(this.#columns.length));
     emit(this, "gui:grid-range", { start, end, total: this.#model.length });
