@@ -880,7 +880,9 @@ export class GuiTreeView extends GuiElement {
   #focusActive() {
     this.#viewport.scrollTo({ top: Math.max(0, this.#active * this.#rowHeight - this.#viewport.clientHeight / 2) });
     this.#renderRange();
-    this.#layer.querySelector(`[data-key="${CSS.escape(String(this.#items[this.#active]?.key ?? ""))}"]`)?.focus();
+    const activeKey = String(this.#items[this.#active]?.key ?? "");
+    [...this.#layer.querySelectorAll("[role=treeitem]")]
+      .find((row) => row.dataset.key === activeKey)?.focus();
   }
 
   #click(event) {
