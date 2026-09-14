@@ -1,6 +1,8 @@
+import type { GuiModuleRegistry } from "./core/module-registry.js";
+
 export { GuiModuleRegistry, defineGuiModule, guiModules } from "./core/module-registry.js";
 
 export function registerGuiModules(
   registry: GuiModuleRegistry,
-  modules: GuiModuleDefinition | GuiModuleDefinition[],
+  modules: unknown | unknown[],
 ): unknown[];
