@@ -36,19 +36,22 @@ test("grid preserves editing, keyboard selection, scrolling, and model listeners
     document.body.append(grid);
   });
   const grid = page.locator("gui-data-grid");
-  const viewport = grid.locator("css=>>> .viewport");
+  const viewport = grid.locator(".viewport");
   await viewport.focus();
   await page.keyboard.press("ArrowDown");
-  await expect(grid.locator("css=>>> .row[aria-selected=true]")).toHaveCount(1);
+  await expect(grid.locator(".row[aria-selected=true]")).toHaveCount(1);
   await viewport.evaluate((element) => { element.scrollTop = 1_500; element.dispatchEvent(new Event("scroll")); });
-  await expect.poll(() => grid.locator("css=>>> .row").count()).toBeLessThan(30);
-  const cell = grid.locator("css=>>> .row .cell[contenteditable=true]").first();
+  await expect.poll(() => grid.locator(".row").count()).toBeLessThan(30);
+  const cell = grid.locator(".row .cell[contenteditable=true]").first();
   await cell.click();
   await page.keyboard.press("Control+A");
   await page.keyboard.type("edited");
   await page.keyboard.press("Tab");
   await expect(cell).toHaveText("edited");
   await grid.evaluate((element) => { const parent = element.parentElement; element.remove(); parent.append(element); });
-  await grid.evaluate((element) => element.model.update(0, { name: "reattached" }));
-  await expect(grid.locator("css=>>> .cell")).toContainText("reattached");
+  await grid.evaluate((element) => {
+    element.model.update(0, { name: "reattached" });
+    element.shadowRoot.querySelector(".viewport").scrollTop = 0;
+  });
+  await expect(grid.locator(".cell")).toContainText("reattached");
 });
