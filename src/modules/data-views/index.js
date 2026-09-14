@@ -735,9 +735,13 @@ export class GuiDataGrid extends GuiElement {
 }
 
 const TREE_STYLES = `
-  :host { display: block; min-height: 8rem; overflow: auto; color: var(--gui-text, #e5e7eb); }
-  [role=treeitem] { display: flex; align-items: center; gap: .35rem; min-height: 2rem;
-    padding-inline-start: calc((var(--level) - 1) * 1.15rem + .35rem); border-radius: .35rem; outline: none; }
+  :host { display: block; min-height: 8rem; color: var(--gui-text, #e5e7eb); }
+  .viewport { height: 100%; min-height: 8rem; overflow: auto; outline: none; }
+  .space { position: relative; min-width: 100%; }
+  .items { position: absolute; inset: 0 0 auto; }
+  [role=treeitem] { position: absolute; left: 0; right: 0; display: flex; align-items: center; gap: .35rem;
+    min-height: 2rem; box-sizing: border-box; padding-inline-start: calc((var(--level) - 1) * 1.15rem + .35rem);
+    border-radius: .35rem; outline: none; }
   [role=treeitem][aria-selected=true], [role=treeitem]:focus {
     background: color-mix(in srgb, var(--gui-accent, #60a5fa) 18%, transparent); }
   button { width: 1.4rem; color: inherit; background: transparent; border: 0; }
@@ -746,24 +750,34 @@ const TREE_STYLES = `
 export class GuiTreeView extends GuiElement {
   #model;
   #root;
+  #viewport;
+  #space;
+  #layer;
+  #items = [];
   #active = 0;
   #selected = null;
   #listener = () => this.render();
   #label = "label";
+  #rowHeight = 32;
+  #scheduled = false;
 
   constructor() {
     super();
     if (!this.attachShadow) return;
     this.#root = this.attachShadow({ mode: "open" });
-    this.#root.innerHTML = `<style>${TREE_STYLES}</style><div role="tree" tabindex="0"></div>`;
+    this.#root.innerHTML = `<style>${TREE_STYLES}</style><div class="viewport" role="tree" tabindex="0"><div class="space"><div class="items"></div></div></div>`;
+    this.#viewport = this.#root.querySelector(".viewport");
+    this.#space = this.#root.querySelector(".space");
+    this.#layer = this.#root.querySelector(".items");
     this.#root.addEventListener("click", (event) => this.#click(event));
-    this.#root.querySelector("[role=tree]").addEventListener("keydown", (event) => this.#keydown(event));
+    this.#viewport.addEventListener("keydown", (event) => this.#keydown(event));
+    this.#viewport.addEventListener("scroll", () => this.#scheduleRender(), { passive: true });
   }
 
   set model(value) {
     this.#model?.removeEventListener?.("gui:tree-change", this.#listener);
     this.#model = value;
-    this.#model?.addEventListener?.("gui:tree-change", this.#listener);
+    if (this.isConnected) this.#model?.addEventListener?.("gui:tree-change", this.#listener);
     this.render();
   }
   get model() { return this.#model; }
@@ -784,16 +798,33 @@ export class GuiTreeView extends GuiElement {
   disconnectedCallback() { this.#model?.removeEventListener?.("gui:tree-change", this.#listener); }
 
   render() {
-    const tree = this.#root?.querySelector("[role=tree]");
-    if (!tree || !this.#model) return;
-    const items = this.#model.flatten();
-    this.#active = Math.min(this.#active, Math.max(0, items.length - 1));
-    tree.replaceChildren();
-    items.forEach((item, index) => {
+    if (!this.#viewport || !this.#model) return;
+    this.#items = this.#model.flatten();
+    this.#active = Math.min(this.#active, Math.max(0, this.#items.length - 1));
+    this.#renderRange();
+  }
+
+  #scheduleRender() {
+    if (this.#scheduled) return;
+    this.#scheduled = true;
+    const request = globalThis.requestAnimationFrame ?? ((callback) => setTimeout(callback, 16));
+    request(() => { this.#scheduled = false; this.#renderRange(); });
+  }
+
+  #renderRange() {
+    if (!this.#space || !this.#layer) return;
+    const start = Math.max(0, Math.floor(this.#viewport.scrollTop / this.#rowHeight) - 5);
+    const end = Math.min(this.#items.length, start + Math.ceil((this.#viewport.clientHeight || 256) / this.#rowHeight) + 10);
+    this.#space.style.height = `${this.#items.length * this.#rowHeight}px`;
+    const rows = [];
+    for (let index = start; index < end; index += 1) {
+      const item = this.#items[index];
       const row = document.createElement("div");
       row.role = "treeitem";
       row.tabIndex = index === this.#active ? 0 : -1;
       row.dataset.key = String(item.key);
+      row.style.top = `${index * this.#rowHeight}px`;
+      row.style.height = `${this.#rowHeight}px`;
       row.style.setProperty("--level", item.level);
       row.setAttribute("aria-level", item.level);
       row.setAttribute("aria-setsize", item.setSize);
@@ -809,40 +840,45 @@ export class GuiTreeView extends GuiElement {
       const label = document.createElement("span");
       label.textContent = String(item.node[this.#label] ?? item.key);
       row.append(toggle, label);
-      tree.append(row);
-    });
+      rows.push(row);
+    }
+    this.#layer.replaceChildren(...rows);
+    emit(this, "gui:tree-range", { start, end, total: this.#items.length });
+  }
+
+  #focusActive() {
+    this.#viewport.scrollTo({ top: Math.max(0, this.#active * this.#rowHeight - this.#viewport.clientHeight / 2) });
+    this.#renderRange();
+    this.#layer.querySelector(`[data-key="${CSS.escape(String(this.#items[this.#active]?.key ?? ""))}"]`)?.focus();
   }
 
   #click(event) {
     const row = event.target.closest?.("[role=treeitem]");
     if (!row) return;
-    const items = this.#model.flatten();
-    this.#active = [...row.parentElement.children].indexOf(row);
-    const item = items[this.#active];
-    if (event.target.closest("[data-toggle]")) {
-      this.#model.toggle(item.key);
-    } else this.#select(item);
+    this.#active = this.#items.findIndex((item) => String(item.key) === row.dataset.key);
+    const item = this.#items[this.#active];
+    if (!item) return;
+    if (event.target.closest("[data-toggle]")) this.#model.toggle(item.key);
+    else this.#select(item);
   }
 
   #keydown(event) {
-    const items = this.#model.flatten();
-    if (!items.length) return;
-    const current = items[this.#active];
-    if (event.key === "ArrowDown") this.#active = Math.min(items.length - 1, this.#active + 1);
+    if (!this.#items.length) return;
+    const current = this.#items[this.#active];
+    if (event.key === "ArrowDown") this.#active = Math.min(this.#items.length - 1, this.#active + 1);
     else if (event.key === "ArrowUp") this.#active = Math.max(0, this.#active - 1);
     else if (event.key === "Home") this.#active = 0;
-    else if (event.key === "End") this.#active = items.length - 1;
+    else if (event.key === "End") this.#active = this.#items.length - 1;
     else if (event.key === "ArrowRight" && current.hasChildren) {
       if (!current.expanded) this.#model.toggle(current.key, true);
       else this.#active += 1;
     } else if (event.key === "ArrowLeft") {
       if (current.expanded) this.#model.toggle(current.key, false);
-      else if (current.parentKey != null) this.#active = items.findIndex((item) => Object.is(item.key, current.parentKey));
+      else if (current.parentKey != null) this.#active = this.#items.findIndex((item) => Object.is(item.key, current.parentKey));
     } else if (event.key === "Enter" || event.key === " ") this.#select(current);
     else return;
     event.preventDefault();
-    this.render();
-    this.#root.querySelectorAll("[role=treeitem]")[this.#active]?.focus();
+    this.#focusActive();
   }
 
   #select(item) {
@@ -850,7 +886,7 @@ export class GuiTreeView extends GuiElement {
     if (!emit(this, "gui:tree-selection-request", detail, true)) return;
     this.#selected = item.key;
     emit(this, "gui:tree-selection", detail);
-    this.render();
+    this.#renderRange();
   }
 }
 
