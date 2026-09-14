@@ -30,6 +30,11 @@
       "default": "./src/gui.js"
     },
     "./styles": "./src/gui.css",
+    "./core": {
+      "types": "./src/core.d.ts",
+      "import": "./src/core.js",
+      "default": "./src/core.js"
+    },
     "./modules": {
       "types": "./src/core/module-registry.d.ts",
       "import": "./src/core/module-registry.js",
